@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS posts;
+DROP TABLE IF EXISTS follows;
+DROP TABLE IF EXISTS fraud_reports;
+DROP TABLE IF EXISTS matchmaking_queue;
+DROP TABLE IF EXISTS user_history_log;
+DROP TABLE IF EXISTS payments;
+DROP TABLE IF EXISTS match_clocks;
+DROP TABLE IF EXISTS matches;
+DROP TABLE IF EXISTS tournament_players;
+DROP TABLE IF EXISTS tournaments;
+DROP TABLE IF EXISTS users;
