@@ -1,7 +1,7 @@
 import React from 'react'
 import { Crown, Flame, Award } from 'lucide-react'
 
-const AVATAR_GLYPHS = {
+export const AVATAR_GLYPHS = {
   rook: '♜',
   knight: '♞',
   king: '♚'
@@ -11,6 +11,12 @@ const BADGE_ICONS = {
   'first-victory': Award,
   'hot-streak': Flame,
   grandmaster: Crown
+}
+
+const BADGE_LABELS = {
+  'first-victory': 'First Victory',
+  'hot-streak': 'Hot Streak',
+  grandmaster: 'Grandmaster'
 }
 
 // Comedic, non-chess profile frames: puns rendered big and loud next to a
@@ -70,6 +76,28 @@ export default function CosmeticIcon({ item }) {
     >
       <Icon size={28} strokeWidth={2.25} />
     </div>
+  )
+}
+
+// Renders the chess-piece glyph for a player's equipped avatar, so the
+// profile picture actually changes when a different avatar is equipped
+// instead of always showing the same placeholder icon.
+export function AvatarGlyph({ avatarKey }) {
+  return <span>{AVATAR_GLYPHS[avatarKey] || '♟'}</span>
+}
+
+// Renders a player's equipped badge as a small icon + label chip, or nothing
+// if no badge is equipped.
+export function EquippedBadge({ badgeKey }) {
+  if (!badgeKey) return null
+  const Icon = BADGE_ICONS[badgeKey] || Award
+  const label = BADGE_LABELS[badgeKey] || badgeKey
+
+  return (
+    <span className="equipped-badge">
+      <Icon size={14} strokeWidth={2.5} />
+      {label}
+    </span>
   )
 }
 
