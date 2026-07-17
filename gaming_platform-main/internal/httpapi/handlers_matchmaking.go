@@ -14,6 +14,10 @@ import (
 	"gaming_platform/internal/dbutil"
 )
 
+// FixedCoinWager is the flat virtual-coin wager charged for every match and
+// tournament entry.
+const FixedCoinWager int64 = 200
+
 func (s *Server) handleJoinQueue(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserID(r.Context())
 	if !ok {
@@ -41,14 +45,7 @@ func (s *Server) handleJoinQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.CoinWager <= 0 {
-		writeError(
-			w,
-			http.StatusBadRequest,
-			"coin_wager must be greater than zero",
-		)
-		return
-	}
+	req.CoinWager = FixedCoinWager
 
 	q := db.New(s.pool)
 

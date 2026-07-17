@@ -137,7 +137,9 @@
   margin-bottom: 16px;
 }
 
-.wager-field select {
+.wager-field select,
+.wager-field .wager-fixed {
+  display: block;
   width: 100%;
   margin-top: 7px;
   padding: 11px 12px;
@@ -145,6 +147,7 @@
   border: 1px solid #334155;
   border-radius: 10px;
   color: #eef2ff;
+  box-sizing: border-box;
 }
 
 .reward-banner {
@@ -241,4 +244,31 @@
   color: #cbd5e1;
   font-size: 13px;
   line-height: 1.4;
+}
+
+.cosmetic-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  color: #0f172a;
+}
+
+.cosmetic-icon-avatar span {
+  font-size: 34px;
+  line-height: 1;
+}
+
+.cosmetic-icon.tier-bronze {
+  background: linear-gradient(135deg, #d97757, #92400e);
+}
+
+.cosmetic-icon.tier-silver {
+  background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+}
+
+.cosmetic-icon.tier-gold {
+  background: linear-gradient(135deg, #fde68a, #d97706);
 }

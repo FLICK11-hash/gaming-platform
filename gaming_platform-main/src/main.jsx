@@ -11,7 +11,10 @@ import {
 } from 'lucide-react'
 import { api } from './api.js'
 import MatchRoom from './Chess.jsx'
+import CosmeticIcon from './cosmeticArt.jsx'
 import './styles.css'
+
+const FIXED_COIN_WAGER = 200
 
 function App() {
   const [token, setToken] = useState(
@@ -212,8 +215,7 @@ function Dashboard({
   const [gameMode, setGameMode] =
     useState('one_vs_one')
 
-  const [coinWager, setCoinWager] =
-    useState(50)
+  const coinWager = FIXED_COIN_WAGER
 
   const [post, setPost] = useState({
     title: 'First post',
@@ -559,24 +561,10 @@ function Dashboard({
           </button>
         </div>
 
-        <label className="wager-field">
+        <div className="wager-field">
           Virtual coin wager
-
-          <select
-            value={coinWager}
-            onChange={event =>
-              setCoinWager(
-                Number(event.target.value)
-              )
-            }
-            disabled={Boolean(queue || activeMatch)}
-          >
-            <option value={25}>25 coins</option>
-            <option value={50}>50 coins</option>
-            <option value={100}>100 coins</option>
-            <option value={250}>250 coins</option>
-          </select>
-        </label>
+          <span className="wager-fixed">{FIXED_COIN_WAGER} coins</span>
+        </div>
 
         {gameMode === 'tournament' && (
           <div className="reward-banner">
@@ -664,6 +652,7 @@ function Dashboard({
         <div className="cosmetics-grid">
           {cosmetics.map(item => (
             <div className="cosmetic-item" key={item.cosmetic_item_id}>
+              <CosmeticIcon item={item} />
               <b>{item.name}</b>
               <span className="mode-detail">{item.item_type} · {item.coin_price} 🪙</span>
               <p>{item.description}</p>
