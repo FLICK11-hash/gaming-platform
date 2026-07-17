@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"gaming_platform/internal/auth"
+	"gaming_platform/internal/domain/match"
 )
 
 // handleMatchWS upgrades to a websocket and relays move/resign messages into
@@ -46,7 +47,8 @@ func (s *Server) handleMatchWS(w http.ResponseWriter, r *http.Request) {
 
 		switch msg.Type {
 		case "move":
-			if err := s.matchSvc.HandleMove(ctx, matchID, userID, msg.From, msg.To, msg.Promotion); err != nil {
+			input := match.MoveInput{From: msg.From, To: msg.To, Promotion: msg.Promotion, Column: msg.Column}
+			if err := s.matchSvc.HandleMove(ctx, matchID, userID, input); err != nil {
 				_ = conn.WriteJSON(map[string]string{"type": "error", "error": err.Error()})
 			}
 		case "resign":

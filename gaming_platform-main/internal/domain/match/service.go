@@ -1,7 +1,9 @@
-// Package match orchestrates a single chess match's lifecycle: starting once
-// both players connect, applying moves, running the bullet clocks, resigning,
-// completing on checkmate/stalemate/draw/timeout, updating Elo, and
-// advancing the tournament bracket.
+// Package match orchestrates a single match's lifecycle: starting once both
+// players connect, applying moves, running the bullet clocks, resigning,
+// completing on a decisive result/draw/timeout, updating Elo, and advancing
+// the tournament bracket. It hosts two game types - chess and Connect Four -
+// dispatching to the matching engine per match while keeping the clock,
+// disconnect-grace-period, countdown, and bracket logic shared between them.
 package match
 
 import (
@@ -20,6 +22,7 @@ import (
 	"gaming_platform/internal/dbutil"
 	"gaming_platform/internal/domain/chess"
 	"gaming_platform/internal/domain/clock"
+	"gaming_platform/internal/domain/connectfour"
 	"gaming_platform/internal/domain/elo"
 	"gaming_platform/internal/domain/hub"
 	"gaming_platform/internal/domain/tournament"
@@ -30,6 +33,19 @@ var (
 	ErrNotYourTurn    = errors.New("match: not your turn")
 	ErrMatchNotActive = errors.New("match: match is not active")
 )
+
+// GameTypeConnectFour identifies a Connect Four match. Anything else
+// (including the empty string, for defensiveness) is treated as chess.
+const GameTypeConnectFour = "connect_four"
+
+// MoveInput carries the game-specific fields for a single move: From/To/
+// Promotion for chess, Column for Connect Four.
+type MoveInput struct {
+	From      string
+	To        string
+	Promotion string
+	Column    *int
+}
 
 type deadline struct {
 	MatchID        int64
@@ -51,9 +67,10 @@ type disconnectDeadline struct {
 }
 
 type Service struct {
-	pool   *pgxpool.Pool
-	engine *chess.Engine
-	hub    *hub.Hub
+	pool        *pgxpool.Pool
+	chessEngine *chess.Engine
+	c4Engine    *connectfour.Engine
+	hub         *hub.Hub
 
 	mu           sync.Mutex
 	deadlines    map[int64]deadline
@@ -64,7 +81,8 @@ type Service struct {
 func NewService(pool *pgxpool.Pool, h *hub.Hub) *Service {
 	return &Service{
 		pool:         pool,
-		engine:       chess.NewEngine(),
+		chessEngine:  chess.NewEngine(),
+		c4Engine:     connectfour.NewEngine(),
 		hub:          h,
 		deadlines:    make(map[int64]deadline),
 		disconnects:  make(map[int64]map[int64]disconnectDeadline),
@@ -76,6 +94,7 @@ func NewService(pool *pgxpool.Pool, h *hub.Hub) *Service {
 type wsOutbound struct {
 	Type    string         `json:"type"`
 	FEN     string         `json:"fen,omitempty"`
+	Board   [][]int        `json:"board,omitempty"`
 	Turn    string         `json:"turn,omitempty"`
 	Outcome string         `json:"outcome,omitempty"`
 	Winner  int64          `json:"winner_user_id,omitempty"`
@@ -110,7 +129,7 @@ func (s *Service) Join(ctx context.Context, matchID, userID int64, ws *websocket
 		return nil
 	}
 
-	s.broadcastState(ctx, matchID)
+	s.broadcastState(ctx, m)
 	return nil
 }
 
@@ -228,7 +247,11 @@ func (s *Service) startMatch(ctx context.Context, m db.Match) error {
 		return err
 	}
 
-	s.engine.StartGame(m.MatchID)
+	if m.GameType == GameTypeConnectFour {
+		s.c4Engine.StartGame(m.MatchID)
+	} else {
+		s.chessEngine.StartGame(m.MatchID)
+	}
 
 	s.mu.Lock()
 	s.deadlines[m.MatchID] = deadline{
@@ -238,13 +261,13 @@ func (s *Service) startMatch(ctx context.Context, m db.Match) error {
 	}
 	s.mu.Unlock()
 
-	s.broadcastState(ctx, m.MatchID)
+	s.broadcastState(ctx, m)
 	return nil
 }
 
-// HandleMove validates and applies a move (e.g. from="e2", to="e4") from
-// userID. promo is the promotion piece letter ("q", "r", "b", "n"), or "".
-func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, from, to, promo string) error {
+// HandleMove validates and applies a move from userID: From/To/Promotion for
+// chess, or Column for Connect Four, depending on the match's game type.
+func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input MoveInput) error {
 	q := db.New(s.pool)
 	m, err := q.GetMatch(ctx, matchID)
 	if err != nil {
@@ -264,14 +287,14 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, from, t
 		return s.completeMatch(ctx, matchID)
 	}
 
-	result, err := s.engine.ApplyMove(matchID, from, to, promo)
-	if err != nil {
-		return err
-	}
-
 	opponentID := m.Player2ID
 	if userID == m.Player2ID {
 		opponentID = m.Player1ID
+	}
+
+	finished, winnerID, err := s.applyMove(m, userID, input)
+	if err != nil {
+		return err
 	}
 
 	now := time.Now()
@@ -306,7 +329,7 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, from, t
 		return err
 	}
 
-	if result.Outcome == chess.NoOutcome {
+	if !finished {
 		if err := q.SetMatchTurn(ctx, db.SetMatchTurnParams{
 			MatchID:           matchID,
 			CurrentTurnUserID: dbutil.Int64ToPGInt8(opponentID),
@@ -322,8 +345,45 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, from, t
 		}
 		s.mu.Unlock()
 
-		s.broadcastState(ctx, matchID)
+		s.broadcastState(ctx, m)
 		return nil
+	}
+
+	// A Connect Four game that ends with the board full and nobody
+	// connecting four isn't a true draw: whoever has more time left on
+	// their clock at that moment wins, so every game reaches a winner.
+	// moverRemaining and opponentClock.RemainingSeconds are both snapshots
+	// as of `now`, so they're directly comparable.
+	if winnerID == 0 && m.GameType == GameTypeConnectFour {
+		winnerID = winnerByRemainingTime(
+			userID, moverRemaining,
+			opponentID, int(opponentClock.RemainingSeconds),
+		)
+	}
+
+	s.mu.Lock()
+	delete(s.deadlines, matchID)
+	s.mu.Unlock()
+
+	return s.finishMatch(ctx, matchID, winnerID)
+}
+
+// applyMove dispatches a move to the correct game engine and reports whether
+// the game finished and, if so, who won (0 for a draw).
+func (s *Service) applyMove(m db.Match, userID int64, input MoveInput) (finished bool, winnerUserID int64, err error) {
+	if m.GameType == GameTypeConnectFour {
+		return s.applyConnectFourMove(m, userID, input)
+	}
+	return s.applyChessMove(m, input)
+}
+
+func (s *Service) applyChessMove(m db.Match, input MoveInput) (bool, int64, error) {
+	result, err := s.chessEngine.ApplyMove(m.MatchID, input.From, input.To, input.Promotion)
+	if err != nil {
+		return false, 0, err
+	}
+	if result.Outcome == chess.NoOutcome {
+		return false, 0, nil
 	}
 
 	winnerID := int64(0)
@@ -333,12 +393,47 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, from, t
 	case chess.BlackWon:
 		winnerID = m.Player2ID
 	}
+	return true, winnerID, nil
+}
 
-	s.mu.Lock()
-	delete(s.deadlines, matchID)
-	s.mu.Unlock()
+func (s *Service) applyConnectFourMove(m db.Match, userID int64, input MoveInput) (bool, int64, error) {
+	if input.Column == nil {
+		return false, 0, errors.New("match: column is required for connect four moves")
+	}
 
-	return s.finishMatch(ctx, matchID, winnerID)
+	color := connectfour.Red
+	if userID == m.Player2ID {
+		color = connectfour.Green
+	}
+
+	result, err := s.c4Engine.DropChip(m.MatchID, *input.Column, color)
+	if err != nil {
+		return false, 0, err
+	}
+
+	switch result.Outcome {
+	case connectfour.NoOutcome:
+		return false, 0, nil
+	case connectfour.RedWon:
+		return true, m.Player1ID, nil
+	case connectfour.GreenWon:
+		return true, m.Player2ID, nil
+	default: // Draw: the board is full with nobody connecting four.
+		return true, 0, nil
+	}
+}
+
+// winnerByRemainingTime picks whichever player has strictly more time left
+// on their clock, or 0 (a true draw) on an exact tie.
+func winnerByRemainingTime(userA int64, remainingA int, userB int64, remainingB int) int64 {
+	switch {
+	case remainingA > remainingB:
+		return userA
+	case remainingB > remainingA:
+		return userB
+	default:
+		return 0
+	}
 }
 
 // HandleResign ends the match with userID's opponent as the winner.
@@ -355,11 +450,13 @@ func (s *Service) HandleResign(ctx context.Context, matchID, userID int64) error
 		return ErrNotParticipant
 	}
 
-	color := chess.White
-	if userID == m.Player2ID {
-		color = chess.Black
+	if m.GameType != GameTypeConnectFour {
+		color := chess.White
+		if userID == m.Player2ID {
+			color = chess.Black
+		}
+		_, _ = s.chessEngine.Resign(matchID, color)
 	}
-	_, _ = s.engine.Resign(matchID, color)
 
 	opponentID := m.Player2ID
 	if userID == m.Player2ID {
@@ -489,7 +586,11 @@ func (s *Service) finishMatch(ctx context.Context, matchID, winnerUserID int64) 
 	if _, err := q.CompleteMatch(ctx, db.CompleteMatchParams{MatchID: matchID, WinnerUserID: winnerPG}); err != nil {
 		return err
 	}
-	s.engine.EndGame(matchID)
+	if m.GameType == GameTypeConnectFour {
+		s.c4Engine.EndGame(matchID)
+	} else {
+		s.chessEngine.EndGame(matchID)
+	}
 
 	s.mu.Lock()
 	delete(s.disconnects, matchID)
@@ -596,6 +697,7 @@ func (s *Service) advanceBracket(ctx context.Context, tournamentID int64, comple
 		pairing := tournament.FinalPairing(sf1.WinnerUserID.Int64, sf2.WinnerUserID.Int64)
 		_, err = q.CreateMatch(ctx, db.CreateMatchParams{
 			TournamentID: tournamentID,
+			GameType:     completed.GameType,
 			Round:        pairing.Round,
 			MatchNumber:  dbutil.IntToPGInt4(pairing.MatchNumber),
 			Player1ID:    pairing.Player1ID,
@@ -722,20 +824,64 @@ func (s *Service) advanceBracket(ctx context.Context, tournamentID int64, comple
 	return nil
 }
 
-func (s *Service) broadcastState(ctx context.Context, matchID int64) {
-	state, err := s.engine.State(matchID)
-	if err != nil {
-		s.hub.Broadcast(matchID, wsOutbound{Type: "waiting"})
+func (s *Service) broadcastState(ctx context.Context, m db.Match) {
+	if m.GameType == GameTypeConnectFour {
+		state, err := s.c4Engine.State(m.MatchID)
+		if err != nil {
+			s.hub.Broadcast(m.MatchID, wsOutbound{Type: "waiting"})
+			return
+		}
+		s.hub.Broadcast(m.MatchID, wsOutbound{
+			Type:    "state",
+			Board:   boardRows(state.Board),
+			Turn:    connectFourColorName(state.Turn),
+			Outcome: connectFourOutcomeName(state.Outcome),
+			Clocks:  s.clockSnapshot(ctx, m.MatchID),
+		})
 		return
 	}
 
-	s.hub.Broadcast(matchID, wsOutbound{
+	state, err := s.chessEngine.State(m.MatchID)
+	if err != nil {
+		s.hub.Broadcast(m.MatchID, wsOutbound{Type: "waiting"})
+		return
+	}
+
+	s.hub.Broadcast(m.MatchID, wsOutbound{
 		Type:    "state",
 		FEN:     state.FEN,
 		Turn:    colorName(state.Turn),
 		Outcome: string(state.Outcome),
-		Clocks:  s.clockSnapshot(ctx, matchID),
+		Clocks:  s.clockSnapshot(ctx, m.MatchID),
 	})
+}
+
+func boardRows(board connectfour.Board) [][]int {
+	rows := make([][]int, connectfour.Rows)
+	for r := range board {
+		rows[r] = append([]int(nil), board[r][:]...)
+	}
+	return rows
+}
+
+func connectFourColorName(c connectfour.Color) string {
+	if c == connectfour.Red {
+		return "red"
+	}
+	return "green"
+}
+
+func connectFourOutcomeName(o connectfour.Outcome) string {
+	switch o {
+	case connectfour.RedWon:
+		return "red_won"
+	case connectfour.GreenWon:
+		return "green_won"
+	case connectfour.Draw:
+		return "draw"
+	default:
+		return ""
+	}
 }
 
 func (s *Service) clockSnapshot(ctx context.Context, matchID int64) map[string]int {

@@ -59,6 +59,7 @@ type Match struct {
 	Status            pgtype.Text        `json:"status"`
 	StartedAt         pgtype.Timestamptz `json:"started_at"`
 	CompletedAt       pgtype.Timestamptz `json:"completed_at"`
+	GameType          string             `json:"game_type"`
 }
 
 type MatchClock struct {

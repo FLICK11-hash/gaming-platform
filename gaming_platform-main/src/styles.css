@@ -18,6 +18,12 @@
 .piece-white{color:#f8fafc;text-shadow:0 1px 2px rgba(0,0,0,.6);display:inline-block;animation:piece-pop .12s ease-out}
 .piece-black{color:#0b1020;text-shadow:0 1px 1px rgba(255,255,255,.25);display:inline-block;animation:piece-pop .12s ease-out}
 @keyframes piece-pop{from{transform:scale(.7);opacity:.4}to{transform:scale(1);opacity:1}}
+.connect-four-board{display:grid;grid-template-rows:repeat(6,1fr);gap:6px;width:100%;aspect-ratio:7/6;background:#1d4ed8;border:2px solid #263148;border-radius:12px;padding:6px;box-sizing:border-box}
+.c4-row{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.c4-cell{border:0;border-radius:50%;padding:0;background:#0b1020;cursor:pointer}
+.c4-cell:disabled{cursor:default}
+.c4-cell.red{background:#ef4444;animation:piece-pop .15s ease-out}
+.c4-cell.green{background:#22c55e;animation:piece-pop .15s ease-out}
 .countdown-overlay{position:absolute;inset:0;z-index:5;display:grid;place-items:center;gap:6px;background:rgba(11,16,32,.82);border-radius:12px;text-align:center}
 .countdown-overlay span{color:#93c5fd;font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:14px}
 .countdown-overlay strong{font-size:64px;color:#eef2ff;line-height:1}
@@ -67,6 +73,13 @@
 
 .coin-balance strong {
   font-size: 18px;
+}
+
+.section-subheading {
+  margin: 0 0 10px;
+  color: #cbd5e1;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .mode-grid {
@@ -357,4 +370,29 @@
   border-radius: 999px;
   font-size: 13px;
   font-weight: 700;
+}
+
+.ad-rail {
+  display: block;
+  position: fixed;
+  top: 96px;
+  width: 160px;
+  min-height: 600px;
+}
+
+.ad-rail-left {
+  left: 12px;
+}
+
+.ad-rail-right {
+  right: 12px;
+}
+
+/* The centered page content maxes out around 1180px; below ~1550px a fixed
+   160px rail on each side would overlap it, so hide the rails rather than
+   let them collide with the main grid. */
+@media (max-width: 1550px) {
+  .ad-rail {
+    display: none;
+  }
 }

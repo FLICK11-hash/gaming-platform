@@ -49,16 +49,17 @@ func (s *Server) handleGetMatch(w http.ResponseWriter, r *http.Request) {
 }
 
 // matchResponseWithProfiles builds a matchResponse and, best-effort, attaches
-// both players' equipped profile frames so opponents can see each other's
-// pins in the match room. If either player lookup fails, the frames are just
-// left empty rather than failing the whole request.
+// both players' username, equipped badge, and equipped profile frames so
+// the match room can show real identity instead of a bare user ID. If
+// either player lookup fails, those fields are just left empty rather than
+// failing the whole request.
 func (s *Server) matchResponseWithProfiles(r *http.Request, q *db.Queries, m db.Match) matchResponse {
 	resp := toMatchResponse(m)
 
 	player1, err1 := q.GetUserByID(r.Context(), m.Player1ID)
 	player2, err2 := q.GetUserByID(r.Context(), m.Player2ID)
 	if err1 == nil && err2 == nil {
-		resp = withPlayerProfileFrames(resp, player1, player2)
+		resp = withPlayerProfiles(resp, player1, player2)
 	}
 
 	return resp
