@@ -165,9 +165,14 @@ func (m *Matcher) matchBucket(
 		coinWager * int64(requiredPlayers)
 
 	bonusCoins := int64(0)
-	if gameMode == "tournament" {
-		bonusCoins = tournamentBonusCoins
-	}
+	// 4-player tournament mode is disabled for now (too much work to keep
+	// fully working right now) - may come back in the future. Left here,
+	// commented out, since handleJoinQueue no longer accepts
+	// game_mode=tournament.
+	//
+	// if gameMode == "tournament" {
+	// 	bonusCoins = tournamentBonusCoins
+	// }
 
 	winnerCoinPrize :=
 		totalCoinPool + bonusCoins
@@ -194,9 +199,10 @@ func (m *Matcher) matchBucket(
 	)
 
 	entryTransactionType := "match_entry"
-	if gameMode == "tournament" {
-		entryTransactionType = "tournament_entry"
-	}
+	// Tournament mode disabled, see above.
+	// if gameMode == "tournament" {
+	// 	entryTransactionType = "tournament_entry"
+	// }
 
 	for index, player := range group {
 		seed := index + 1
@@ -276,16 +282,22 @@ func (m *Matcher) matchBucket(
 			return err
 		}
 	} else {
-		err = m.createTournamentSemifinals(
-			ctx,
-			q,
-			createdTournament.TournamentID,
-			gameType,
-			seededPlayers,
-		)
-		if err != nil {
-			return err
-		}
+		// 4-player tournament mode is disabled for now (too much work to
+		// keep fully working right now) - may come back in the future.
+		// The implementation is left in place, just unreachable, since
+		// handleJoinQueue no longer accepts game_mode=tournament.
+		//
+		// err = m.createTournamentSemifinals(
+		// 	ctx,
+		// 	q,
+		// 	createdTournament.TournamentID,
+		// 	gameType,
+		// 	seededPlayers,
+		// )
+		// if err != nil {
+		// 	return err
+		// }
+		return fmt.Errorf("matchmaking: tournament mode is disabled")
 	}
 
 	_, err = q.StartTournament(
@@ -303,8 +315,9 @@ func playersRequired(gameMode string) (int, error) {
 	switch gameMode {
 	case "one_vs_one":
 		return 2, nil
-	case "tournament":
-		return 4, nil
+	// 4-player tournament mode is disabled for now, see handleJoinQueue.
+	// case "tournament":
+	// 	return 4, nil
 	default:
 		return 0, fmt.Errorf(
 			"unsupported game mode: %s",

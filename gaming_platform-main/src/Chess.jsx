@@ -82,6 +82,31 @@ function lowestEmptyRow(board, column) {
   return -1
 }
 
+const WIN_MESSAGES = [
+  '🏆 Victory! You crushed it!',
+  '🎉 GG! You won!',
+  '🔥 Dominant win!',
+  '👑 Champion status achieved!',
+  '💪 Flawless victory!',
+]
+
+const LOSS_MESSAGES = [
+  '😵 Tough break — you lost.',
+  '💀 Defeated... run it back?',
+  '😤 So close! Better luck next time.',
+  '🥲 Not your day. Try again!',
+  '😬 Ouch, that one hurt.',
+]
+
+const DRAW_MESSAGES = [
+  "🤝 It's a draw!",
+  '😐 Stalemate. Nobody wins this one.',
+]
+
+function randomOf(list) {
+  return list[Math.floor(Math.random() * list.length)]
+}
+
 function playerLabel(barColor, myColor) {
   const capitalized = barColor.charAt(0).toUpperCase() + barColor.slice(1)
   return barColor === myColor ? `You (${capitalized})` : `Opponent (${capitalized})`
@@ -116,6 +141,8 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   const [countdown, setCountdown] = useState(null)
   const [optimisticMove, setOptimisticMove] = useState(null)
   const [optimisticDrop, setOptimisticDrop] = useState(null)
+  const [winningSquare, setWinningSquare] = useState(null)
+  const [winningCells, setWinningCells] = useState(null)
   const [, forceTick] = useState(0)
 
   const wsRef = useRef(null)
@@ -181,14 +208,25 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
             if (msg.board) setC4Board(msg.board)
             else setFen(msg.fen || START_FEN)
             setTurn(msg.turn || 'white')
+            setWinningSquare(msg.winning_square || null)
+            setWinningCells(msg.winning_cells || null)
             if (msg.clocks) {
               setClocks(msg.clocks)
               clocksSyncedAt.current = Date.now()
             }
             break
-          case 'match_over':
-            setGameOver({ winnerUserId: msg.winner_user_id || 0 })
+          case 'match_over': {
+            const winnerUserId = msg.winner_user_id || 0
+            const isDraw = winnerUserId === 0
+            const isWinner = winnerUserId === userId
+            setGameOver({
+              winnerUserId,
+              isDraw,
+              isWinner,
+              message: randomOf(isDraw ? DRAW_MESSAGES : isWinner ? WIN_MESSAGES : LOSS_MESSAGES),
+            })
             break
+          }
           case 'opponent_disconnected':
             setNotice('Opponent disconnected. They forfeit in 5 seconds if they don’t reconnect.')
             break
@@ -337,15 +375,18 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
               <div className="connect-four-board">
                 {displayC4Board.map((row, rowIdx) => (
                   <div className="c4-row" key={rowIdx}>
-                    {row.map((cell, colIdx) => (
-                      <button
-                        key={colIdx}
-                        className={`c4-cell ${cell === 1 ? 'red' : cell === 2 ? 'green' : ''}`}
-                        onClick={() => handleColumnClick(colIdx)}
-                        disabled={!isMyTurn || c4Board[0][colIdx] !== 0}
-                        aria-label={`Drop in column ${colIdx + 1}`}
-                      />
-                    ))}
+                    {row.map((cell, colIdx) => {
+                      const isWinning = winningCells?.some(([r, c]) => r === rowIdx && c === colIdx)
+                      return (
+                        <button
+                          key={colIdx}
+                          className={`c4-cell ${cell === 1 ? 'red' : cell === 2 ? 'green' : ''} ${isWinning ? 'winning' : ''}`}
+                          onClick={() => handleColumnClick(colIdx)}
+                          disabled={!isMyTurn || c4Board[0][colIdx] !== 0}
+                          aria-label={`Drop in column ${colIdx + 1}`}
+                        />
+                      )
+                    })}
                   </div>
                 ))}
               </div>
@@ -358,10 +399,11 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
                       const sq = squareName(rankIdx, fileIdx)
                       const dark = (rankIdx + fileIdx) % 2 === 1
                       const isSelected = selected === sq
+                      const isWinning = winningSquare === sq
                       return (
                         <button
                           key={sq}
-                          className={`chess-square ${dark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''}`}
+                          className={`chess-square ${dark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} ${isWinning ? 'winning' : ''}`}
                           onClick={() => handleSquareClick(rankIdx, fileIdx)}
                           disabled={!isMyTurn}
                         >
@@ -409,14 +451,11 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
           )}
 
           {gameOver && (
-            <div className="post game-over">
-              <b>
-                {gameOver.winnerUserId === 0
-                  ? 'Draw'
-                  : gameOver.winnerUserId === userId
-                    ? 'You won!'
-                    : 'You lost.'}
-              </b>
+            <div className={`post game-over ${gameOver.isDraw ? 'draw' : gameOver.isWinner ? 'win' : 'loss'}`}>
+              <div className="game-over-emoji">
+                {gameOver.isDraw ? '🤝' : gameOver.isWinner ? '🏆' : '💀'}
+              </div>
+              <b>{gameOver.message}</b>
               <button onClick={onExit}>Back to Lobby</button>
             </div>
           )}

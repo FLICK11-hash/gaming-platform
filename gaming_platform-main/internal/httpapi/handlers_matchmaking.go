@@ -40,11 +40,17 @@ func (s *Server) handleJoinQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.GameMode != "one_vs_one" && req.GameMode != "tournament" {
+	// The 4-player tournament format is disabled for now (too much work to
+	// keep fully working right now) - may come back in the future. The
+	// bracket/advancement logic in match/service.go and matcher.go is left
+	// in place, just unreachable, so it's ready to re-enable later:
+	//
+	// if req.GameMode != "one_vs_one" && req.GameMode != "tournament" {
+	if req.GameMode != "one_vs_one" {
 		writeError(
 			w,
 			http.StatusBadRequest,
-			"game_mode must be one_vs_one or tournament",
+			"game_mode must be one_vs_one",
 		)
 		return
 	}

@@ -28,6 +28,10 @@ func TestDropChip_HorizontalWin(t *testing.T) {
 	if result.Outcome != RedWon {
 		t.Errorf("Outcome = %v, want RedWon", result.Outcome)
 	}
+	wantCells := [][2]int{{5, 0}, {5, 1}, {5, 2}, {5, 3}}
+	if !cellsEqual(result.WinningCells, wantCells) {
+		t.Errorf("WinningCells = %v, want %v", result.WinningCells, wantCells)
+	}
 }
 
 func TestDropChip_VerticalWin(t *testing.T) {
@@ -54,6 +58,10 @@ func TestDropChip_VerticalWin(t *testing.T) {
 	}
 	if result.Outcome != RedWon {
 		t.Errorf("Outcome = %v, want RedWon", result.Outcome)
+	}
+	wantCells := [][2]int{{2, 0}, {3, 0}, {4, 0}, {5, 0}}
+	if !cellsEqual(result.WinningCells, wantCells) {
+		t.Errorf("WinningCells = %v, want %v", result.WinningCells, wantCells)
 	}
 }
 
@@ -93,6 +101,22 @@ func TestDropChip_DiagonalWin(t *testing.T) {
 	if result.Outcome != RedWon {
 		t.Errorf("Outcome = %v, want RedWon", result.Outcome)
 	}
+	wantCells := [][2]int{{2, 3}, {3, 2}, {4, 1}, {5, 0}}
+	if !cellsEqual(result.WinningCells, wantCells) {
+		t.Errorf("WinningCells = %v, want %v", result.WinningCells, wantCells)
+	}
+}
+
+func cellsEqual(got, want [][2]int) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func TestDropChip_NotYourTurn(t *testing.T) {
@@ -186,7 +210,7 @@ func findNonWinningFillSequence(t *testing.T) []int {
 
 			next := board
 			next[row][col] = int(turn)
-			if checkWin(next, row, col, int(turn)) {
+			if won, _ := checkWin(next, row, col, int(turn)); won {
 				continue // this column completes a line; not a safe move
 			}
 

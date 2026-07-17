@@ -49,12 +49,17 @@ type MoveResult struct {
 	Board   Board
 	Turn    Color
 	Outcome Outcome
+	// WinningCells holds every cell in the connected line that won the game
+	// (at least 4, occasionally more), so a client can highlight them. Only
+	// populated when Outcome is RedWon or GreenWon.
+	WinningCells [][2]int
 }
 
 type gameState struct {
-	board   Board
-	turn    Color
-	outcome Outcome
+	board        Board
+	turn         Color
+	outcome      Outcome
+	winningCells [][2]int
 }
 
 // Engine holds one live Connect Four game per active match_id.
@@ -109,13 +114,15 @@ func (e *Engine) DropChip(matchID int64, column int, color Color) (MoveResult, e
 
 	g.board[row][column] = int(color)
 
+	won, winningCells := checkWin(g.board, row, column, int(color))
 	switch {
-	case checkWin(g.board, row, column, int(color)):
+	case won:
 		if color == Red {
 			g.outcome = RedWon
 		} else {
 			g.outcome = GreenWon
 		}
+		g.winningCells = winningCells
 	case boardFull(g.board):
 		g.outcome = Draw
 	default:
@@ -149,7 +156,7 @@ func (e *Engine) EndGame(matchID int64) {
 }
 
 func snapshot(g *gameState) MoveResult {
-	return MoveResult{Board: g.board, Turn: g.turn, Outcome: g.outcome}
+	return MoveResult{Board: g.board, Turn: g.turn, Outcome: g.outcome, WinningCells: g.winningCells}
 }
 
 func boardFull(board Board) bool {
@@ -163,26 +170,34 @@ func boardFull(board Board) bool {
 
 // checkWin reports whether the chip just placed at (row, col) completes a
 // run of four for color, checking all four axes (horizontal, vertical, and
-// both diagonals) by counting outward from the placed chip in each
-// direction along an axis.
-func checkWin(board Board, row, col, color int) bool {
+// both diagonals) by collecting outward from the placed chip in each
+// direction along an axis. When it finds a win, it also returns every cell
+// in that connected line (in order), so a client can highlight them.
+func checkWin(board Board, row, col, color int) (bool, [][2]int) {
 	directions := [4][2]int{{0, 1}, {1, 0}, {1, 1}, {1, -1}}
 	for _, d := range directions {
-		count := 1 + countDirection(board, row, col, d[0], d[1], color) + countDirection(board, row, col, -d[0], -d[1], color)
-		if count >= 4 {
-			return true
+		forward := collectDirection(board, row, col, d[0], d[1], color)
+		backward := collectDirection(board, row, col, -d[0], -d[1], color)
+		if len(forward)+len(backward)+1 >= 4 {
+			cells := make([][2]int, 0, len(forward)+len(backward)+1)
+			for i := len(backward) - 1; i >= 0; i-- {
+				cells = append(cells, backward[i])
+			}
+			cells = append(cells, [2]int{row, col})
+			cells = append(cells, forward...)
+			return true, cells
 		}
 	}
-	return false
+	return false, nil
 }
 
-func countDirection(board Board, row, col, dRow, dCol, color int) int {
-	count := 0
+func collectDirection(board Board, row, col, dRow, dCol, color int) [][2]int {
+	var cells [][2]int
 	r, c := row+dRow, col+dCol
 	for r >= 0 && r < Rows && c >= 0 && c < Columns && board[r][c] == color {
-		count++
+		cells = append(cells, [2]int{r, c})
 		r += dRow
 		c += dCol
 	}
-	return count
+	return cells
 }
