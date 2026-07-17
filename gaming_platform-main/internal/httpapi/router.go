@@ -48,6 +48,7 @@ func (s *Server) Router() http.Handler {
 		r.Post("/me/daily-reward", s.handleClaimDailyReward)
 		r.Post("/me/avatar", s.handleEquipAvatar)
 		r.Post("/me/badge", s.handleEquipBadge)
+		r.Post("/me/profile-frame", s.handleEquipProfileFrame)
 
 		r.Get("/cosmetics", s.handleListCosmetics)
 		r.Post("/cosmetics/{cosmeticItemID}/purchase", s.handleBuyCosmetic)

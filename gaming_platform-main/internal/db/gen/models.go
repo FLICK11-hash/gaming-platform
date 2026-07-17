@@ -128,21 +128,22 @@ type TournamentPlayer struct {
 }
 
 type User struct {
-	UserID            int64              `json:"user_id"`
-	Username          string             `json:"username"`
-	Email             string             `json:"email"`
-	Password          string             `json:"password"`
-	CurrentElo        pgtype.Int4        `json:"current_elo"`
-	TotalWins         pgtype.Int4        `json:"total_wins"`
-	TotalLosses       pgtype.Int4        `json:"total_losses"`
-	NumGames          pgtype.Int4        `json:"num_games"`
-	AccountBalance    pgtype.Numeric     `json:"account_balance"`
-	AccountStatus     pgtype.Text        `json:"account_status"`
-	CreatedAt         pgtype.Timestamptz `json:"created_at"`
-	CoinBalance       int64              `json:"coin_balance"`
-	LastDailyRewardAt pgtype.Timestamptz `json:"last_daily_reward_at"`
-	SelectedAvatar    string             `json:"selected_avatar"`
-	SelectedBadge     pgtype.Text        `json:"selected_badge"`
+	UserID               int64              `json:"user_id"`
+	Username             string             `json:"username"`
+	Email                string             `json:"email"`
+	Password             string             `json:"password"`
+	CurrentElo           pgtype.Int4        `json:"current_elo"`
+	TotalWins            pgtype.Int4        `json:"total_wins"`
+	TotalLosses          pgtype.Int4        `json:"total_losses"`
+	NumGames             pgtype.Int4        `json:"num_games"`
+	AccountBalance       pgtype.Numeric     `json:"account_balance"`
+	AccountStatus        pgtype.Text        `json:"account_status"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	CoinBalance          int64              `json:"coin_balance"`
+	LastDailyRewardAt    pgtype.Timestamptz `json:"last_daily_reward_at"`
+	SelectedAvatar       string             `json:"selected_avatar"`
+	SelectedBadge        pgtype.Text        `json:"selected_badge"`
+	SelectedProfileFrame pgtype.Text        `json:"selected_profile_frame"`
 }
 
 type UserCosmetic struct {

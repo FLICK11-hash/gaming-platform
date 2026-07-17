@@ -232,3 +232,43 @@ func (s *Server) handleEquipBadge(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, toUserResponse(user))
 }
+
+// handleEquipProfileFrame sets or clears the large comedic banner shown next
+// to the player's profile.
+func (s *Server) handleEquipProfileFrame(w http.ResponseWriter, r *http.Request) {
+	userID, ok := auth.UserID(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "not authenticated")
+		return
+	}
+
+	var req equipCosmeticRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	q := db.New(s.pool)
+
+	// A zero id clears the equipped profile frame.
+	var frameKey pgtype.Text
+	if req.CosmeticItemID != 0 {
+		item, err := s.ownsOrFreeCosmetic(r, q, userID, req.CosmeticItemID, "profile_frame")
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "you do not own that profile frame")
+			return
+		}
+		frameKey = dbutil.TextToPGText(item.ImageKey)
+	}
+
+	user, err := q.SetSelectedProfileFrame(r.Context(), db.SetSelectedProfileFrameParams{
+		UserID:               userID,
+		SelectedProfileFrame: frameKey,
+	})
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to equip profile frame")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toUserResponse(user))
+}

@@ -59,3 +59,7 @@ RETURNING *;
 -- name: SetSelectedBadge :one
 UPDATE users SET selected_badge = $2 WHERE user_id = $1
 RETURNING *;
+
+-- name: SetSelectedProfileFrame :one
+UPDATE users SET selected_profile_frame = $2 WHERE user_id = $1
+RETURNING *;

@@ -36,7 +36,7 @@ func (s *Server) handleMatchWS(w http.ResponseWriter, r *http.Request) {
 		_ = conn.WriteJSON(map[string]string{"type": "error", "error": err.Error()})
 		return
 	}
-	defer s.matchSvc.Leave(ctx, matchID, userID)
+	defer s.matchSvc.Leave(ctx, matchID, userID, conn)
 
 	for {
 		var msg inboundWSMessage

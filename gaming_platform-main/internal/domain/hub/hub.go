@@ -41,14 +41,22 @@ func (h *Hub) Register(matchID, userID int64, ws *websocket.Conn) {
 	h.conns[matchID][userID] = &conn{ws: ws}
 }
 
-// Unregister removes userID's connection from matchID.
-func (h *Hub) Unregister(matchID, userID int64) {
+// Unregister removes userID's connection from matchID, but only if ws is
+// still the currently registered connection for that user. This matters
+// because a dropped connection's read loop can notice the failure and call
+// Unregister well after the player has already reconnected with a new
+// connection; without the pointer check, that stale cleanup would rip out
+// the fresh connection and silently stop delivering broadcasts to it even
+// though the socket looks open to the client.
+func (h *Hub) Unregister(matchID, userID int64, ws *websocket.Conn) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if conns, ok := h.conns[matchID]; ok {
-		delete(conns, userID)
-		if len(conns) == 0 {
-			delete(h.conns, matchID)
+		if c, ok := conns[userID]; ok && c.ws == ws {
+			delete(conns, userID)
+			if len(conns) == 0 {
+				delete(h.conns, matchID)
+			}
 		}
 	}
 }

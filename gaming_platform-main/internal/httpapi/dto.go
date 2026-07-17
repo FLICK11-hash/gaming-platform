@@ -24,34 +24,36 @@ type authResponse struct {
 }
 
 type userResponse struct {
-	UserID         int64     `json:"user_id"`
-	Username       string    `json:"username"`
-	Email          string    `json:"email"`
-	CurrentElo     int       `json:"current_elo"`
-	TotalWins      int       `json:"total_wins"`
-	TotalLosses    int       `json:"total_losses"`
-	NumGames       int       `json:"num_games"`
-	CoinBalance    int64     `json:"coin_balance"`
-	SelectedAvatar string    `json:"selected_avatar"`
-	SelectedBadge  string    `json:"selected_badge,omitempty"`
-	AccountStatus  string    `json:"account_status"`
-	CreatedAt      time.Time `json:"created_at"`
+	UserID               int64     `json:"user_id"`
+	Username             string    `json:"username"`
+	Email                string    `json:"email"`
+	CurrentElo           int       `json:"current_elo"`
+	TotalWins            int       `json:"total_wins"`
+	TotalLosses          int       `json:"total_losses"`
+	NumGames             int       `json:"num_games"`
+	CoinBalance          int64     `json:"coin_balance"`
+	SelectedAvatar       string    `json:"selected_avatar"`
+	SelectedBadge        string    `json:"selected_badge,omitempty"`
+	SelectedProfileFrame string    `json:"selected_profile_frame,omitempty"`
+	AccountStatus        string    `json:"account_status"`
+	CreatedAt            time.Time `json:"created_at"`
 }
 
 func toUserResponse(u db.User) userResponse {
 	return userResponse{
-		UserID:         u.UserID,
-		Username:       u.Username,
-		Email:          u.Email,
-		CurrentElo:     dbutil.PGInt4ToInt(u.CurrentElo),
-		TotalWins:      dbutil.PGInt4ToInt(u.TotalWins),
-		TotalLosses:    dbutil.PGInt4ToInt(u.TotalLosses),
-		NumGames:       dbutil.PGInt4ToInt(u.NumGames),
-		CoinBalance:    u.CoinBalance,
-		SelectedAvatar: u.SelectedAvatar,
-		SelectedBadge:  dbutil.PGTextToString(u.SelectedBadge),
-		AccountStatus:  dbutil.PGTextToString(u.AccountStatus),
-		CreatedAt:      u.CreatedAt.Time,
+		UserID:               u.UserID,
+		Username:             u.Username,
+		Email:                u.Email,
+		CurrentElo:           dbutil.PGInt4ToInt(u.CurrentElo),
+		TotalWins:            dbutil.PGInt4ToInt(u.TotalWins),
+		TotalLosses:          dbutil.PGInt4ToInt(u.TotalLosses),
+		NumGames:             dbutil.PGInt4ToInt(u.NumGames),
+		CoinBalance:          u.CoinBalance,
+		SelectedAvatar:       u.SelectedAvatar,
+		SelectedBadge:        dbutil.PGTextToString(u.SelectedBadge),
+		SelectedProfileFrame: dbutil.PGTextToString(u.SelectedProfileFrame),
+		AccountStatus:        dbutil.PGTextToString(u.AccountStatus),
+		CreatedAt:            u.CreatedAt.Time,
 	}
 }
 

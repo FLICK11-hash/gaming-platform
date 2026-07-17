@@ -16,7 +16,7 @@ UPDATE users
 SET coin_balance = coin_balance + $1::bigint
 WHERE user_id = $2
   AND coin_balance + $1::bigint >= 0
-RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge
+RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frame
 `
 
 type AdjustUserCoinBalanceParams struct {
@@ -47,6 +47,7 @@ func (q *Queries) AdjustUserCoinBalance(ctx context.Context, arg AdjustUserCoinB
 		&i.LastDailyRewardAt,
 		&i.SelectedAvatar,
 		&i.SelectedBadge,
+		&i.SelectedProfileFrame,
 	)
 	return i, err
 }

@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { api } from './api.js'
 import MatchRoom from './Chess.jsx'
-import CosmeticIcon from './cosmeticArt.jsx'
+import CosmeticIcon, { PROFILE_FRAMES } from './cosmeticArt.jsx'
 import './styles.css'
 
 const FIXED_COIN_WAGER = 200
@@ -296,7 +296,12 @@ function Dashboard({
 
   async function equipCosmetic(item) {
     try {
-      const path = item.item_type === 'avatar' ? '/me/avatar' : '/me/badge'
+      const path =
+        item.item_type === 'avatar'
+          ? '/me/avatar'
+          : item.item_type === 'profile_frame'
+            ? '/me/profile-frame'
+            : '/me/badge'
       const data = await api(path, {
         token,
         method: 'POST',
@@ -443,6 +448,17 @@ function Dashboard({
   return (
     <section className="grid">
       <div className="card profile">
+        {user.selected_profile_frame && PROFILE_FRAMES[user.selected_profile_frame] && (
+          <div className="profile-frame-banner">
+            <span className="profile-frame-emoji">
+              {PROFILE_FRAMES[user.selected_profile_frame].emoji}
+            </span>
+            <span className="profile-frame-label">
+              {PROFILE_FRAMES[user.selected_profile_frame].label}
+            </span>
+          </div>
+        )}
+
         <div className="avatar">
           <User />
         </div>
@@ -647,7 +663,7 @@ function Dashboard({
           Cosmetic Shop
         </h2>
 
-        <p>Spend coins on avatars and badges. Equip anything you own.</p>
+        <p>Spend coins on avatars, badges, and ridiculous profile frames. Equip anything you own.</p>
 
         <div className="cosmetics-grid">
           {cosmetics.map(item => (
