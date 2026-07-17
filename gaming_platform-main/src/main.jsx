@@ -84,9 +84,9 @@ function App() {
 function AuthScreen({ onAuth, onMessage }) {
   const [mode, setMode] = useState('login')
   const [form, setForm] = useState({
-    username: 'conrad',
-    email: 'conrad@test.com',
-    password: 'password123'
+    username: '',
+    email: '',
+    password: ''
   })
   const [loading, setLoading] = useState(false)
 
