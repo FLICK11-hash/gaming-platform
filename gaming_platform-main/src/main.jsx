@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
   Trophy,
-  User,
   LogOut,
   Send,
   Search,
@@ -11,7 +10,7 @@ import {
 } from 'lucide-react'
 import { api } from './api.js'
 import MatchRoom from './Chess.jsx'
-import CosmeticIcon, { ProfileFrameBanner } from './cosmeticArt.jsx'
+import CosmeticIcon, { AvatarGlyph, EquippedBadge, ProfileFrameBanner } from './cosmeticArt.jsx'
 import './styles.css'
 
 const FIXED_COIN_WAGER = 200
@@ -477,11 +476,14 @@ function Dashboard({
         <ProfileFrameBanner frameKeys={user.selected_profile_frames} />
 
         <div className="avatar">
-          <User />
+          <AvatarGlyph avatarKey={user.selected_avatar} />
         </div>
 
         <div>
-          <h2>{user.username}</h2>
+          <h2>
+            {user.username}
+            <EquippedBadge badgeKey={user.selected_badge} />
+          </h2>
           <p>{user.email}</p>
         </div>
 

@@ -338,3 +338,23 @@
 .cosmetic-item button.equipped {
   background: #15803d;
 }
+
+.avatar span {
+  font-size: 34px;
+  line-height: 1;
+  color: #fff;
+}
+
+.equipped-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 10px;
+  padding: 4px 10px;
+  background: #422006;
+  color: #fbbf24;
+  border: 1px solid #92400e;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
