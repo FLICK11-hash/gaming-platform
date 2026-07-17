@@ -62,9 +62,13 @@ type Querier interface {
 	SetMatchTurn(ctx context.Context, arg SetMatchTurnParams) error
 	SetSelectedAvatar(ctx context.Context, arg SetSelectedAvatarParams) (User, error)
 	SetSelectedBadge(ctx context.Context, arg SetSelectedBadgeParams) (User, error)
-	SetSelectedProfileFrame(ctx context.Context, arg SetSelectedProfileFrameParams) (User, error)
 	SetTournamentPlayerResult(ctx context.Context, arg SetTournamentPlayerResultParams) error
 	StartTournament(ctx context.Context, tournamentID int64) (Tournament, error)
+	// Adds image_key to selected_profile_frames if it isn't already equipped,
+	// otherwise removes it. Atomic, so concurrent toggles can't race each other,
+	// and the users_max_five_profile_frames CHECK constraint rejects the update
+	// (as a check_violation) if adding would exceed the 5-frame cap.
+	ToggleSelectedProfileFrame(ctx context.Context, arg ToggleSelectedProfileFrameParams) (User, error)
 	UpdateFraudReportStatus(ctx context.Context, arg UpdateFraudReportStatusParams) (FraudReport, error)
 	UpdateMatchClock(ctx context.Context, arg UpdateMatchClockParams) (MatchClock, error)
 	UpdatePostStatus(ctx context.Context, arg UpdatePostStatusParams) (Post, error)

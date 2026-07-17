@@ -2,11 +2,15 @@ package httpapi
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"gaming_platform/internal/auth"
@@ -233,9 +237,11 @@ func (s *Server) handleEquipBadge(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, toUserResponse(user))
 }
 
-// handleEquipProfileFrame sets or clears the large comedic banner shown next
-// to the player's profile.
-func (s *Server) handleEquipProfileFrame(w http.ResponseWriter, r *http.Request) {
+// handleToggleProfileFrame equips a comedic profile frame the player owns if
+// it isn't already equipped, or unequips it if it is. Up to
+// MaxSelectedProfileFrames may be equipped at once, enforced atomically by
+// the users_max_five_profile_frames CHECK constraint.
+func (s *Server) handleToggleProfileFrame(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserID(r.Context())
 	if !ok {
 		writeError(w, http.StatusUnauthorized, "not authenticated")
@@ -250,23 +256,23 @@ func (s *Server) handleEquipProfileFrame(w http.ResponseWriter, r *http.Request)
 
 	q := db.New(s.pool)
 
-	// A zero id clears the equipped profile frame.
-	var frameKey pgtype.Text
-	if req.CosmeticItemID != 0 {
-		item, err := s.ownsOrFreeCosmetic(r, q, userID, req.CosmeticItemID, "profile_frame")
-		if err != nil {
-			writeError(w, http.StatusBadRequest, "you do not own that profile frame")
-			return
-		}
-		frameKey = dbutil.TextToPGText(item.ImageKey)
+	item, err := s.ownsOrFreeCosmetic(r, q, userID, req.CosmeticItemID, "profile_frame")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "you do not own that profile frame")
+		return
 	}
 
-	user, err := q.SetSelectedProfileFrame(r.Context(), db.SetSelectedProfileFrameParams{
-		UserID:               userID,
-		SelectedProfileFrame: frameKey,
+	user, err := q.ToggleSelectedProfileFrame(r.Context(), db.ToggleSelectedProfileFrameParams{
+		UserID:   userID,
+		ImageKey: item.ImageKey,
 	})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to equip profile frame")
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.CheckViolation {
+			writeError(w, http.StatusBadRequest, fmt.Sprintf("you can only equip up to %d profile frames at once", MaxSelectedProfileFrames))
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "failed to update profile frame")
 		return
 	}
 

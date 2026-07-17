@@ -23,37 +23,41 @@ type authResponse struct {
 	User  userResponse `json:"user"`
 }
 
+// MaxSelectedProfileFrames is how many profile frames a player may equip at
+// once.
+const MaxSelectedProfileFrames = 5
+
 type userResponse struct {
-	UserID               int64     `json:"user_id"`
-	Username             string    `json:"username"`
-	Email                string    `json:"email"`
-	CurrentElo           int       `json:"current_elo"`
-	TotalWins            int       `json:"total_wins"`
-	TotalLosses          int       `json:"total_losses"`
-	NumGames             int       `json:"num_games"`
-	CoinBalance          int64     `json:"coin_balance"`
-	SelectedAvatar       string    `json:"selected_avatar"`
-	SelectedBadge        string    `json:"selected_badge,omitempty"`
-	SelectedProfileFrame string    `json:"selected_profile_frame,omitempty"`
-	AccountStatus        string    `json:"account_status"`
-	CreatedAt            time.Time `json:"created_at"`
+	UserID                int64     `json:"user_id"`
+	Username              string    `json:"username"`
+	Email                 string    `json:"email"`
+	CurrentElo            int       `json:"current_elo"`
+	TotalWins             int       `json:"total_wins"`
+	TotalLosses           int       `json:"total_losses"`
+	NumGames              int       `json:"num_games"`
+	CoinBalance           int64     `json:"coin_balance"`
+	SelectedAvatar        string    `json:"selected_avatar"`
+	SelectedBadge         string    `json:"selected_badge,omitempty"`
+	SelectedProfileFrames []string  `json:"selected_profile_frames"`
+	AccountStatus         string    `json:"account_status"`
+	CreatedAt             time.Time `json:"created_at"`
 }
 
 func toUserResponse(u db.User) userResponse {
 	return userResponse{
-		UserID:               u.UserID,
-		Username:             u.Username,
-		Email:                u.Email,
-		CurrentElo:           dbutil.PGInt4ToInt(u.CurrentElo),
-		TotalWins:            dbutil.PGInt4ToInt(u.TotalWins),
-		TotalLosses:          dbutil.PGInt4ToInt(u.TotalLosses),
-		NumGames:             dbutil.PGInt4ToInt(u.NumGames),
-		CoinBalance:          u.CoinBalance,
-		SelectedAvatar:       u.SelectedAvatar,
-		SelectedBadge:        dbutil.PGTextToString(u.SelectedBadge),
-		SelectedProfileFrame: dbutil.PGTextToString(u.SelectedProfileFrame),
-		AccountStatus:        dbutil.PGTextToString(u.AccountStatus),
-		CreatedAt:            u.CreatedAt.Time,
+		UserID:                u.UserID,
+		Username:              u.Username,
+		Email:                 u.Email,
+		CurrentElo:            dbutil.PGInt4ToInt(u.CurrentElo),
+		TotalWins:             dbutil.PGInt4ToInt(u.TotalWins),
+		TotalLosses:           dbutil.PGInt4ToInt(u.TotalLosses),
+		NumGames:              dbutil.PGInt4ToInt(u.NumGames),
+		CoinBalance:           u.CoinBalance,
+		SelectedAvatar:        u.SelectedAvatar,
+		SelectedBadge:         dbutil.PGTextToString(u.SelectedBadge),
+		SelectedProfileFrames: nonNilStrings(u.SelectedProfileFrames),
+		AccountStatus:         dbutil.PGTextToString(u.AccountStatus),
+		CreatedAt:             u.CreatedAt.Time,
 	}
 }
 
@@ -98,15 +102,17 @@ func toTournamentPlayerResponse(p db.TournamentPlayer) tournamentPlayerResponse 
 }
 
 type matchResponse struct {
-	MatchID           int64  `json:"match_id"`
-	TournamentID      int64  `json:"tournament_id"`
-	Round             string `json:"round"`
-	MatchNumber       int    `json:"match_number"`
-	Player1ID         int64  `json:"player_1_id"`
-	Player2ID         int64  `json:"player_2_id"`
-	CurrentTurnUserID *int64 `json:"current_turn_user_id,omitempty"`
-	WinnerUserID      *int64 `json:"winner_user_id,omitempty"`
-	Status            string `json:"status"`
+	MatchID              int64    `json:"match_id"`
+	TournamentID         int64    `json:"tournament_id"`
+	Round                string   `json:"round"`
+	MatchNumber          int      `json:"match_number"`
+	Player1ID            int64    `json:"player_1_id"`
+	Player2ID            int64    `json:"player_2_id"`
+	CurrentTurnUserID    *int64   `json:"current_turn_user_id,omitempty"`
+	WinnerUserID         *int64   `json:"winner_user_id,omitempty"`
+	Status               string   `json:"status"`
+	Player1ProfileFrames []string `json:"player_1_profile_frames,omitempty"`
+	Player2ProfileFrames []string `json:"player_2_profile_frames,omitempty"`
 }
 
 func toMatchResponse(m db.Match) matchResponse {
@@ -127,6 +133,14 @@ func toMatchResponse(m db.Match) matchResponse {
 		v := m.WinnerUserID.Int64
 		resp.WinnerUserID = &v
 	}
+	return resp
+}
+
+// withPlayerProfileFrames attaches each player's equipped profile frames to a
+// match response, so an opponent's pins are visible in the match room.
+func withPlayerProfileFrames(resp matchResponse, player1, player2 db.User) matchResponse {
+	resp.Player1ProfileFrames = nonNilStrings(player1.SelectedProfileFrames)
+	resp.Player2ProfileFrames = nonNilStrings(player2.SelectedProfileFrames)
 	return resp
 }
 
@@ -298,4 +312,12 @@ type inboundWSMessage struct {
 	From      string `json:"from,omitempty"`
 	To        string `json:"to,omitempty"`
 	Promotion string `json:"promotion,omitempty"`
+}
+
+// nonNilStrings ensures a nil slice serializes as [] instead of null.
+func nonNilStrings(s []string) []string {
+	if s == nil {
+		return []string{}
+	}
+	return s
 }
