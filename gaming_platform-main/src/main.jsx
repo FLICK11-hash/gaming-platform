@@ -59,37 +59,72 @@ function App() {
   }
 
   return (
-    <main>
-      <header className="topbar">
-        <div className="brand">
-          <Trophy />
-          <span>Gaming Platform</span>
-        </div>
+    <>
+      <AdRail slot={AD_SLOT_LEFT} side="left" />
 
-        {user && (
-          <button className="ghost" onClick={logout}>
-            <LogOut size={18} />
-            Log out
-          </button>
+      <main>
+        <header className="topbar">
+          <div className="brand">
+            <Trophy />
+            <span>Gaming Platform</span>
+          </div>
+
+          {user && (
+            <button className="ghost" onClick={logout}>
+              <LogOut size={18} />
+              Log out
+            </button>
+          )}
+        </header>
+
+        {message && <div className="toast">{message}</div>}
+
+        {!user ? (
+          <AuthScreen
+            onAuth={saveSession}
+            onMessage={setMessage}
+          />
+        ) : (
+          <Dashboard
+            user={user}
+            token={token}
+            onUser={setUser}
+            onMessage={setMessage}
+          />
         )}
-      </header>
+      </main>
 
-      {message && <div className="toast">{message}</div>}
+      <AdRail slot={AD_SLOT_RIGHT} side="right" />
+    </>
+  )
+}
 
-      {!user ? (
-        <AuthScreen
-          onAuth={saveSession}
-          onMessage={setMessage}
-        />
-      ) : (
-        <Dashboard
-          user={user}
-          token={token}
-          onUser={setUser}
-          onMessage={setMessage}
-        />
-      )}
-    </main>
+// AdSense client ID from the site's AdSense verification snippet.
+const AD_CLIENT = 'ca-pub-7858636493303342'
+// TODO: replace with real ad unit slot IDs created in the AdSense dashboard
+// (Ads > By ad unit > Display ads) - ads won't actually serve without them.
+const AD_SLOT_LEFT = 'YOUR_LEFT_AD_SLOT_ID'
+const AD_SLOT_RIGHT = 'YOUR_RIGHT_AD_SLOT_ID'
+
+// A fixed, non-flexed ad slot pinned to a page margin, independent of the
+// centered grid layout so it never gets squeezed by the main content.
+function AdRail({ slot, side }) {
+  useEffect(() => {
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({})
+    } catch {
+      // adsbygoogle.js may not have loaded yet (e.g. blocked by an ad blocker).
+    }
+  }, [])
+
+  return (
+    <ins
+      className={`adsbygoogle ad-rail ad-rail-${side}`}
+      data-ad-client={AD_CLIENT}
+      data-ad-slot={slot}
+      data-ad-format="auto"
+      data-full-width-responsive="true"
+    />
   )
 }
 
@@ -223,6 +258,9 @@ function Dashboard({
 
   const [gameMode, setGameMode] =
     useState('one_vs_one')
+
+  const [gameType, setGameType] =
+    useState('chess')
 
   const coinWager = FIXED_COIN_WAGER
 
@@ -368,7 +406,7 @@ function Dashboard({
         token,
         method: 'POST',
         body: {
-          game_type: 'chess',
+          game_type: gameType,
           game_mode: gameMode,
           coin_wager: Number(coinWager),
           min_elo: 800,
@@ -525,11 +563,11 @@ function Dashboard({
           <div>
             <h2>
               <Users />
-              Choose a Game Mode
+              Play a Match
             </h2>
 
             <p>
-              Select how you want to compete before entering
+              Pick a game and a format before entering
               matchmaking.
             </p>
           </div>
@@ -539,6 +577,56 @@ function Dashboard({
             <strong>{coinBalance} 🪙</strong>
           </div>
         </div>
+
+        <h3 className="section-subheading">Choose a Game</h3>
+
+        <div className="mode-grid">
+          <button
+            type="button"
+            className={
+              `mode-card ${
+                gameType === 'chess'
+                  ? 'selected'
+                  : ''
+              }`
+            }
+            onClick={() => setGameType('chess')}
+            disabled={Boolean(queue || activeMatch)}
+          >
+            <div className="mode-icon">♟</div>
+
+            <div>
+              <h3>Chess</h3>
+              <p>Classic checkmate-or-timeout chess.</p>
+              <span className="mode-detail">60-second clocks</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className={
+              `mode-card ${
+                gameType === 'connect_four'
+                  ? 'selected'
+                  : ''
+              }`
+            }
+            onClick={() => setGameType('connect_four')}
+            disabled={Boolean(queue || activeMatch)}
+          >
+            <div className="mode-icon">🔴</div>
+
+            <div>
+              <h3>Connect Four</h3>
+              <p>Drop chips, connect four to win.</p>
+              <span className="mode-detail">
+                60-second clocks · most time left wins a draw
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <h3 className="section-subheading">Choose a Format</h3>
 
         <div className="mode-grid">
           <button

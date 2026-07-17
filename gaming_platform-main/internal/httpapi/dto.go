@@ -104,10 +104,15 @@ func toTournamentPlayerResponse(p db.TournamentPlayer) tournamentPlayerResponse 
 type matchResponse struct {
 	MatchID              int64    `json:"match_id"`
 	TournamentID         int64    `json:"tournament_id"`
+	GameType             string   `json:"game_type"`
 	Round                string   `json:"round"`
 	MatchNumber          int      `json:"match_number"`
 	Player1ID            int64    `json:"player_1_id"`
 	Player2ID            int64    `json:"player_2_id"`
+	Player1Username      string   `json:"player_1_username,omitempty"`
+	Player2Username      string   `json:"player_2_username,omitempty"`
+	Player1Badge         string   `json:"player_1_badge,omitempty"`
+	Player2Badge         string   `json:"player_2_badge,omitempty"`
 	CurrentTurnUserID    *int64   `json:"current_turn_user_id,omitempty"`
 	WinnerUserID         *int64   `json:"winner_user_id,omitempty"`
 	Status               string   `json:"status"`
@@ -119,6 +124,7 @@ func toMatchResponse(m db.Match) matchResponse {
 	resp := matchResponse{
 		MatchID:      m.MatchID,
 		TournamentID: m.TournamentID,
+		GameType:     m.GameType,
 		Round:        m.Round,
 		MatchNumber:  dbutil.PGInt4ToInt(m.MatchNumber),
 		Player1ID:    m.Player1ID,
@@ -136,9 +142,14 @@ func toMatchResponse(m db.Match) matchResponse {
 	return resp
 }
 
-// withPlayerProfileFrames attaches each player's equipped profile frames to a
-// match response, so an opponent's pins are visible in the match room.
-func withPlayerProfileFrames(resp matchResponse, player1, player2 db.User) matchResponse {
+// withPlayerProfiles attaches each player's username, equipped badge, and
+// equipped profile frames to a match response, so both the in-battle
+// identity and an opponent's pins are visible in the match room.
+func withPlayerProfiles(resp matchResponse, player1, player2 db.User) matchResponse {
+	resp.Player1Username = player1.Username
+	resp.Player2Username = player2.Username
+	resp.Player1Badge = dbutil.PGTextToString(player1.SelectedBadge)
+	resp.Player2Badge = dbutil.PGTextToString(player2.SelectedBadge)
 	resp.Player1ProfileFrames = nonNilStrings(player1.SelectedProfileFrames)
 	resp.Player2ProfileFrames = nonNilStrings(player2.SelectedProfileFrames)
 	return resp
@@ -312,6 +323,7 @@ type inboundWSMessage struct {
 	From      string `json:"from,omitempty"`
 	To        string `json:"to,omitempty"`
 	Promotion string `json:"promotion,omitempty"`
+	Column    *int   `json:"column,omitempty"`
 }
 
 // nonNilStrings ensures a nil slice serializes as [] instead of null.

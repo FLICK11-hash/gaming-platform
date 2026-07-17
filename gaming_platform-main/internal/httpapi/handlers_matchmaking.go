@@ -31,8 +31,12 @@ func (s *Server) handleJoinQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.GameType == "" {
-		writeError(w, http.StatusBadRequest, "game_type is required")
+	if req.GameType != "chess" && req.GameType != "connect_four" {
+		writeError(
+			w,
+			http.StatusBadRequest,
+			"game_type must be chess or connect_four",
+		)
 		return
 	}
 

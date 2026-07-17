@@ -1,6 +1,6 @@
 -- name: CreateMatch :one
-INSERT INTO matches (tournament_id, round, match_number, player_1_id, player_2_id, current_turn_user_id, status)
-VALUES ($1, $2, $3, $4, $5, NULL, 'waiting')
+INSERT INTO matches (tournament_id, game_type, round, match_number, player_1_id, player_2_id, current_turn_user_id, status)
+VALUES ($1, $2, $3, $4, $5, $6, NULL, 'waiting')
 RETURNING *;
 
 -- name: GetMatch :one

@@ -269,6 +269,7 @@ func (m *Matcher) matchBucket(
 			ctx,
 			q,
 			createdTournament.TournamentID,
+			gameType,
 			seededPlayers,
 		)
 		if err != nil {
@@ -279,6 +280,7 @@ func (m *Matcher) matchBucket(
 			ctx,
 			q,
 			createdTournament.TournamentID,
+			gameType,
 			seededPlayers,
 		)
 		if err != nil {
@@ -315,6 +317,7 @@ func (m *Matcher) createOneVsOneMatch(
 	ctx context.Context,
 	q *db.Queries,
 	tournamentID int64,
+	gameType string,
 	players []tournament.SeededPlayer,
 ) error {
 	if len(players) != 2 {
@@ -327,6 +330,7 @@ func (m *Matcher) createOneVsOneMatch(
 		ctx,
 		db.CreateMatchParams{
 			TournamentID: tournamentID,
+			GameType:     gameType,
 			Round:        "final",
 			MatchNumber:  dbutil.IntToPGInt4(1),
 			Player1ID:    players[0].UserID,
@@ -341,6 +345,7 @@ func (m *Matcher) createTournamentSemifinals(
 	ctx context.Context,
 	q *db.Queries,
 	tournamentID int64,
+	gameType string,
 	players []tournament.SeededPlayer,
 ) error {
 	pairings, err := tournament.Semifinals(players)
@@ -353,6 +358,7 @@ func (m *Matcher) createTournamentSemifinals(
 			ctx,
 			db.CreateMatchParams{
 				TournamentID: tournamentID,
+				GameType:     gameType,
 				Round:        pairing.Round,
 				MatchNumber:
 					dbutil.IntToPGInt4(

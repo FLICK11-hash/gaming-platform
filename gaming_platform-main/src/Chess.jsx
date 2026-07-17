@@ -1,13 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Flag, Wifi, WifiOff } from 'lucide-react'
 import { api } from './api.js'
-import { ProfileFrameBanner } from './cosmeticArt.jsx'
+import { EquippedBadge, ProfileFrameBanner } from './cosmeticArt.jsx'
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+const C4_ROWS = 6
+const C4_COLUMNS = 7
 
 const PIECE_GLYPHS = {
   K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙',
   k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟',
+}
+
+function emptyC4Board() {
+  return Array.from({ length: C4_ROWS }, () => Array(C4_COLUMNS).fill(0))
 }
 
 function parseFEN(fen) {
@@ -61,6 +67,26 @@ function squareToIndices(square) {
   return [rank, file]
 }
 
+// Same idea as withOptimisticMove but for a dropped Connect Four chip.
+function withOptimisticDrop(board, drop) {
+  if (!drop) return board
+  const next = board.map(row => row.slice())
+  next[drop.row][drop.column] = drop.color
+  return next
+}
+
+function lowestEmptyRow(board, column) {
+  for (let r = C4_ROWS - 1; r >= 0; r--) {
+    if (board[r][column] === 0) return r
+  }
+  return -1
+}
+
+function playerLabel(barColor, myColor) {
+  const capitalized = barColor.charAt(0).toUpperCase() + barColor.slice(1)
+  return barColor === myColor ? `You (${capitalized})` : `Opponent (${capitalized})`
+}
+
 function wsURL(matchId, token) {
   const apiUrl = import.meta.env.VITE_API_URL
   let proto, host
@@ -78,6 +104,7 @@ function wsURL(matchId, token) {
 export default function MatchRoom({ matchId, token, userId, onExit }) {
   const [matchInfo, setMatchInfo] = useState(null)
   const [fen, setFen] = useState(START_FEN)
+  const [c4Board, setC4Board] = useState(emptyC4Board)
   const [turn, setTurn] = useState('white')
   const [clocks, setClocks] = useState({})
   const [waiting, setWaiting] = useState(true)
@@ -88,6 +115,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   const [notice, setNotice] = useState('')
   const [countdown, setCountdown] = useState(null)
   const [optimisticMove, setOptimisticMove] = useState(null)
+  const [optimisticDrop, setOptimisticDrop] = useState(null)
   const [, forceTick] = useState(0)
 
   const wsRef = useRef(null)
@@ -149,7 +177,9 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
             setWaiting(false)
             setCountdown(null)
             setOptimisticMove(null)
-            setFen(msg.fen || START_FEN)
+            setOptimisticDrop(null)
+            if (msg.board) setC4Board(msg.board)
+            else setFen(msg.fen || START_FEN)
             setTurn(msg.turn || 'white')
             if (msg.clocks) {
               setClocks(msg.clocks)
@@ -167,6 +197,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
             break
           case 'error':
             setOptimisticMove(null)
+            setOptimisticDrop(null)
             setNotice(msg.error || 'Error')
             break
           default:
@@ -187,18 +218,22 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
 
   if (!matchInfo) return <div className="card wide chessroom"><p className="muted">Loading match...</p></div>
 
-  const myColor = userId === matchInfo.player_1_id ? 'white' : 'black'
+  const isConnectFour = matchInfo.game_type === 'connect_four'
+  const isPlayer1 = userId === matchInfo.player_1_id
+  const myColor = isConnectFour ? (isPlayer1 ? 'red' : 'green') : (isPlayer1 ? 'white' : 'black')
+  const player1Color = isConnectFour ? 'red' : 'white'
+  const player2Color = isConnectFour ? 'green' : 'black'
   const whiteId = matchInfo.player_1_id
   const blackId = matchInfo.player_2_id
   const board = withOptimisticMove(parseFEN(fen), optimisticMove)
-  const isMyTurn = !gameOver && !waiting && !optimisticMove && turn === myColor
-  const flip = myColor === 'black'
+  const displayC4Board = withOptimisticDrop(c4Board, optimisticDrop)
+  const isMyTurn = !gameOver && !waiting && !optimisticMove && !optimisticDrop && turn === myColor
+  const flip = !isConnectFour && myColor === 'black'
 
-  function remainingFor(uid) {
+  function remainingFor(uid, colorForUid) {
     const base = clocks[String(uid)]
     if (base == null) return null
-    const theirTurn = (uid === whiteId && turn === 'white') || (uid === blackId && turn === 'black')
-    if (!theirTurn) return base
+    if (turn !== colorForUid) return base
     const elapsed = Math.floor((Date.now() - clocksSyncedAt.current) / 1000)
     return Math.max(0, base - elapsed)
   }
@@ -208,9 +243,22 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
       wsRef.current.send(JSON.stringify({ type: 'move', from, to, promotion }))
   }
 
+  function sendDrop(column) {
+    wsRef.current?.readyState === WebSocket.OPEN &&
+      wsRef.current.send(JSON.stringify({ type: 'move', column }))
+  }
+
   function resign() {
     wsRef.current?.readyState === WebSocket.OPEN &&
       wsRef.current.send(JSON.stringify({ type: 'resign' }))
+  }
+
+  function handleColumnClick(column) {
+    if (!isMyTurn) return
+    const row = lowestEmptyRow(c4Board, column)
+    if (row === -1) return
+    setOptimisticDrop({ column, row, color: myColor === 'red' ? 1 : 2 })
+    sendDrop(column)
   }
 
   function handleSquareClick(rankIdx, fileIdx) {
@@ -261,7 +309,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   return (
     <div className="card wide chessroom">
       <div className="chess-header">
-        <h2>Match #{matchId} · {matchInfo.round}</h2>
+        <h2>Match #{matchId} · {isConnectFour ? 'Connect Four' : 'Chess'} · {matchInfo.round}</h2>
         <span className={`conn-badge conn-${connStatus}`}>
           {connStatus === 'open' ? <Wifi size={14} /> : <WifiOff size={14} />} {connStatus}
         </span>
@@ -269,7 +317,15 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
 
       <div className="chess-layout">
         <div>
-          <PlayerBar label={myColor === 'black' ? 'Opponent (White)' : 'You (White)'} uid={whiteId} seconds={remainingFor(whiteId)} active={turn === 'white' && !gameOver} frameKeys={matchInfo.player_1_profile_frames} />
+          <PlayerBar
+            label={playerLabel(player1Color, myColor)}
+            uid={whiteId}
+            username={matchInfo.player_1_username}
+            badgeKey={matchInfo.player_1_badge}
+            seconds={remainingFor(whiteId, player1Color)}
+            active={turn === player1Color && !gameOver}
+            frameKeys={matchInfo.player_1_profile_frames}
+          />
           <div className="board-wrap">
             {countdown != null && (
               <div className="countdown-overlay">
@@ -277,34 +333,60 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
                 <strong>{countdown > 0 ? countdown : 'Go!'}</strong>
               </div>
             )}
-            <div className="chessboard">
-            {displayRanks.map(rankIdx => (
-              <div className="chess-row" key={rankIdx}>
-                {displayFiles.map(fileIdx => {
-                  const piece = board[rankIdx][fileIdx]
-                  const sq = squareName(rankIdx, fileIdx)
-                  const dark = (rankIdx + fileIdx) % 2 === 1
-                  const isSelected = selected === sq
-                  return (
-                    <button
-                      key={sq}
-                      className={`chess-square ${dark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''}`}
-                      onClick={() => handleSquareClick(rankIdx, fileIdx)}
-                      disabled={!isMyTurn}
-                    >
-                      {piece && (
-                        <span className={piece === piece.toUpperCase() ? 'piece-white' : 'piece-black'}>
-                          {PIECE_GLYPHS[piece]}
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
+            {isConnectFour ? (
+              <div className="connect-four-board">
+                {displayC4Board.map((row, rowIdx) => (
+                  <div className="c4-row" key={rowIdx}>
+                    {row.map((cell, colIdx) => (
+                      <button
+                        key={colIdx}
+                        className={`c4-cell ${cell === 1 ? 'red' : cell === 2 ? 'green' : ''}`}
+                        onClick={() => handleColumnClick(colIdx)}
+                        disabled={!isMyTurn || c4Board[0][colIdx] !== 0}
+                        aria-label={`Drop in column ${colIdx + 1}`}
+                      />
+                    ))}
+                  </div>
+                ))}
               </div>
-            ))}
-            </div>
+            ) : (
+              <div className="chessboard">
+                {displayRanks.map(rankIdx => (
+                  <div className="chess-row" key={rankIdx}>
+                    {displayFiles.map(fileIdx => {
+                      const piece = board[rankIdx][fileIdx]
+                      const sq = squareName(rankIdx, fileIdx)
+                      const dark = (rankIdx + fileIdx) % 2 === 1
+                      const isSelected = selected === sq
+                      return (
+                        <button
+                          key={sq}
+                          className={`chess-square ${dark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''}`}
+                          onClick={() => handleSquareClick(rankIdx, fileIdx)}
+                          disabled={!isMyTurn}
+                        >
+                          {piece && (
+                            <span className={piece === piece.toUpperCase() ? 'piece-white' : 'piece-black'}>
+                              {PIECE_GLYPHS[piece]}
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <PlayerBar label={myColor === 'white' ? 'Opponent (Black)' : 'You (Black)'} uid={blackId} seconds={remainingFor(blackId)} active={turn === 'black' && !gameOver} frameKeys={matchInfo.player_2_profile_frames} />
+          <PlayerBar
+            label={playerLabel(player2Color, myColor)}
+            uid={blackId}
+            username={matchInfo.player_2_username}
+            badgeKey={matchInfo.player_2_badge}
+            seconds={remainingFor(blackId, player2Color)}
+            active={turn === player2Color && !gameOver}
+            frameKeys={matchInfo.player_2_profile_frames}
+          />
         </div>
 
         <div className="chess-side">
@@ -348,13 +430,16 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   )
 }
 
-function PlayerBar({ label, uid, seconds, active, frameKeys }) {
+function PlayerBar({ label, uid, username, badgeKey, seconds, active, frameKeys }) {
   const mm = seconds == null ? '--' : String(Math.floor(seconds / 60)).padStart(2, '0')
   const ss = seconds == null ? '--' : String(seconds % 60).padStart(2, '0')
   return (
     <div>
       <div className={`player-bar ${active ? 'active' : ''}`}>
-        <span>{label} · #{uid}</span>
+        <span>
+          {label} · {username || `#${uid}`}
+          <EquippedBadge badgeKey={badgeKey} />
+        </span>
         <strong className={seconds != null && seconds <= 10 ? 'clock-low' : ''}>{mm}:{ss}</strong>
       </div>
       <ProfileFrameBanner frameKeys={frameKeys} size="small" />
