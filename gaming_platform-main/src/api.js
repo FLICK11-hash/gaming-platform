@@ -2,7 +2,7 @@
 // In production, set VITE_API_URL to your Render backend URL, e.g.
 // https://gaming-platform-api.onrender.com — Vercel has no idea where
 // your Go server lives otherwise.
-const API_BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api'
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 export function api(path, { token, method = 'GET', body } = {}) {
   const headers = { 'Content-Type': 'application/json' }
