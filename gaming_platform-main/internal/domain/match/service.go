@@ -41,6 +41,10 @@ type deadline struct {
 // match's websocket before they forfeit it to their opponent.
 const DisconnectGracePeriod = 5 * time.Second
 
+// PreMatchCountdown is how long players see a "get ready" countdown after
+// both have connected, before the match clocks actually start.
+const PreMatchCountdown = 5 * time.Second
+
 type disconnectDeadline struct {
 	OpponentUserID int64
 	At             time.Time
@@ -51,18 +55,20 @@ type Service struct {
 	engine *chess.Engine
 	hub    *hub.Hub
 
-	mu          sync.Mutex
-	deadlines   map[int64]deadline
-	disconnects map[int64]map[int64]disconnectDeadline // matchID -> userID -> deadline
+	mu           sync.Mutex
+	deadlines    map[int64]deadline
+	disconnects  map[int64]map[int64]disconnectDeadline // matchID -> userID -> deadline
+	countingDown map[int64]bool
 }
 
 func NewService(pool *pgxpool.Pool, h *hub.Hub) *Service {
 	return &Service{
-		pool:        pool,
-		engine:      chess.NewEngine(),
-		hub:         h,
-		deadlines:   make(map[int64]deadline),
-		disconnects: make(map[int64]map[int64]disconnectDeadline),
+		pool:         pool,
+		engine:       chess.NewEngine(),
+		hub:          h,
+		deadlines:    make(map[int64]deadline),
+		disconnects:  make(map[int64]map[int64]disconnectDeadline),
+		countingDown: make(map[int64]bool),
 	}
 }
 
@@ -74,6 +80,7 @@ type wsOutbound struct {
 	Outcome string         `json:"outcome,omitempty"`
 	Winner  int64          `json:"winner_user_id,omitempty"`
 	Clocks  map[string]int `json:"clocks,omitempty"`
+	Seconds int            `json:"seconds,omitempty"`
 	Error   string         `json:"error,omitempty"`
 }
 
@@ -99,18 +106,50 @@ func (s *Service) Join(ctx context.Context, matchID, userID int64, ws *websocket
 	}
 
 	if m.Status.String == "waiting" && s.hub.ConnectedCount(matchID) >= 2 {
-		return s.startMatch(ctx, m)
+		s.beginCountdown(m)
+		return nil
 	}
 
 	s.broadcastState(ctx, matchID)
 	return nil
 }
 
+// beginCountdown announces a get-ready countdown to both players once they've
+// both connected, then starts the match after PreMatchCountdown elapses. It
+// is idempotent per match so a reconnect during the countdown can't restart
+// or duplicate it.
+func (s *Service) beginCountdown(m db.Match) {
+	s.mu.Lock()
+	if s.countingDown[m.MatchID] {
+		s.mu.Unlock()
+		return
+	}
+	s.countingDown[m.MatchID] = true
+	s.mu.Unlock()
+
+	s.hub.Broadcast(m.MatchID, wsOutbound{
+		Type:    "countdown",
+		Seconds: int(PreMatchCountdown.Seconds()),
+	})
+
+	go func() {
+		time.Sleep(PreMatchCountdown)
+
+		s.mu.Lock()
+		delete(s.countingDown, m.MatchID)
+		s.mu.Unlock()
+
+		if err := s.startMatch(context.Background(), m); err != nil {
+			log.Printf("match: countdown start error for match %d: %v", m.MatchID, err)
+		}
+	}()
+}
+
 // Leave unregisters a player's websocket connection (e.g. on disconnect) and,
 // if the match is still active, starts a grace period after which the
 // disconnected player forfeits to their opponent if they haven't reconnected.
-func (s *Service) Leave(ctx context.Context, matchID, userID int64) {
-	s.hub.Unregister(matchID, userID)
+func (s *Service) Leave(ctx context.Context, matchID, userID int64, ws *websocket.Conn) {
+	s.hub.Unregister(matchID, userID, ws)
 
 	q := db.New(s.pool)
 	m, err := q.GetMatch(ctx, matchID)

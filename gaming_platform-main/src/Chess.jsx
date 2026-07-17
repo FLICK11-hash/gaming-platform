@@ -37,6 +37,29 @@ function isOwnPiece(piece, color) {
   return color === 'white' ? piece === piece.toUpperCase() : piece === piece.toLowerCase()
 }
 
+// Renders a move immediately, before the server confirms it, so the board
+// feels responsive instead of freezing for a round trip. The server's next
+// authoritative 'state' broadcast silently overwrites this preview.
+function withOptimisticMove(board, move) {
+  if (!move) return board
+  const next = board.map(row => row.slice())
+  const [fromRank, fromFile] = squareToIndices(move.from)
+  const [toRank, toFile] = squareToIndices(move.to)
+  let piece = next[fromRank][fromFile]
+  if (piece && move.promotion) {
+    piece = piece === piece.toUpperCase() ? move.promotion.toUpperCase() : move.promotion.toLowerCase()
+  }
+  next[fromRank][fromFile] = null
+  next[toRank][toFile] = piece
+  return next
+}
+
+function squareToIndices(square) {
+  const file = square.charCodeAt(0) - 'a'.charCodeAt(0)
+  const rank = 8 - Number(square[1])
+  return [rank, file]
+}
+
 function wsURL(matchId, token) {
   const apiUrl = import.meta.env.VITE_API_URL
   let proto, host
@@ -62,6 +85,8 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   const [selected, setSelected] = useState(null)
   const [pendingPromo, setPendingPromo] = useState(null)
   const [notice, setNotice] = useState('')
+  const [countdown, setCountdown] = useState(null)
+  const [optimisticMove, setOptimisticMove] = useState(null)
   const [, forceTick] = useState(0)
 
   const wsRef = useRef(null)
@@ -83,6 +108,16 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   }, [])
 
   useEffect(() => {
+    if (countdown == null) return
+    if (countdown <= 0) {
+      setCountdown(null)
+      return
+    }
+    const id = setTimeout(() => setCountdown(c => (c == null ? null : c - 1)), 1000)
+    return () => clearTimeout(id)
+  }, [countdown])
+
+  useEffect(() => {
     mountedRef.current = true
     let reconnectTimer = null
 
@@ -96,7 +131,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
       ws.onclose = () => {
         if (!mountedRef.current) return
         setConnStatus('closed')
-        if (!gameOverRef.current) reconnectTimer = setTimeout(connect, 1500)
+        if (!gameOverRef.current) reconnectTimer = setTimeout(connect, 600)
       }
       ws.onerror = () => {}
       ws.onmessage = evt => {
@@ -106,8 +141,13 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
           case 'waiting':
             setWaiting(true)
             break
+          case 'countdown':
+            setCountdown(msg.seconds || 5)
+            break
           case 'state':
             setWaiting(false)
+            setCountdown(null)
+            setOptimisticMove(null)
             setFen(msg.fen || START_FEN)
             setTurn(msg.turn || 'white')
             if (msg.clocks) {
@@ -125,6 +165,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
             setNotice('')
             break
           case 'error':
+            setOptimisticMove(null)
             setNotice(msg.error || 'Error')
             break
           default:
@@ -148,8 +189,8 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   const myColor = userId === matchInfo.player_1_id ? 'white' : 'black'
   const whiteId = matchInfo.player_1_id
   const blackId = matchInfo.player_2_id
-  const board = parseFEN(fen)
-  const isMyTurn = !gameOver && !waiting && turn === myColor
+  const board = withOptimisticMove(parseFEN(fen), optimisticMove)
+  const isMyTurn = !gameOver && !waiting && !optimisticMove && turn === myColor
   const flip = myColor === 'black'
 
   function remainingFor(uid) {
@@ -201,12 +242,14 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
       return
     }
 
+    setOptimisticMove({ from: selected, to: sq, promotion: '' })
     sendMove(selected, sq, '')
     setSelected(null)
   }
 
   function choosePromotion(letter) {
     if (!pendingPromo) return
+    setOptimisticMove({ from: pendingPromo.from, to: pendingPromo.to, promotion: letter })
     sendMove(pendingPromo.from, pendingPromo.to, letter)
     setPendingPromo(null)
   }
@@ -226,7 +269,14 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
       <div className="chess-layout">
         <div>
           <PlayerBar label={myColor === 'black' ? 'Opponent (White)' : 'You (White)'} uid={whiteId} seconds={remainingFor(whiteId)} active={turn === 'white' && !gameOver} />
-          <div className="chessboard">
+          <div className="board-wrap">
+            {countdown != null && (
+              <div className="countdown-overlay">
+                <span>Get ready</span>
+                <strong>{countdown > 0 ? countdown : 'Go!'}</strong>
+              </div>
+            )}
+            <div className="chessboard">
             {displayRanks.map(rankIdx => (
               <div className="chess-row" key={rankIdx}>
                 {displayFiles.map(fileIdx => {
@@ -251,12 +301,14 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
                 })}
               </div>
             ))}
+            </div>
           </div>
           <PlayerBar label={myColor === 'white' ? 'Opponent (Black)' : 'You (Black)'} uid={blackId} seconds={remainingFor(blackId)} active={turn === 'black' && !gameOver} />
         </div>
 
         <div className="chess-side">
-          {waiting && !gameOver && <p className="muted">Waiting for your opponent to connect...</p>}
+          {waiting && countdown == null && !gameOver && <p className="muted">Waiting for your opponent to connect...</p>}
+          {countdown != null && !gameOver && <p className="muted">Both players connected. Match starts in a moment...</p>}
           {!waiting && !gameOver && <p className={isMyTurn ? 'turn-yours' : 'muted'}>{isMyTurn ? 'Your move' : "Opponent's move"}</p>}
           {notice && <p className="notice">{notice}</p>}
 

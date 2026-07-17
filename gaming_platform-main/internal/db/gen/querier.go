@@ -62,6 +62,7 @@ type Querier interface {
 	SetMatchTurn(ctx context.Context, arg SetMatchTurnParams) error
 	SetSelectedAvatar(ctx context.Context, arg SetSelectedAvatarParams) (User, error)
 	SetSelectedBadge(ctx context.Context, arg SetSelectedBadgeParams) (User, error)
+	SetSelectedProfileFrame(ctx context.Context, arg SetSelectedProfileFrameParams) (User, error)
 	SetTournamentPlayerResult(ctx context.Context, arg SetTournamentPlayerResultParams) error
 	StartTournament(ctx context.Context, tournamentID int64) (Tournament, error)
 	UpdateFraudReportStatus(ctx context.Context, arg UpdateFraudReportStatusParams) (FraudReport, error)
