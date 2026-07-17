@@ -11,10 +11,20 @@ import {
 } from 'lucide-react'
 import { api } from './api.js'
 import MatchRoom from './Chess.jsx'
-import CosmeticIcon, { PROFILE_FRAMES } from './cosmeticArt.jsx'
+import CosmeticIcon, { ProfileFrameBanner } from './cosmeticArt.jsx'
 import './styles.css'
 
 const FIXED_COIN_WAGER = 200
+const MAX_PROFILE_FRAMES = 5
+
+function isCosmeticEquipped(item, user) {
+  if (item.item_type === 'avatar') return user.selected_avatar === item.image_key
+  if (item.item_type === 'badge') return user.selected_badge === item.image_key
+  if (item.item_type === 'profile_frame') {
+    return (user.selected_profile_frames || []).includes(item.image_key)
+  }
+  return false
+}
 
 function App() {
   const [token, setToken] = useState(
@@ -295,20 +305,36 @@ function Dashboard({
   }
 
   async function equipCosmetic(item) {
+    const equipped = isCosmeticEquipped(item, user)
+
     try {
-      const path =
-        item.item_type === 'avatar'
-          ? '/me/avatar'
-          : item.item_type === 'profile_frame'
-            ? '/me/profile-frame'
-            : '/me/badge'
-      const data = await api(path, {
-        token,
-        method: 'POST',
-        body: { cosmetic_item_id: item.cosmetic_item_id }
-      })
-      onUser(data)
-      onMessage(`Equipped ${item.name}.`)
+      if (item.item_type === 'avatar') {
+        if (equipped) return
+        onUser(
+          await api('/me/avatar', {
+            token,
+            method: 'POST',
+            body: { cosmetic_item_id: item.cosmetic_item_id }
+          })
+        )
+      } else if (item.item_type === 'profile_frame') {
+        onUser(
+          await api('/me/profile-frames/toggle', {
+            token,
+            method: 'POST',
+            body: { cosmetic_item_id: item.cosmetic_item_id }
+          })
+        )
+      } else {
+        onUser(
+          await api('/me/badge', {
+            token,
+            method: 'POST',
+            body: { cosmetic_item_id: equipped ? 0 : item.cosmetic_item_id }
+          })
+        )
+      }
+      onMessage(equipped ? `Unequipped ${item.name}.` : `Equipped ${item.name}.`)
     } catch (err) {
       onMessage(err.message)
     }
@@ -448,16 +474,7 @@ function Dashboard({
   return (
     <section className="grid">
       <div className="card profile">
-        {user.selected_profile_frame && PROFILE_FRAMES[user.selected_profile_frame] && (
-          <div className="profile-frame-banner">
-            <span className="profile-frame-emoji">
-              {PROFILE_FRAMES[user.selected_profile_frame].emoji}
-            </span>
-            <span className="profile-frame-label">
-              {PROFILE_FRAMES[user.selected_profile_frame].label}
-            </span>
-          </div>
-        )}
+        <ProfileFrameBanner frameKeys={user.selected_profile_frames} />
 
         <div className="avatar">
           <User />
@@ -663,27 +680,50 @@ function Dashboard({
           Cosmetic Shop
         </h2>
 
-        <p>Spend coins on avatars, badges, and ridiculous profile frames. Equip anything you own.</p>
+        <p>
+          Spend coins on avatars, badges, and ridiculous profile frames.
+          Equip anything you own — up to {MAX_PROFILE_FRAMES} profile frames at once.
+        </p>
 
         <div className="cosmetics-grid">
-          {cosmetics.map(item => (
-            <div className="cosmetic-item" key={item.cosmetic_item_id}>
-              <CosmeticIcon item={item} />
-              <b>{item.name}</b>
-              <span className="mode-detail">{item.item_type} · {item.coin_price} 🪙</span>
-              <p>{item.description}</p>
-              {item.owned ? (
-                <button onClick={() => equipCosmetic(item)}>Equip</button>
-              ) : (
-                <button
-                  onClick={() => buyCosmetic(item)}
-                  disabled={coinBalance < item.coin_price}
-                >
-                  Buy
-                </button>
-              )}
-            </div>
-          ))}
+          {cosmetics.map(item => {
+            const equipped = isCosmeticEquipped(item, user)
+            const framesAtCap =
+              item.item_type === 'profile_frame' &&
+              !equipped &&
+              (user.selected_profile_frames || []).length >= MAX_PROFILE_FRAMES
+
+            let equipLabel = 'Equip'
+            if (equipped) {
+              equipLabel = item.item_type === 'avatar' ? 'Equipped' : 'Unequip'
+            }
+
+            return (
+              <div className="cosmetic-item" key={item.cosmetic_item_id}>
+                <CosmeticIcon item={item} />
+                <b>{item.name}</b>
+                <span className="mode-detail">{item.item_type} · {item.coin_price} 🪙</span>
+                <p>{item.description}</p>
+                {item.owned ? (
+                  <button
+                    className={equipped ? 'equipped' : ''}
+                    onClick={() => equipCosmetic(item)}
+                    disabled={(equipped && item.item_type === 'avatar') || framesAtCap}
+                    title={framesAtCap ? `You can only equip ${MAX_PROFILE_FRAMES} profile frames at once.` : undefined}
+                  >
+                    {equipLabel}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => buyCosmetic(item)}
+                    disabled={coinBalance < item.coin_price}
+                  >
+                    Buy
+                  </button>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
 

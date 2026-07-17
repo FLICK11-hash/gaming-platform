@@ -60,6 +60,16 @@ RETURNING *;
 UPDATE users SET selected_badge = $2 WHERE user_id = $1
 RETURNING *;
 
--- name: SetSelectedProfileFrame :one
-UPDATE users SET selected_profile_frame = $2 WHERE user_id = $1
+-- name: ToggleSelectedProfileFrame :one
+-- Adds image_key to selected_profile_frames if it isn't already equipped,
+-- otherwise removes it. Atomic, so concurrent toggles can't race each other,
+-- and the users_max_five_profile_frames CHECK constraint rejects the update
+-- (as a check_violation) if adding would exceed the 5-frame cap.
+UPDATE users
+SET selected_profile_frames = CASE
+    WHEN sqlc.arg('image_key')::varchar = ANY(selected_profile_frames)
+        THEN array_remove(selected_profile_frames, sqlc.arg('image_key')::varchar)
+    ELSE array_append(selected_profile_frames, sqlc.arg('image_key')::varchar)
+END
+WHERE user_id = sqlc.arg('user_id')
 RETURNING *;

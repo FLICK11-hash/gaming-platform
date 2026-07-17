@@ -72,3 +72,22 @@ export default function CosmeticIcon({ item }) {
     </div>
   )
 }
+
+// Renders every equipped profile frame (up to 5) as a row of large pun
+// chips. Used on a player's own profile card and, given an opponent's
+// frame keys, in the match room so both players can see each other's pins.
+export function ProfileFrameBanner({ frameKeys, size = 'large' }) {
+  const keys = (frameKeys || []).filter(key => PROFILE_FRAMES[key])
+  if (keys.length === 0) return null
+
+  return (
+    <div className={`profile-frame-banner profile-frame-banner-${size}`}>
+      {keys.map(key => (
+        <div className="profile-frame-chip" key={key}>
+          <span className="profile-frame-emoji">{PROFILE_FRAMES[key].emoji}</span>
+          <span className="profile-frame-label">{PROFILE_FRAMES[key].label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}

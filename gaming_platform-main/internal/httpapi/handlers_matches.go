@@ -28,7 +28,7 @@ func (s *Server) handleGetMyActiveMatch(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	writeJSON(w, http.StatusOK, toMatchResponse(m))
+	writeJSON(w, http.StatusOK, s.matchResponseWithProfiles(r, q, m))
 }
 
 func (s *Server) handleGetMatch(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +45,23 @@ func (s *Server) handleGetMatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, toMatchResponse(m))
+	writeJSON(w, http.StatusOK, s.matchResponseWithProfiles(r, q, m))
+}
+
+// matchResponseWithProfiles builds a matchResponse and, best-effort, attaches
+// both players' equipped profile frames so opponents can see each other's
+// pins in the match room. If either player lookup fails, the frames are just
+// left empty rather than failing the whole request.
+func (s *Server) matchResponseWithProfiles(r *http.Request, q *db.Queries, m db.Match) matchResponse {
+	resp := toMatchResponse(m)
+
+	player1, err1 := q.GetUserByID(r.Context(), m.Player1ID)
+	player2, err2 := q.GetUserByID(r.Context(), m.Player2ID)
+	if err1 == nil && err2 == nil {
+		resp = withPlayerProfileFrames(resp, player1, player2)
+	}
+
+	return resp
 }
 
 func (s *Server) handleResign(w http.ResponseWriter, r *http.Request) {

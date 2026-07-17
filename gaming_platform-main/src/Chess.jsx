@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Flag, Wifi, WifiOff } from 'lucide-react'
 import { api } from './api.js'
+import { ProfileFrameBanner } from './cosmeticArt.jsx'
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
@@ -268,7 +269,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
 
       <div className="chess-layout">
         <div>
-          <PlayerBar label={myColor === 'black' ? 'Opponent (White)' : 'You (White)'} uid={whiteId} seconds={remainingFor(whiteId)} active={turn === 'white' && !gameOver} />
+          <PlayerBar label={myColor === 'black' ? 'Opponent (White)' : 'You (White)'} uid={whiteId} seconds={remainingFor(whiteId)} active={turn === 'white' && !gameOver} frameKeys={matchInfo.player_1_profile_frames} />
           <div className="board-wrap">
             {countdown != null && (
               <div className="countdown-overlay">
@@ -303,7 +304,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
             ))}
             </div>
           </div>
-          <PlayerBar label={myColor === 'white' ? 'Opponent (Black)' : 'You (Black)'} uid={blackId} seconds={remainingFor(blackId)} active={turn === 'black' && !gameOver} />
+          <PlayerBar label={myColor === 'white' ? 'Opponent (Black)' : 'You (Black)'} uid={blackId} seconds={remainingFor(blackId)} active={turn === 'black' && !gameOver} frameKeys={matchInfo.player_2_profile_frames} />
         </div>
 
         <div className="chess-side">
@@ -347,13 +348,16 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   )
 }
 
-function PlayerBar({ label, uid, seconds, active }) {
+function PlayerBar({ label, uid, seconds, active, frameKeys }) {
   const mm = seconds == null ? '--' : String(Math.floor(seconds / 60)).padStart(2, '0')
   const ss = seconds == null ? '--' : String(seconds % 60).padStart(2, '0')
   return (
-    <div className={`player-bar ${active ? 'active' : ''}`}>
-      <span>{label} · #{uid}</span>
-      <strong className={seconds != null && seconds <= 10 ? 'clock-low' : ''}>{mm}:{ss}</strong>
+    <div>
+      <div className={`player-bar ${active ? 'active' : ''}`}>
+        <span>{label} · #{uid}</span>
+        <strong className={seconds != null && seconds <= 10 ? 'clock-low' : ''}>{mm}:{ss}</strong>
+      </div>
+      <ProfileFrameBanner frameKeys={frameKeys} size="small" />
     </div>
   )
 }
