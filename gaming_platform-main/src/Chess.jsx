@@ -48,7 +48,7 @@ function wsURL(matchId, token) {
     proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     host = window.location.host
   }
-  return `${proto}//${host}/api/matches/${matchId}/ws?token=${encodeURIComponent(token)}`
+  return `${proto}//${host}/matches/${matchId}/ws?token=${encodeURIComponent(token)}`
 }
 
 export default function MatchRoom({ matchId, token, userId, onExit }) {
