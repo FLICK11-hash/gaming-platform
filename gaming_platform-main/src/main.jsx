@@ -656,6 +656,10 @@ function Dashboard({
             </div>
           </button>
 
+          {/* 4-Player Tournament mode is disabled for now (too much work to
+              keep fully working right now) - may come back in the future.
+              Backend support for it is disabled to match; see matcher.go
+              and handlers_matchmaking.go.
           <button
             type="button"
             className={
@@ -682,6 +686,7 @@ function Dashboard({
               </span>
             </div>
           </button>
+          */}
         </div>
 
         <div className="wager-field">
@@ -689,6 +694,7 @@ function Dashboard({
           <span className="wager-fixed">{FIXED_COIN_WAGER} coins</span>
         </div>
 
+        {/* Tournament mode disabled, see above.
         {gameMode === 'tournament' && (
           <div className="reward-banner">
             <Trophy size={18} />
@@ -696,6 +702,7 @@ function Dashboard({
             pool plus a bonus reward.
           </div>
         )}
+        */}
 
         {queue ? (
           <div className="queue-status">

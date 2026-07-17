@@ -92,15 +92,25 @@ func NewService(pool *pgxpool.Pool, h *hub.Hub) *Service {
 
 // wsOutbound is broadcast/sent to clients over the match websocket.
 type wsOutbound struct {
-	Type    string         `json:"type"`
-	FEN     string         `json:"fen,omitempty"`
-	Board   [][]int        `json:"board,omitempty"`
-	Turn    string         `json:"turn,omitempty"`
-	Outcome string         `json:"outcome,omitempty"`
-	Winner  int64          `json:"winner_user_id,omitempty"`
-	Clocks  map[string]int `json:"clocks,omitempty"`
-	Seconds int            `json:"seconds,omitempty"`
-	Error   string         `json:"error,omitempty"`
+	Type          string         `json:"type"`
+	FEN           string         `json:"fen,omitempty"`
+	Board         [][]int        `json:"board,omitempty"`
+	Turn          string         `json:"turn,omitempty"`
+	Outcome       string         `json:"outcome,omitempty"`
+	Winner        int64          `json:"winner_user_id,omitempty"`
+	Clocks        map[string]int `json:"clocks,omitempty"`
+	Seconds       int            `json:"seconds,omitempty"`
+	WinningSquare string         `json:"winning_square,omitempty"`
+	WinningCells  [][2]int       `json:"winning_cells,omitempty"`
+	Error         string         `json:"error,omitempty"`
+}
+
+// moveHighlight identifies what to visually call out in the final position
+// of a just-finished game: the checkmating square in chess, or the winning
+// line's cells in Connect Four. Zero value means nothing to highlight.
+type moveHighlight struct {
+	Square string
+	Cells  [][2]int
 }
 
 // Join registers a player's websocket connection to a match and starts the
@@ -129,7 +139,7 @@ func (s *Service) Join(ctx context.Context, matchID, userID int64, ws *websocket
 		return nil
 	}
 
-	s.broadcastState(ctx, m)
+	s.broadcastState(ctx, m, moveHighlight{})
 	return nil
 }
 
@@ -261,7 +271,7 @@ func (s *Service) startMatch(ctx context.Context, m db.Match) error {
 	}
 	s.mu.Unlock()
 
-	s.broadcastState(ctx, m)
+	s.broadcastState(ctx, m, moveHighlight{})
 	return nil
 }
 
@@ -292,7 +302,7 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input M
 		opponentID = m.Player1ID
 	}
 
-	finished, winnerID, err := s.applyMove(m, userID, input)
+	finished, winnerID, highlight, err := s.applyMove(m, userID, input)
 	if err != nil {
 		return err
 	}
@@ -345,7 +355,7 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input M
 		}
 		s.mu.Unlock()
 
-		s.broadcastState(ctx, m)
+		s.broadcastState(ctx, m, moveHighlight{})
 		return nil
 	}
 
@@ -365,25 +375,33 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input M
 	delete(s.deadlines, matchID)
 	s.mu.Unlock()
 
+	// Broadcast the final position (with the winning move/line highlighted)
+	// before match_over, so both players actually see how the game ended
+	// instead of jumping straight from the prior position to a bare
+	// "match over" message - previously only the player who made the move
+	// had already seen it applied locally; the opponent never received it.
+	s.broadcastState(ctx, m, highlight)
+
 	return s.finishMatch(ctx, matchID, winnerID)
 }
 
 // applyMove dispatches a move to the correct game engine and reports whether
-// the game finished and, if so, who won (0 for a draw).
-func (s *Service) applyMove(m db.Match, userID int64, input MoveInput) (finished bool, winnerUserID int64, err error) {
+// the game finished and, if so, who won (0 for a draw), plus what to
+// highlight in the final position if it did.
+func (s *Service) applyMove(m db.Match, userID int64, input MoveInput) (finished bool, winnerUserID int64, highlight moveHighlight, err error) {
 	if m.GameType == GameTypeConnectFour {
 		return s.applyConnectFourMove(m, userID, input)
 	}
 	return s.applyChessMove(m, input)
 }
 
-func (s *Service) applyChessMove(m db.Match, input MoveInput) (bool, int64, error) {
+func (s *Service) applyChessMove(m db.Match, input MoveInput) (bool, int64, moveHighlight, error) {
 	result, err := s.chessEngine.ApplyMove(m.MatchID, input.From, input.To, input.Promotion)
 	if err != nil {
-		return false, 0, err
+		return false, 0, moveHighlight{}, err
 	}
 	if result.Outcome == chess.NoOutcome {
-		return false, 0, nil
+		return false, 0, moveHighlight{}, nil
 	}
 
 	winnerID := int64(0)
@@ -393,12 +411,17 @@ func (s *Service) applyChessMove(m db.Match, input MoveInput) (bool, int64, erro
 	case chess.BlackWon:
 		winnerID = m.Player2ID
 	}
-	return true, winnerID, nil
+
+	var highlight moveHighlight
+	if winnerID != 0 {
+		highlight.Square = input.To
+	}
+	return true, winnerID, highlight, nil
 }
 
-func (s *Service) applyConnectFourMove(m db.Match, userID int64, input MoveInput) (bool, int64, error) {
+func (s *Service) applyConnectFourMove(m db.Match, userID int64, input MoveInput) (bool, int64, moveHighlight, error) {
 	if input.Column == nil {
-		return false, 0, errors.New("match: column is required for connect four moves")
+		return false, 0, moveHighlight{}, errors.New("match: column is required for connect four moves")
 	}
 
 	color := connectfour.Red
@@ -408,18 +431,18 @@ func (s *Service) applyConnectFourMove(m db.Match, userID int64, input MoveInput
 
 	result, err := s.c4Engine.DropChip(m.MatchID, *input.Column, color)
 	if err != nil {
-		return false, 0, err
+		return false, 0, moveHighlight{}, err
 	}
 
 	switch result.Outcome {
 	case connectfour.NoOutcome:
-		return false, 0, nil
+		return false, 0, moveHighlight{}, nil
 	case connectfour.RedWon:
-		return true, m.Player1ID, nil
+		return true, m.Player1ID, moveHighlight{Cells: result.WinningCells}, nil
 	case connectfour.GreenWon:
-		return true, m.Player2ID, nil
+		return true, m.Player2ID, moveHighlight{Cells: result.WinningCells}, nil
 	default: // Draw: the board is full with nobody connecting four.
-		return true, 0, nil
+		return true, 0, moveHighlight{}, nil
 	}
 }
 
@@ -667,44 +690,48 @@ func (s *Service) updateElo(ctx context.Context, player1ID, player2ID, winnerUse
 // Known limitation: a drawn semifinal or final has no tiebreak mechanism
 // defined in the ERD, so it will not advance automatically.
 func (s *Service) advanceBracket(ctx context.Context, tournamentID int64, completed db.Match, winnerUserID int64) error {
-	q := db.New(s.pool)
-
-	if completed.Round == tournament.RoundSemifinal {
-		matches, err := q.ListMatchesByTournament(ctx, tournamentID)
-		if err != nil {
-			return err
-		}
-
-		var sf1, sf2 *db.Match
-		for i := range matches {
-			mm := &matches[i]
-			if mm.Round != tournament.RoundSemifinal {
-				continue
-			}
-			if mm.MatchNumber.Int32 == 1 {
-				sf1 = mm
-			} else if mm.MatchNumber.Int32 == 2 {
-				sf2 = mm
-			}
-		}
-		if sf1 == nil || sf2 == nil || sf1.Status.String != "completed" || sf2.Status.String != "completed" {
-			return nil
-		}
-		if !sf1.WinnerUserID.Valid || !sf2.WinnerUserID.Valid {
-			return nil // one of the semifinals was a draw; no tiebreak defined
-		}
-
-		pairing := tournament.FinalPairing(sf1.WinnerUserID.Int64, sf2.WinnerUserID.Int64)
-		_, err = q.CreateMatch(ctx, db.CreateMatchParams{
-			TournamentID: tournamentID,
-			GameType:     completed.GameType,
-			Round:        pairing.Round,
-			MatchNumber:  dbutil.IntToPGInt4(pairing.MatchNumber),
-			Player1ID:    pairing.Player1ID,
-			Player2ID:    pairing.Player2ID,
-		})
-		return err
-	}
+	// 4-player tournament mode is disabled for now (too much work to keep
+	// fully working right now) - may come back in the future. No match ever
+	// has Round == RoundSemifinal while it's disabled (createOneVsOneMatch
+	// always creates Round "final"), so this is unreachable; left in place,
+	// commented out, for an easy re-enable (re-add `q := db.New(s.pool)` too).
+	//
+	// if completed.Round == tournament.RoundSemifinal {
+	// 	matches, err := q.ListMatchesByTournament(ctx, tournamentID)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	//
+	// 	var sf1, sf2 *db.Match
+	// 	for i := range matches {
+	// 		mm := &matches[i]
+	// 		if mm.Round != tournament.RoundSemifinal {
+	// 			continue
+	// 		}
+	// 		if mm.MatchNumber.Int32 == 1 {
+	// 			sf1 = mm
+	// 		} else if mm.MatchNumber.Int32 == 2 {
+	// 			sf2 = mm
+	// 		}
+	// 	}
+	// 	if sf1 == nil || sf2 == nil || sf1.Status.String != "completed" || sf2.Status.String != "completed" {
+	// 		return nil
+	// 	}
+	// 	if !sf1.WinnerUserID.Valid || !sf2.WinnerUserID.Valid {
+	// 		return nil // one of the semifinals was a draw; no tiebreak defined
+	// 	}
+	//
+	// 	pairing := tournament.FinalPairing(sf1.WinnerUserID.Int64, sf2.WinnerUserID.Int64)
+	// 	_, err = q.CreateMatch(ctx, db.CreateMatchParams{
+	// 		TournamentID: tournamentID,
+	// 		GameType:     completed.GameType,
+	// 		Round:        pairing.Round,
+	// 		MatchNumber:  dbutil.IntToPGInt4(pairing.MatchNumber),
+	// 		Player1ID:    pairing.Player1ID,
+	// 		Player2ID:    pairing.Player2ID,
+	// 	})
+	// 	return err
+	// }
 
 	if completed.Round == tournament.RoundFinal {
 		// The payout (or refund) and CompleteTournament must land together:
@@ -824,7 +851,7 @@ func (s *Service) advanceBracket(ctx context.Context, tournamentID int64, comple
 	return nil
 }
 
-func (s *Service) broadcastState(ctx context.Context, m db.Match) {
+func (s *Service) broadcastState(ctx context.Context, m db.Match, highlight moveHighlight) {
 	if m.GameType == GameTypeConnectFour {
 		state, err := s.c4Engine.State(m.MatchID)
 		if err != nil {
@@ -832,11 +859,12 @@ func (s *Service) broadcastState(ctx context.Context, m db.Match) {
 			return
 		}
 		s.hub.Broadcast(m.MatchID, wsOutbound{
-			Type:    "state",
-			Board:   boardRows(state.Board),
-			Turn:    connectFourColorName(state.Turn),
-			Outcome: connectFourOutcomeName(state.Outcome),
-			Clocks:  s.clockSnapshot(ctx, m.MatchID),
+			Type:         "state",
+			Board:        boardRows(state.Board),
+			Turn:         connectFourColorName(state.Turn),
+			Outcome:      connectFourOutcomeName(state.Outcome),
+			Clocks:       s.clockSnapshot(ctx, m.MatchID),
+			WinningCells: highlight.Cells,
 		})
 		return
 	}
@@ -848,11 +876,12 @@ func (s *Service) broadcastState(ctx context.Context, m db.Match) {
 	}
 
 	s.hub.Broadcast(m.MatchID, wsOutbound{
-		Type:    "state",
-		FEN:     state.FEN,
-		Turn:    colorName(state.Turn),
-		Outcome: string(state.Outcome),
-		Clocks:  s.clockSnapshot(ctx, m.MatchID),
+		Type:          "state",
+		FEN:           state.FEN,
+		Turn:          colorName(state.Turn),
+		Outcome:       string(state.Outcome),
+		Clocks:        s.clockSnapshot(ctx, m.MatchID),
+		WinningSquare: highlight.Square,
 	})
 }
 
