@@ -118,6 +118,12 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
           case 'match_over':
             setGameOver({ winnerUserId: msg.winner_user_id || 0 })
             break
+          case 'opponent_disconnected':
+            setNotice('Opponent disconnected. They forfeit in 5 seconds if they don’t reconnect.')
+            break
+          case 'opponent_reconnected':
+            setNotice('')
+            break
           case 'error':
             setNotice(msg.error || 'Error')
             break

@@ -37,21 +37,32 @@ type deadline struct {
 	At             time.Time
 }
 
+// DisconnectGracePeriod is how long a player has to reconnect to an active
+// match's websocket before they forfeit it to their opponent.
+const DisconnectGracePeriod = 5 * time.Second
+
+type disconnectDeadline struct {
+	OpponentUserID int64
+	At             time.Time
+}
+
 type Service struct {
 	pool   *pgxpool.Pool
 	engine *chess.Engine
 	hub    *hub.Hub
 
-	mu        sync.Mutex
-	deadlines map[int64]deadline
+	mu          sync.Mutex
+	deadlines   map[int64]deadline
+	disconnects map[int64]map[int64]disconnectDeadline // matchID -> userID -> deadline
 }
 
 func NewService(pool *pgxpool.Pool, h *hub.Hub) *Service {
 	return &Service{
-		pool:      pool,
-		engine:    chess.NewEngine(),
-		hub:       h,
-		deadlines: make(map[int64]deadline),
+		pool:        pool,
+		engine:      chess.NewEngine(),
+		hub:         h,
+		deadlines:   make(map[int64]deadline),
+		disconnects: make(map[int64]map[int64]disconnectDeadline),
 	}
 }
 
@@ -83,6 +94,10 @@ func (s *Service) Join(ctx context.Context, matchID, userID int64, ws *websocket
 
 	s.hub.Register(matchID, userID, ws)
 
+	if s.clearDisconnect(matchID, userID) && m.Status.String == "active" {
+		s.hub.Broadcast(matchID, wsOutbound{Type: "opponent_reconnected"})
+	}
+
 	if m.Status.String == "waiting" && s.hub.ConnectedCount(matchID) >= 2 {
 		return s.startMatch(ctx, m)
 	}
@@ -91,10 +106,56 @@ func (s *Service) Join(ctx context.Context, matchID, userID int64, ws *websocket
 	return nil
 }
 
-// Leave unregisters a player's websocket connection (e.g. on disconnect).
-// The match and its clock continue running against a disconnected player.
-func (s *Service) Leave(matchID, userID int64) {
+// Leave unregisters a player's websocket connection (e.g. on disconnect) and,
+// if the match is still active, starts a grace period after which the
+// disconnected player forfeits to their opponent if they haven't reconnected.
+func (s *Service) Leave(ctx context.Context, matchID, userID int64) {
 	s.hub.Unregister(matchID, userID)
+
+	q := db.New(s.pool)
+	m, err := q.GetMatch(ctx, matchID)
+	if err != nil || m.Status.String != "active" {
+		return
+	}
+	if userID != m.Player1ID && userID != m.Player2ID {
+		return
+	}
+
+	opponentID := m.Player2ID
+	if userID == m.Player2ID {
+		opponentID = m.Player1ID
+	}
+
+	s.mu.Lock()
+	if s.disconnects[matchID] == nil {
+		s.disconnects[matchID] = make(map[int64]disconnectDeadline)
+	}
+	s.disconnects[matchID][userID] = disconnectDeadline{
+		OpponentUserID: opponentID,
+		At:             time.Now().Add(DisconnectGracePeriod),
+	}
+	s.mu.Unlock()
+
+	s.hub.Broadcast(matchID, wsOutbound{Type: "opponent_disconnected"})
+}
+
+// clearDisconnect cancels any pending disconnect grace period for userID in
+// matchID, reporting whether one was cancelled.
+func (s *Service) clearDisconnect(matchID, userID int64) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	users, ok := s.disconnects[matchID]
+	if !ok {
+		return false
+	}
+	if _, ok := users[userID]; !ok {
+		return false
+	}
+	delete(users, userID)
+	if len(users) == 0 {
+		delete(s.disconnects, matchID)
+	}
+	return true
 }
 
 func (s *Service) startMatch(ctx context.Context, m db.Match) error {
@@ -288,6 +349,8 @@ func (s *Service) popIfExpired(matchID int64) bool {
 
 // RunClockWatcher periodically checks all in-flight matches for expired
 // clocks and completes them as timeout losses, even absent an incoming move.
+// It also checks for players who failed to reconnect within the disconnect
+// grace period and forfeits the match to their opponent.
 func (s *Service) RunClockWatcher(ctx context.Context) {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
@@ -297,6 +360,37 @@ func (s *Service) RunClockWatcher(ctx context.Context) {
 			return
 		case <-ticker.C:
 			s.checkTimeouts(ctx)
+			s.checkDisconnects(ctx)
+		}
+	}
+}
+
+func (s *Service) checkDisconnects(ctx context.Context) {
+	now := time.Now()
+
+	type forfeit struct {
+		MatchID        int64
+		OpponentUserID int64
+	}
+	var expired []forfeit
+
+	s.mu.Lock()
+	for matchID, users := range s.disconnects {
+		for userID, d := range users {
+			if now.After(d.At) {
+				expired = append(expired, forfeit{MatchID: matchID, OpponentUserID: d.OpponentUserID})
+				delete(users, userID)
+			}
+		}
+		if len(users) == 0 {
+			delete(s.disconnects, matchID)
+		}
+	}
+	s.mu.Unlock()
+
+	for _, f := range expired {
+		if err := s.finishMatch(ctx, f.MatchID, f.OpponentUserID); err != nil {
+			log.Printf("match: disconnect forfeit error for match %d: %v", f.MatchID, err)
 		}
 	}
 }
@@ -357,6 +451,10 @@ func (s *Service) finishMatch(ctx context.Context, matchID, winnerUserID int64) 
 		return err
 	}
 	s.engine.EndGame(matchID)
+
+	s.mu.Lock()
+	delete(s.disconnects, matchID)
+	s.mu.Unlock()
 
 	if err := s.updateElo(ctx, m.Player1ID, m.Player2ID, winnerUserID); err != nil {
 		log.Printf("match: elo update error for match %d: %v", matchID, err)
