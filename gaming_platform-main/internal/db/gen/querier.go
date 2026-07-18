@@ -58,6 +58,11 @@ type Querier interface {
 	ListTournamentPlayers(ctx context.Context, tournamentID int64) ([]TournamentPlayer, error)
 	ListUserCosmeticItemIDs(ctx context.Context, userID int64) ([]int64, error)
 	ListWaitingQueueEntries(ctx context.Context, arg ListWaitingQueueEntriesParams) ([]MatchmakingQueue, error)
+	// Finds and row-locks the single oldest still-waiting queue entry created at
+	// or before the cutoff, for pairing against a bot. FOR UPDATE SKIP LOCKED
+	// lets the caller loop this one row at a time without colliding with the
+	// regular human-pairing pass's own locks on the same table.
+	LockOldestStaleWaitingQueueEntry(ctx context.Context, createdAt pgtype.Timestamptz) (MatchmakingQueue, error)
 	MarkQueueEntryMatched(ctx context.Context, queueID int64) error
 	SetMatchTurn(ctx context.Context, arg SetMatchTurnParams) error
 	SetSelectedAvatar(ctx context.Context, arg SetSelectedAvatarParams) (User, error)

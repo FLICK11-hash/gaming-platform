@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"math/rand"
 	"strconv"
 	"sync"
 	"time"
@@ -20,6 +21,7 @@ import (
 
 	db "gaming_platform/internal/db/gen"
 	"gaming_platform/internal/dbutil"
+	"gaming_platform/internal/domain/bot"
 	"gaming_platform/internal/domain/chess"
 	"gaming_platform/internal/domain/clock"
 	"gaming_platform/internal/domain/connectfour"
@@ -134,9 +136,24 @@ func (s *Service) Join(ctx context.Context, matchID, userID int64, ws *websocket
 		s.hub.Broadcast(matchID, wsOutbound{Type: "opponent_reconnected"})
 	}
 
-	if m.Status.String == "waiting" && s.hub.ConnectedCount(matchID) >= 2 {
-		s.beginCountdown(m)
-		return nil
+	if m.Status.String == "waiting" {
+		opponentID := m.Player2ID
+		if userID == m.Player2ID {
+			opponentID = m.Player1ID
+		}
+
+		// A bot opponent never opens a websocket, so it can never bring
+		// ConnectedCount to 2; start the countdown as soon as the human
+		// joins instead of waiting for a connection that will never come.
+		opponentIsBot, err := s.isBot(ctx, opponentID)
+		if err != nil {
+			return err
+		}
+
+		if opponentIsBot || s.hub.ConnectedCount(matchID) >= 2 {
+			s.beginCountdown(m)
+			return nil
+		}
 	}
 
 	s.broadcastState(ctx, m, moveHighlight{})
@@ -272,7 +289,92 @@ func (s *Service) startMatch(ctx context.Context, m db.Match) error {
 	s.mu.Unlock()
 
 	s.broadcastState(ctx, m, moveHighlight{})
+	s.triggerBotMoveIfNeeded(m.MatchID)
 	return nil
+}
+
+// isBot reports whether userID belongs to one of the fixed bot accounts
+// seeded by migration 0009_bot_users.up.sql.
+func (s *Service) isBot(ctx context.Context, userID int64) (bool, error) {
+	q := db.New(s.pool)
+	u, err := q.GetUserByID(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	return u.IsBot, nil
+}
+
+// triggerBotMoveIfNeeded checks whether it's currently a bot's turn in
+// matchID and, if so, asynchronously plays that bot's move after a short
+// "thinking" delay. It runs on its own background context rather than the
+// caller's, since the caller (an HTTP/WS handler) may return and cancel its
+// context long before the delay elapses.
+func (s *Service) triggerBotMoveIfNeeded(matchID int64) {
+	go func() {
+		ctx := context.Background()
+		q := db.New(s.pool)
+
+		m, err := q.GetMatch(ctx, matchID)
+		if err != nil || m.Status.String != "active" {
+			return
+		}
+
+		moverID := dbutil.PGInt8ToInt64(m.CurrentTurnUserID)
+		if moverID == 0 {
+			return
+		}
+
+		mover, err := q.GetUserByID(ctx, moverID)
+		if err != nil || !mover.IsBot {
+			return
+		}
+
+		time.Sleep(botThinkDelay())
+
+		input, err := s.chooseBotMove(m, mover)
+		if err != nil {
+			log.Printf("match: bot move-selection error for match %d: %v", matchID, err)
+			return
+		}
+
+		if err := s.HandleMove(ctx, matchID, moverID, input); err != nil {
+			log.Printf("match: bot move error for match %d: %v", matchID, err)
+		}
+	}()
+}
+
+// botThinkDelay returns a short randomized pause before a bot plays its
+// move, so it doesn't feel like it's responding instantaneously.
+func botThinkDelay() time.Duration {
+	return 400*time.Millisecond + time.Duration(rand.Intn(900))*time.Millisecond
+}
+
+// chooseBotMove asks the bot package for botUser's move given m's current
+// live engine state.
+func (s *Service) chooseBotMove(m db.Match, botUser db.User) (MoveInput, error) {
+	difficulty := bot.DifficultyForElo(dbutil.PGInt4ToInt(botUser.CurrentElo))
+
+	if m.GameType == GameTypeConnectFour {
+		state, err := s.c4Engine.State(m.MatchID)
+		if err != nil {
+			return MoveInput{}, err
+		}
+		column, err := bot.ChooseConnectFourMove(state.Board, state.Turn, difficulty)
+		if err != nil {
+			return MoveInput{}, err
+		}
+		return MoveInput{Column: &column}, nil
+	}
+
+	state, err := s.chessEngine.State(m.MatchID)
+	if err != nil {
+		return MoveInput{}, err
+	}
+	from, to, promo, err := bot.ChooseChessMove(state.FEN, difficulty)
+	if err != nil {
+		return MoveInput{}, err
+	}
+	return MoveInput{From: from, To: to, Promotion: promo}, nil
 }
 
 // HandleMove validates and applies a move from userID: From/To/Promotion for
@@ -356,6 +458,7 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input M
 		s.mu.Unlock()
 
 		s.broadcastState(ctx, m, moveHighlight{})
+		s.triggerBotMoveIfNeeded(matchID)
 		return nil
 	}
 
@@ -662,23 +765,31 @@ func (s *Service) updateElo(ctx context.Context, player1ID, player2ID, winnerUse
 		newP2Elo = elo.Update(p2Elo, p1Elo, elo.Draw)
 	}
 
-	if _, err := q.UpdateUserEloAndStats(ctx, db.UpdateUserEloAndStatsParams{
-		UserID:      player1ID,
-		CurrentElo:  dbutil.IntToPGInt4(newP1Elo),
-		TotalWins:   dbutil.IntToPGInt4(dbutil.PGInt4ToInt(p1.TotalWins) + p1Wins),
-		TotalLosses: dbutil.IntToPGInt4(dbutil.PGInt4ToInt(p1.TotalLosses) + p1Losses),
-		NumGames:    dbutil.IntToPGInt4(dbutil.PGInt4ToInt(p1.NumGames) + 1),
-	}); err != nil {
-		return err
+	// Bots' Elo is a fixed difficulty label (see migration
+	// 0009_bot_users.up.sql), not a real rating: their current p1Elo/p2Elo
+	// is still used as an input above so the human's rating moves correctly,
+	// but the bot's own row is never written back.
+	if !p1.IsBot {
+		if _, err := q.UpdateUserEloAndStats(ctx, db.UpdateUserEloAndStatsParams{
+			UserID:      player1ID,
+			CurrentElo:  dbutil.IntToPGInt4(newP1Elo),
+			TotalWins:   dbutil.IntToPGInt4(dbutil.PGInt4ToInt(p1.TotalWins) + p1Wins),
+			TotalLosses: dbutil.IntToPGInt4(dbutil.PGInt4ToInt(p1.TotalLosses) + p1Losses),
+			NumGames:    dbutil.IntToPGInt4(dbutil.PGInt4ToInt(p1.NumGames) + 1),
+		}); err != nil {
+			return err
+		}
 	}
-	if _, err := q.UpdateUserEloAndStats(ctx, db.UpdateUserEloAndStatsParams{
-		UserID:      player2ID,
-		CurrentElo:  dbutil.IntToPGInt4(newP2Elo),
-		TotalWins:   dbutil.IntToPGInt4(dbutil.PGInt4ToInt(p2.TotalWins) + p2Wins),
-		TotalLosses: dbutil.IntToPGInt4(dbutil.PGInt4ToInt(p2.TotalLosses) + p2Losses),
-		NumGames:    dbutil.IntToPGInt4(dbutil.PGInt4ToInt(p2.NumGames) + 1),
-	}); err != nil {
-		return err
+	if !p2.IsBot {
+		if _, err := q.UpdateUserEloAndStats(ctx, db.UpdateUserEloAndStatsParams{
+			UserID:      player2ID,
+			CurrentElo:  dbutil.IntToPGInt4(newP2Elo),
+			TotalWins:   dbutil.IntToPGInt4(dbutil.PGInt4ToInt(p2.TotalWins) + p2Wins),
+			TotalLosses: dbutil.IntToPGInt4(dbutil.PGInt4ToInt(p2.TotalLosses) + p2Losses),
+			NumGames:    dbutil.IntToPGInt4(dbutil.PGInt4ToInt(p2.NumGames) + 1),
+		}); err != nil {
+			return err
+		}
 	}
 
 	return nil

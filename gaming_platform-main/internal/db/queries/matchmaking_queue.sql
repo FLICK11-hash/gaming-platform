@@ -46,3 +46,16 @@ WHERE queue_id = $1
 UPDATE matchmaking_queue
 SET status = 'matched'
 WHERE queue_id = $1;
+
+-- name: LockOldestStaleWaitingQueueEntry :one
+-- Finds and row-locks the single oldest still-waiting queue entry created at
+-- or before the cutoff, for pairing against a bot. FOR UPDATE SKIP LOCKED
+-- lets the caller loop this one row at a time without colliding with the
+-- regular human-pairing pass's own locks on the same table.
+SELECT *
+FROM matchmaking_queue
+WHERE status = 'waiting'
+  AND created_at <= $1
+ORDER BY created_at
+LIMIT 1
+FOR UPDATE SKIP LOCKED;

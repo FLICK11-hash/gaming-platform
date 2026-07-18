@@ -17,7 +17,7 @@ SET coin_balance = coin_balance + $1::bigint,
     last_daily_reward_at = now()
 WHERE user_id = $2
   AND (last_daily_reward_at IS NULL OR last_daily_reward_at <= now() - INTERVAL '24 hours')
-RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames
+RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames, is_bot
 `
 
 type ClaimDailyLoginRewardParams struct {
@@ -47,6 +47,7 @@ func (q *Queries) ClaimDailyLoginReward(ctx context.Context, arg ClaimDailyLogin
 		&i.SelectedAvatar,
 		&i.SelectedBadge,
 		&i.SelectedProfileFrames,
+		&i.IsBot,
 	)
 	return i, err
 }
@@ -76,7 +77,7 @@ VALUES (
     1000,
     'rook'
 )
-RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames
+RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames, is_bot
 `
 
 type CreateUserParams struct {
@@ -105,12 +106,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.SelectedAvatar,
 		&i.SelectedBadge,
 		&i.SelectedProfileFrames,
+		&i.IsBot,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames FROM users WHERE email = $1
+SELECT user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames, is_bot FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -133,12 +135,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.SelectedAvatar,
 		&i.SelectedBadge,
 		&i.SelectedProfileFrames,
+		&i.IsBot,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames FROM users WHERE user_id = $1
+SELECT user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames, is_bot FROM users WHERE user_id = $1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, userID int64) (User, error) {
@@ -161,12 +164,13 @@ func (q *Queries) GetUserByID(ctx context.Context, userID int64) (User, error) {
 		&i.SelectedAvatar,
 		&i.SelectedBadge,
 		&i.SelectedProfileFrames,
+		&i.IsBot,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames FROM users WHERE username = $1
+SELECT user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames, is_bot FROM users WHERE username = $1
 `
 
 func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
@@ -189,13 +193,14 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.SelectedAvatar,
 		&i.SelectedBadge,
 		&i.SelectedProfileFrames,
+		&i.IsBot,
 	)
 	return i, err
 }
 
 const setSelectedAvatar = `-- name: SetSelectedAvatar :one
 UPDATE users SET selected_avatar = $2 WHERE user_id = $1
-RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames
+RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames, is_bot
 `
 
 type SetSelectedAvatarParams struct {
@@ -223,13 +228,14 @@ func (q *Queries) SetSelectedAvatar(ctx context.Context, arg SetSelectedAvatarPa
 		&i.SelectedAvatar,
 		&i.SelectedBadge,
 		&i.SelectedProfileFrames,
+		&i.IsBot,
 	)
 	return i, err
 }
 
 const setSelectedBadge = `-- name: SetSelectedBadge :one
 UPDATE users SET selected_badge = $2 WHERE user_id = $1
-RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames
+RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames, is_bot
 `
 
 type SetSelectedBadgeParams struct {
@@ -257,6 +263,7 @@ func (q *Queries) SetSelectedBadge(ctx context.Context, arg SetSelectedBadgePara
 		&i.SelectedAvatar,
 		&i.SelectedBadge,
 		&i.SelectedProfileFrames,
+		&i.IsBot,
 	)
 	return i, err
 }
@@ -269,7 +276,7 @@ SET selected_profile_frames = CASE
     ELSE array_append(selected_profile_frames, $1::varchar)
 END
 WHERE user_id = $2
-RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames
+RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames, is_bot
 `
 
 type ToggleSelectedProfileFrameParams struct {
@@ -301,6 +308,7 @@ func (q *Queries) ToggleSelectedProfileFrame(ctx context.Context, arg ToggleSele
 		&i.SelectedAvatar,
 		&i.SelectedBadge,
 		&i.SelectedProfileFrames,
+		&i.IsBot,
 	)
 	return i, err
 }
@@ -312,7 +320,7 @@ SET current_elo = $2,
     total_losses = $4,
     num_games = $5
 WHERE user_id = $1
-RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames
+RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames, is_bot
 `
 
 type UpdateUserEloAndStatsParams struct {
@@ -349,6 +357,7 @@ func (q *Queries) UpdateUserEloAndStats(ctx context.Context, arg UpdateUserEloAn
 		&i.SelectedAvatar,
 		&i.SelectedBadge,
 		&i.SelectedProfileFrames,
+		&i.IsBot,
 	)
 	return i, err
 }

@@ -168,6 +168,15 @@ func boardFull(board Board) bool {
 	return true
 }
 
+// CheckWin reports whether a chip of color placed at (row, col) on board
+// completes a run of four. Exported so the bot package can evaluate
+// hypothetical moves against the same win-detection logic the engine itself
+// uses, without duplicating it.
+func CheckWin(board Board, row, col int, color Color) bool {
+	won, _ := checkWin(board, row, col, int(color))
+	return won
+}
+
 // checkWin reports whether the chip just placed at (row, col) completes a
 // run of four for color, checking all four axes (horizontal, vertical, and
 // both diagonals) by collecting outward from the placed chip in each

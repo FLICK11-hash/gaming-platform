@@ -145,6 +145,7 @@ type User struct {
 	SelectedAvatar        string             `json:"selected_avatar"`
 	SelectedBadge         pgtype.Text        `json:"selected_badge"`
 	SelectedProfileFrames []string           `json:"selected_profile_frames"`
+	IsBot                 bool               `json:"is_bot"`
 }
 
 type UserCosmetic struct {
