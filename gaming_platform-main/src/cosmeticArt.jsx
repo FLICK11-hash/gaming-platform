@@ -48,64 +48,103 @@ export const PROFILE_FRAMES = {
   'frankenstein-gym': { emoji: '🧟💪', label: 'Built Different (Literally)' },
   'king-arthur-wholesale': { emoji: '⚔️🛒', label: 'Sword in the Bulk Aisle' },
   'alice-wonderland-ai': { emoji: '🐇🤖', label: 'Curiouser and Curiouser Prompts' },
-  'medusa-salon': { emoji: '🐍💇', label: 'Snake Charmer Salon' },
-  // Second batch of public-domain character x modern-day-job mashups.
-  'scrooge-refunds': { emoji: '👴💰', label: 'Bah, Humbug Refund Policy' },
-  'jekyll-hyde-video-call': { emoji: '🧑‍⚕️😈', label: 'Great on Camera, Menace Off It' },
-  'red-riding-hood-influencer': { emoji: '🧺🐺', label: 'What Big Eyes You Have, Subscribe' },
-  'big-bad-wolf-realtor': { emoji: '🐺🏠', label: 'Blows Down Deals, Not Houses' },
-  'quasimodo-notifications': { emoji: '🔔😖', label: 'Ringing All Day, Answering None' },
-  'ahab-viral': { emoji: '🐋⚓', label: 'Chasing One White Whale (His Engagement Rate)' },
-  'long-john-silver-substitute': { emoji: '🦜🦵', label: 'Substitute Teacher, Full Mutiny' },
-  'puss-in-boots-fashion': { emoji: '🐈👢', label: 'Selling Boots, Slaying Looks' }
+  'medusa-salon': { emoji: '🐍💇', label: 'Snake Charmer Salon' }
+}
+
+// Tier palettes for the badge medallion artwork. Each tier gets its own
+// metallic gradient, rim color, and (for the top two tiers) sparkle accents,
+// so pricier cosmetics visibly read as more prestigious.
+const TIER_COLORS = {
+  bronze: { light: '#e8a86c', base: '#b87333', dark: '#7a4a1f', rim: '#f2c894' },
+  silver: { light: '#f4f8fc', base: '#c7d2e0', dark: '#8b98ab', rim: '#ffffff' },
+  gold: { light: '#ffe9a8', base: '#f5c542', dark: '#a8791b', rim: '#fff3c4' },
+  legendary: { light: '#e9d5ff', base: '#a855f7', dark: '#6b21a8', rim: '#f3e8ff' }
 }
 
 function tierFor(coinPrice) {
-  if (coinPrice >= 1500) return 'gold'
-  if (coinPrice >= 500) return 'silver'
+  if (coinPrice >= 50000) return 'legendary'
+  if (coinPrice >= 10000) return 'gold'
+  if (coinPrice >= 2000) return 'silver'
   return 'bronze'
+}
+
+// Hexagonal "achievement badge" medallion: a metallic gradient shield with a
+// bevelled inner rim, a diagonal shine highlight, and sparkle accents on the
+// top two tiers, with whatever glyph/emoji passed as children centered on
+// top. This is the actual artwork for every cosmetic icon, rather than a
+// bare emoji sitting in a flat circle.
+function BadgeMedallion({ tier, children }) {
+  const c = TIER_COLORS[tier] || TIER_COLORS.bronze
+  const gradId = `badge-grad-${tier}`
+
+  return (
+    <div className={`cosmetic-badge tier-${tier}`} aria-hidden="true">
+      <svg viewBox="0 0 100 100" className="cosmetic-badge-svg">
+        <defs>
+          <linearGradient id={gradId} x1="10%" y1="0%" x2="90%" y2="100%">
+            <stop offset="0%" stopColor={c.light} />
+            <stop offset="55%" stopColor={c.base} />
+            <stop offset="100%" stopColor={c.dark} />
+          </linearGradient>
+        </defs>
+        <polygon
+          points="50,96 12,73 12,27 50,4 88,27 88,73"
+          fill={`url(#${gradId})`}
+          stroke={c.dark}
+          strokeWidth="3"
+        />
+        <polygon
+          points="50,90 16,70 16,30 50,10 84,30 84,70"
+          fill="none"
+          stroke={c.rim}
+          strokeWidth="1.5"
+          opacity="0.85"
+        />
+        <ellipse cx="36" cy="26" rx="20" ry="8" fill="#ffffff" opacity="0.28" transform="rotate(-18 36 26)" />
+        {(tier === 'gold' || tier === 'legendary') && (
+          <g fill={c.rim}>
+            <circle cx="50" cy="13" r="2.2" />
+            <circle cx="19" cy="50" r="2.2" />
+            <circle cx="81" cy="50" r="2.2" />
+          </g>
+        )}
+      </svg>
+      <div className="cosmetic-badge-content">{children}</div>
+    </div>
+  )
 }
 
 // A small visual "product photo" for a cosmetic shop item: an avatar shows
 // its chess-piece glyph, a badge shows its icon, a profile frame shows its
-// pun emoji, each tinted by price tier so pricier items read as more
-// prestigious at a glance.
+// pun emoji, all rendered on a tiered badge medallion so pricier items read
+// as more prestigious at a glance.
 export default function CosmeticIcon({ item }) {
   const tier = tierFor(item.coin_price)
 
   if (item.item_type === 'avatar') {
     const glyph = AVATAR_GLYPHS[item.image_key] || '♟'
     return (
-      <div
-        className={`cosmetic-icon cosmetic-icon-avatar tier-${tier}`}
-        aria-hidden="true"
-      >
-        <span>{glyph}</span>
-      </div>
+      <BadgeMedallion tier={tier}>
+        <span className="cosmetic-glyph">{glyph}</span>
+      </BadgeMedallion>
     )
   }
 
   if (item.item_type === 'profile_frame') {
     const frame = PROFILE_FRAMES[item.image_key]
     return (
-      <div
-        className={`cosmetic-icon cosmetic-icon-avatar tier-${tier}`}
-        aria-hidden="true"
-      >
-        <span>{frame?.emoji || '🎉'}</span>
-      </div>
+      <BadgeMedallion tier={tier}>
+        <span className="cosmetic-glyph">{frame?.emoji || '🎉'}</span>
+      </BadgeMedallion>
     )
   }
 
   const Icon = BADGE_ICONS[item.image_key] || Award
 
   return (
-    <div
-      className={`cosmetic-icon cosmetic-icon-badge tier-${tier}`}
-      aria-hidden="true"
-    >
-      <Icon size={28} strokeWidth={2.25} />
-    </div>
+    <BadgeMedallion tier={tier}>
+      <Icon size={26} strokeWidth={2.25} color="#1e293b" />
+    </BadgeMedallion>
   )
 }
 
