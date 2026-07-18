@@ -48,7 +48,16 @@ export const PROFILE_FRAMES = {
   'frankenstein-gym': { emoji: '🧟💪', label: 'Built Different (Literally)' },
   'king-arthur-wholesale': { emoji: '⚔️🛒', label: 'Sword in the Bulk Aisle' },
   'alice-wonderland-ai': { emoji: '🐇🤖', label: 'Curiouser and Curiouser Prompts' },
-  'medusa-salon': { emoji: '🐍💇', label: 'Snake Charmer Salon' }
+  'medusa-salon': { emoji: '🐍💇', label: 'Snake Charmer Salon' },
+  // Second batch of public-domain character x modern-day-job mashups.
+  'scrooge-refunds': { emoji: '👴💰', label: 'Bah, Humbug Refund Policy' },
+  'jekyll-hyde-video-call': { emoji: '🧑‍⚕️😈', label: 'Great on Camera, Menace Off It' },
+  'red-riding-hood-influencer': { emoji: '🧺🐺', label: 'What Big Eyes You Have, Subscribe' },
+  'big-bad-wolf-realtor': { emoji: '🐺🏠', label: 'Blows Down Deals, Not Houses' },
+  'quasimodo-notifications': { emoji: '🔔😖', label: 'Ringing All Day, Answering None' },
+  'ahab-viral': { emoji: '🐋⚓', label: 'Chasing One White Whale (His Engagement Rate)' },
+  'long-john-silver-substitute': { emoji: '🦜🦵', label: 'Substitute Teacher, Full Mutiny' },
+  'puss-in-boots-fashion': { emoji: '🐈👢', label: 'Selling Boots, Slaying Looks' }
 }
 
 function tierFor(coinPrice) {
