@@ -339,31 +339,38 @@
   line-height: 1.4;
 }
 
-.cosmetic-icon {
+.cosmetic-badge {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.cosmetic-badge-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.4));
+}
+
+.cosmetic-badge-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  color: #0f172a;
 }
 
-.cosmetic-icon-avatar span {
-  font-size: 34px;
+.cosmetic-glyph {
+  font-size: 30px;
   line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
 }
 
-.cosmetic-icon.tier-bronze {
-  background: linear-gradient(135deg, #d97757, #92400e);
-}
-
-.cosmetic-icon.tier-silver {
-  background: linear-gradient(135deg, #e2e8f0, #94a3b8);
-}
-
-.cosmetic-icon.tier-gold {
-  background: linear-gradient(135deg, #fde68a, #d97706);
+.cosmetic-badge.tier-legendary .cosmetic-badge-svg {
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 10px rgba(168, 85, 247, 0.55));
 }
 
 .profile-frame-banner {
