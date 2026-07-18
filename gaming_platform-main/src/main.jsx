@@ -776,7 +776,10 @@ function Dashboard({
           matchId={activeMatch.match_id}
           token={token}
           userId={user.user_id}
-          onExit={() => setActiveMatch(null)}
+          onExit={() => {
+            setActiveMatch(null)
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
         />
       )}
 
