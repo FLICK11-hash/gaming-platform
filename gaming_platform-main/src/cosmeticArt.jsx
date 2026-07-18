@@ -39,7 +39,16 @@ export const PROFILE_FRAMES = {
   zeus: { emoji: '⚡', label: 'Thunderously Good' },
   'paul-bunyan': { emoji: '🪓', label: 'Larger Than Life W' },
   'uncle-sam': { emoji: '🎩', label: 'I Want YOU... To Lose' },
-  'bat-guy': { emoji: '🏏', label: 'Bat Outta Nowhere' }
+  'bat-guy': { emoji: '🏏', label: 'Bat Outta Nowhere' },
+  // Public-domain character x modern-day-job/hobby mashups.
+  'sherlock-holmes-gamer': { emoji: '🕵️🎮', label: 'Elementary, My Dear K/D Ratio' },
+  'dracula-drivethru': { emoji: '🧛🍟', label: 'Sucks at Small Talk, Great at Fries' },
+  'robin-hood-gig': { emoji: '🏹🛵', label: 'Steals From the Rich, Delivers to Everyone' },
+  'winnie-pooh-hedgefund': { emoji: '🐻📈', label: 'Bearish Market, Bullish on Honey' },
+  'frankenstein-gym': { emoji: '🧟💪', label: 'Built Different (Literally)' },
+  'king-arthur-wholesale': { emoji: '⚔️🛒', label: 'Sword in the Bulk Aisle' },
+  'alice-wonderland-ai': { emoji: '🐇🤖', label: 'Curiouser and Curiouser Prompts' },
+  'medusa-salon': { emoji: '🐍💇', label: 'Snake Charmer Salon' }
 }
 
 function tierFor(coinPrice) {
