@@ -310,7 +310,10 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   function remainingFor(uid, colorForUid) {
     const base = clocks[String(uid)]
     if (base == null) return null
-    if (turn !== colorForUid) return base
+    // Once the match is over, freeze the display at whatever the clocks
+    // last reported instead of continuing to count down against a turn
+    // that no longer means anything.
+    if (gameOver || turn !== colorForUid) return base
     const elapsed = Math.floor((Date.now() - clocksSyncedAt.current) / 1000)
     return Math.max(0, base - elapsed)
   }

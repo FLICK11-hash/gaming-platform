@@ -38,7 +38,8 @@ export const PROFILE_FRAMES = {
   'sun-wukong': { emoji: '🐒', label: 'Monkey Business Champion' },
   zeus: { emoji: '⚡', label: 'Thunderously Good' },
   'paul-bunyan': { emoji: '🪓', label: 'Larger Than Life W' },
-  'uncle-sam': { emoji: '🎩', label: 'I Want YOU... To Lose' }
+  'uncle-sam': { emoji: '🎩', label: 'I Want YOU... To Lose' },
+  'bat-guy': { emoji: '🏏', label: 'Bat Outta Nowhere' }
 }
 
 function tierFor(coinPrice) {
