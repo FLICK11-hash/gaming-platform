@@ -284,6 +284,33 @@
   background: #1e293b;
 }
 
+.cosmetics-grid-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cosmetics-grid-wrap::before,
+.cosmetics-grid-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 4px;
+  width: 32px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cosmetics-grid-wrap::before {
+  left: 0;
+  background: linear-gradient(to right, #111827, transparent);
+}
+
+.cosmetics-grid-wrap::after {
+  right: 0;
+  background: linear-gradient(to left, #111827, transparent);
+}
+
 .cosmetics-grid {
   display: flex;
   gap: 14px;
