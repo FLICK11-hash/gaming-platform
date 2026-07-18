@@ -27,7 +27,18 @@ export const PROFILE_FRAMES = {
   'nacho-average': { emoji: '🌮', label: 'Nacho Average Player' },
   'holy-guacamole': { emoji: '🥑', label: 'Holy Guacamole' },
   'donut-even': { emoji: '🍩', label: 'Donut Even Try It' },
-  'legend-dairy': { emoji: '🧀', label: 'Legend-dairy' }
+  'legend-dairy': { emoji: '🧀', label: 'Legend-dairy' },
+  // Public-domain literary/folklore characters, played for laughs.
+  dracula: { emoji: '🧛', label: 'Fangs for the Win' },
+  'sherlock-holmes': { emoji: '🕵️', label: 'Elementary, My Dear Winner' },
+  frankenstein: { emoji: '🧟', label: "It's Alive! (And Winning)" },
+  medusa: { emoji: '🐍', label: 'Petrifying Performance' },
+  'robin-hood': { emoji: '🏹', label: 'Robbing the Rich (of Their Coins)' },
+  'king-arthur': { emoji: '⚔️', label: 'Sword in the Stone-Cold Killer' },
+  'sun-wukong': { emoji: '🐒', label: 'Monkey Business Champion' },
+  zeus: { emoji: '⚡', label: 'Thunderously Good' },
+  'paul-bunyan': { emoji: '🪓', label: 'Larger Than Life W' },
+  'uncle-sam': { emoji: '🎩', label: 'I Want YOU... To Lose' }
 }
 
 function tierFor(coinPrice) {

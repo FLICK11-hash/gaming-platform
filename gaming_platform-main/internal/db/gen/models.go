@@ -67,7 +67,7 @@ type MatchClock struct {
 	MatchID          int64              `json:"match_id"`
 	UserID           int64              `json:"user_id"`
 	StartingSeconds  int32              `json:"starting_seconds"`
-	RemainingSeconds int32              `json:"remaining_seconds"`
+	RemainingSeconds float64            `json:"remaining_seconds"`
 	IsCurrentTurn    pgtype.Bool        `json:"is_current_turn"`
 	LastStartedAt    pgtype.Timestamptz `json:"last_started_at"`
 }

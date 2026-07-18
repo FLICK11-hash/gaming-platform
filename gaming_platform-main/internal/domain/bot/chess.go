@@ -117,12 +117,20 @@ func promoStr(t nchess.PieceType) string {
 	return t.String()
 }
 
-// chooseEasyMove plays mostly at random, but about half the time greedily
-// grabs whatever material is available one ply ahead (i.e. without
-// considering the opponent's reply), so it isn't oblivious to hanging a
-// free piece right in front of it.
+// easyBlunderChance is how often RookieBot ignores its own evaluation and
+// plays a purely random legal move instead - enough to keep it clearly
+// weaker than GrandmasterBot's full 2-ply search, without being the
+// mostly-random opponent it used to be.
+const easyBlunderChance = 0.15
+
+// chooseEasyMove greedily grabs whatever material is available one ply
+// ahead (i.e. without considering the opponent's reply), so it develops
+// sensibly and doesn't hang free pieces sitting in front of it, but it can't
+// see far enough to avoid a two-move tactic the way chooseHardMove can. It
+// occasionally (easyBlunderChance) plays a random move instead, so it still
+// makes real mistakes.
 func chooseEasyMove(game *nchess.Game, moves []*nchess.Move) *nchess.Move {
-	if rand.Intn(2) == 0 {
+	if rand.Float64() < easyBlunderChance {
 		return moves[rand.Intn(len(moves))]
 	}
 

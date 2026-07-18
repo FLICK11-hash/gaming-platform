@@ -1,6 +1,6 @@
 -- name: CreateMatchClock :one
 INSERT INTO match_clocks (match_id, user_id, starting_seconds, remaining_seconds, is_current_turn, last_started_at)
-VALUES ($1, $2, $3, $3, $4, $5)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
 -- name: ListMatchClocksByMatch :many

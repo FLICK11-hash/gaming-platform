@@ -13,16 +13,17 @@ import (
 
 const createMatchClock = `-- name: CreateMatchClock :one
 INSERT INTO match_clocks (match_id, user_id, starting_seconds, remaining_seconds, is_current_turn, last_started_at)
-VALUES ($1, $2, $3, $3, $4, $5)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING match_clock_id, match_id, user_id, starting_seconds, remaining_seconds, is_current_turn, last_started_at
 `
 
 type CreateMatchClockParams struct {
-	MatchID         int64              `json:"match_id"`
-	UserID          int64              `json:"user_id"`
-	StartingSeconds int32              `json:"starting_seconds"`
-	IsCurrentTurn   pgtype.Bool        `json:"is_current_turn"`
-	LastStartedAt   pgtype.Timestamptz `json:"last_started_at"`
+	MatchID          int64              `json:"match_id"`
+	UserID           int64              `json:"user_id"`
+	StartingSeconds  int32              `json:"starting_seconds"`
+	RemainingSeconds float64            `json:"remaining_seconds"`
+	IsCurrentTurn    pgtype.Bool        `json:"is_current_turn"`
+	LastStartedAt    pgtype.Timestamptz `json:"last_started_at"`
 }
 
 func (q *Queries) CreateMatchClock(ctx context.Context, arg CreateMatchClockParams) (MatchClock, error) {
@@ -30,6 +31,7 @@ func (q *Queries) CreateMatchClock(ctx context.Context, arg CreateMatchClockPara
 		arg.MatchID,
 		arg.UserID,
 		arg.StartingSeconds,
+		arg.RemainingSeconds,
 		arg.IsCurrentTurn,
 		arg.LastStartedAt,
 	)
@@ -111,7 +113,7 @@ RETURNING match_clock_id, match_id, user_id, starting_seconds, remaining_seconds
 
 type UpdateMatchClockParams struct {
 	MatchClockID     int64              `json:"match_clock_id"`
-	RemainingSeconds int32              `json:"remaining_seconds"`
+	RemainingSeconds float64            `json:"remaining_seconds"`
 	IsCurrentTurn    pgtype.Bool        `json:"is_current_turn"`
 	LastStartedAt    pgtype.Timestamptz `json:"last_started_at"`
 }

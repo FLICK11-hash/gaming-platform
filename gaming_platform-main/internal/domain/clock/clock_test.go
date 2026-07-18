@@ -8,7 +8,7 @@ import (
 func TestRemainingAt_NotCurrentTurn(t *testing.T) {
 	s := State{RemainingSeconds: 45, IsCurrentTurn: false}
 	if got := RemainingAt(s, time.Now().Add(time.Hour)); got != 45 {
-		t.Errorf("RemainingAt = %d, want 45 (clock not running)", got)
+		t.Errorf("RemainingAt = %v, want 45 (clock not running)", got)
 	}
 }
 
@@ -18,7 +18,7 @@ func TestRemainingAt_CountsDown(t *testing.T) {
 
 	got := RemainingAt(s, start.Add(10*time.Second))
 	if got != 50 {
-		t.Errorf("RemainingAt after 10s = %d, want 50", got)
+		t.Errorf("RemainingAt after 10s = %v, want 50", got)
 	}
 }
 
@@ -28,7 +28,7 @@ func TestRemainingAt_FloorsAtZero(t *testing.T) {
 
 	got := RemainingAt(s, start.Add(90*time.Second))
 	if got != 0 {
-		t.Errorf("RemainingAt after 90s on a 60s clock = %d, want 0", got)
+		t.Errorf("RemainingAt after 90s on a 60s clock = %v, want 0", got)
 	}
 }
 

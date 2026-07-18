@@ -109,13 +109,36 @@ func negamax(board connectfour.Board, toMove connectfour.Color, depth int) int {
 	return best
 }
 
-// chooseEasyC4Move blocks the opponent's immediate win about half the time,
-// otherwise (and the rest of the time) just drops into a random open column.
+// chooseEasyC4Move blocks the opponent's immediate win almost always, and
+// otherwise greedily plays the best single-ply center-weighted column
+// instead of a purely random one, so it develops toward the center like a
+// real (if short-sighted) player rather than scattering chips at random. It
+// still blunders occasionally (easyBlunderChance) with a random column.
 func chooseEasyC4Move(board connectfour.Board, turn connectfour.Color, cols []int) int {
-	if blockCol, ok := findWinningColumn(board, other(turn), cols); ok && rand.Intn(2) == 0 {
+	if blockCol, ok := findWinningColumn(board, other(turn), cols); ok && rand.Float64() > easyBlunderChance {
 		return blockCol
 	}
-	return cols[rand.Intn(len(cols))]
+
+	if rand.Float64() < easyBlunderChance {
+		return cols[rand.Intn(len(cols))]
+	}
+
+	bestCol := cols[0]
+	bestScore := -c4WinScore * 2
+	for _, c := range cols {
+		row := dropRow(board, c)
+		b := board
+		b[row][c] = int(turn)
+		score := heuristic(b, turn)
+		if connectfour.CheckWin(b, row, c, turn) {
+			score = c4WinScore
+		}
+		if score > bestScore {
+			bestScore = score
+			bestCol = c
+		}
+	}
+	return bestCol
 }
 
 // chooseHardC4Move searches several plies ahead (own move + reply, repeated)
