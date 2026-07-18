@@ -801,6 +801,7 @@ function Dashboard({
             <ChevronLeft size={22} />
           </button>
 
+          <div className="cosmetics-grid-wrap">
           <div className="cosmetics-grid" ref={cosmeticsScrollRef}>
             {cosmetics.map(item => {
               const equipped = isCosmeticEquipped(item, user)
@@ -840,6 +841,7 @@ function Dashboard({
                 </div>
               )
             })}
+          </div>
           </div>
 
           <button

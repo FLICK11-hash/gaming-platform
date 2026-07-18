@@ -328,6 +328,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   }
 
   function resign() {
+    if (!window.confirm('Resign this match? This counts as a loss.')) return
     wsRef.current?.readyState === WebSocket.OPEN &&
       wsRef.current.send(JSON.stringify({ type: 'resign' }))
   }
@@ -522,7 +523,8 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
           {!waiting && !gameOver && <p className={isMyTurn ? 'turn-yours' : 'muted'}>{isMyTurn ? 'Your move' : "Opponent's move"}</p>}
           {!isMyTurn && !gameOver && !waiting && (premove || premoveColumn != null) && (
             <p className="notice premove-notice">
-              ⏩ Premove queued (costs 0.2s) <button type="button" className="link-button" onClick={cancelPremove}>Cancel</button>
+              ⏩ Premove queued: {premove ? `${premove.from} → ${premove.to}` : `column ${premoveColumn + 1}`} (costs 0.2s){' '}
+              <button type="button" className="link-button" onClick={cancelPremove}>Cancel</button>
             </p>
           )}
           {notice && <p className="notice">{notice}</p>}
