@@ -182,6 +182,37 @@ func (q *Queries) ListWaitingQueueEntries(ctx context.Context, arg ListWaitingQu
 	return items, nil
 }
 
+const lockOldestStaleWaitingQueueEntry = `-- name: LockOldestStaleWaitingQueueEntry :one
+SELECT queue_id, user_id, game_type, min_elo, max_elo, status, created_at, game_mode, coin_wager
+FROM matchmaking_queue
+WHERE status = 'waiting'
+  AND created_at <= $1
+ORDER BY created_at
+LIMIT 1
+FOR UPDATE SKIP LOCKED
+`
+
+// Finds and row-locks the single oldest still-waiting queue entry created at
+// or before the cutoff, for pairing against a bot. FOR UPDATE SKIP LOCKED
+// lets the caller loop this one row at a time without colliding with the
+// regular human-pairing pass's own locks on the same table.
+func (q *Queries) LockOldestStaleWaitingQueueEntry(ctx context.Context, createdAt pgtype.Timestamptz) (MatchmakingQueue, error) {
+	row := q.db.QueryRow(ctx, lockOldestStaleWaitingQueueEntry, createdAt)
+	var i MatchmakingQueue
+	err := row.Scan(
+		&i.QueueID,
+		&i.UserID,
+		&i.GameType,
+		&i.MinElo,
+		&i.MaxElo,
+		&i.Status,
+		&i.CreatedAt,
+		&i.GameMode,
+		&i.CoinWager,
+	)
+	return i, err
+}
+
 const markQueueEntryMatched = `-- name: MarkQueueEntryMatched :exec
 UPDATE matchmaking_queue
 SET status = 'matched'

@@ -360,6 +360,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
             uid={whiteId}
             username={matchInfo.player_1_username}
             badgeKey={matchInfo.player_1_badge}
+            isBot={matchInfo.player_1_is_bot}
             seconds={remainingFor(whiteId, player1Color)}
             active={turn === player1Color && !gameOver}
             frameKeys={matchInfo.player_1_profile_frames}
@@ -425,6 +426,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
             uid={blackId}
             username={matchInfo.player_2_username}
             badgeKey={matchInfo.player_2_badge}
+            isBot={matchInfo.player_2_is_bot}
             seconds={remainingFor(blackId, player2Color)}
             active={turn === player2Color && !gameOver}
             frameKeys={matchInfo.player_2_profile_frames}
@@ -469,7 +471,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   )
 }
 
-function PlayerBar({ label, uid, username, badgeKey, seconds, active, frameKeys }) {
+function PlayerBar({ label, uid, username, badgeKey, isBot, seconds, active, frameKeys }) {
   const mm = seconds == null ? '--' : String(Math.floor(seconds / 60)).padStart(2, '0')
   const ss = seconds == null ? '--' : String(seconds % 60).padStart(2, '0')
   return (
@@ -477,6 +479,7 @@ function PlayerBar({ label, uid, username, badgeKey, seconds, active, frameKeys 
       <div className={`player-bar ${active ? 'active' : ''}`}>
         <span>
           {label} · {username || `#${uid}`}
+          {isBot && <span className="bot-indicator" title="Computer opponent"> 🤖 Bot</span>}
           <EquippedBadge badgeKey={badgeKey} />
         </span>
         <strong className={seconds != null && seconds <= 10 ? 'clock-low' : ''}>{mm}:{ss}</strong>

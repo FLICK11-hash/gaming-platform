@@ -32,6 +32,7 @@
 .countdown-overlay strong{font-size:64px;color:#eef2ff;line-height:1}
 .player-bar{display:flex;align-items:center;justify-content:space-between;background:#020617;border:1px solid #263148;border-radius:12px;padding:8px 14px;margin:8px 0}
 .player-bar.active{border-color:#3b82f6}
+.bot-indicator{color:#a78bfa;font-size:12px;font-weight:600;margin-left:6px}
 .player-bar strong{font-variant-numeric:tabular-nums;font-size:18px}
 .clock-low{color:#f87171}
 .chess-side{display:grid;gap:12px;align-content:start}

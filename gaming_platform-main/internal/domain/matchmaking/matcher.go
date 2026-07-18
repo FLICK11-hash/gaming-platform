@@ -7,10 +7,13 @@ import (
 	"sort"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gaming_platform/internal/db/gen"
 	"gaming_platform/internal/dbutil"
+	"gaming_platform/internal/domain/bot"
 	"gaming_platform/internal/domain/tournament"
 )
 
@@ -76,7 +79,155 @@ func (m *Matcher) tick(ctx context.Context) error {
 		}
 	}
 
+	// A second, independent pass: any entry still waiting after
+	// bot.MatchWait gets seated against a bot instead of a human, so nobody
+	// waits forever for an opponent that never shows up. This runs after the
+	// human-pairing pass above so a real opponent is always preferred over a
+	// bot when one's available in the same tick.
+	if err := m.matchStaleEntriesWithBots(ctx); err != nil {
+		log.Printf("matchmaking: bot-matching error: %v", err)
+	}
+
 	return nil
+}
+
+// matchStaleEntriesWithBots seats every queue entry that's been waiting at
+// least bot.MatchWait against a bot opponent, one entry per transaction, in
+// a loop until none are left.
+func (m *Matcher) matchStaleEntriesWithBots(ctx context.Context) error {
+	cutoff := time.Now().Add(-bot.MatchWait)
+	for {
+		matched, err := m.matchOneStaleEntryWithBot(ctx, cutoff)
+		if err != nil {
+			return err
+		}
+		if !matched {
+			return nil
+		}
+	}
+}
+
+// matchOneStaleEntryWithBot locks and seats a single stale waiting queue
+// entry against a bot opponent chosen by the human's current Elo, mirroring
+// the tournament/match shape createOneVsOneMatch produces for two humans.
+// It reports whether an entry was found (and processed) at all, so the
+// caller can loop until the queue is drained rather than assuming exactly
+// one stale entry exists per tick.
+func (m *Matcher) matchOneStaleEntryWithBot(ctx context.Context, cutoff time.Time) (bool, error) {
+	tx, err := m.pool.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback(ctx)
+
+	q := db.New(m.pool).WithTx(tx)
+
+	entry, err := q.LockOldestStaleWaitingQueueEntry(
+		ctx,
+		pgtype.Timestamptz{Time: cutoff, Valid: true},
+	)
+	if err == pgx.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	human, err := q.GetUserByID(ctx, entry.UserID)
+	if err != nil {
+		return false, err
+	}
+
+	// The human's balance may have dropped below the wager since they
+	// joined the queue (e.g. spent on a cosmetic); rather than fail the
+	// whole tick, just cancel the stale entry and move on to the next one.
+	if human.CoinBalance < entry.CoinWager {
+		if err := q.CancelQueueEntry(ctx, db.CancelQueueEntryParams{
+			QueueID: entry.QueueID,
+			UserID:  entry.UserID,
+		}); err != nil {
+			return false, err
+		}
+		return true, tx.Commit(ctx)
+	}
+
+	botUsername := bot.UsernameForOpponentElo(dbutil.PGInt4ToInt(human.CurrentElo))
+	botUser, err := q.GetUserByUsername(ctx, botUsername)
+	if err != nil {
+		return false, fmt.Errorf("look up bot account %s: %w", botUsername, err)
+	}
+
+	totalCoinPool := entry.CoinWager * 2
+
+	createdTournament, err := q.CreateTournament(ctx, db.CreateTournamentParams{
+		GameType:        entry.GameType,
+		GameMode:        entry.GameMode,
+		Status:          "waiting",
+		CoinWager:       entry.CoinWager,
+		TotalCoinPool:   totalCoinPool,
+		WinnerCoinPrize: totalCoinPool,
+		BonusCoins:      0,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	if _, err := q.CreateTournamentPlayer(ctx, db.CreateTournamentPlayerParams{
+		TournamentID: createdTournament.TournamentID,
+		UserID:       human.UserID,
+		SeedNumber:   dbutil.IntToPGInt4(1),
+	}); err != nil {
+		return false, err
+	}
+	if _, err := q.CreateTournamentPlayer(ctx, db.CreateTournamentPlayerParams{
+		TournamentID: createdTournament.TournamentID,
+		UserID:       botUser.UserID,
+		SeedNumber:   dbutil.IntToPGInt4(2),
+	}); err != nil {
+		return false, err
+	}
+
+	if err := q.MarkQueueEntryMatched(ctx, entry.QueueID); err != nil {
+		return false, err
+	}
+
+	for _, uid := range []int64{human.UserID, botUser.UserID} {
+		if _, err := q.AdjustUserCoinBalance(ctx, db.AdjustUserCoinBalanceParams{
+			UserID: uid,
+			Delta:  -entry.CoinWager,
+		}); err != nil {
+			return false, fmt.Errorf("debit wager for user %d: %w", uid, err)
+		}
+		if _, err := q.CreateCoinTransaction(ctx, db.CreateCoinTransactionParams{
+			UserID:              uid,
+			Amount:              -entry.CoinWager,
+			TransactionType:     "match_entry",
+			Description:         dbutil.TextToPGText("Entry wager for " + entry.GameType + " vs bot"),
+			RelatedTournamentID: dbutil.Int64ToPGInt8(createdTournament.TournamentID),
+		}); err != nil {
+			return false, err
+		}
+	}
+
+	// The human is always seated as player 1 (moves first in both games);
+	// the match service triggers the bot's own moves autonomously whenever
+	// it becomes player 2's turn.
+	if _, err := q.CreateMatch(ctx, db.CreateMatchParams{
+		TournamentID: createdTournament.TournamentID,
+		GameType:     entry.GameType,
+		Round:        "final",
+		MatchNumber:  dbutil.IntToPGInt4(1),
+		Player1ID:    human.UserID,
+		Player2ID:    botUser.UserID,
+	}); err != nil {
+		return false, err
+	}
+
+	if _, err := q.StartTournament(ctx, createdTournament.TournamentID); err != nil {
+		return false, err
+	}
+
+	return true, tx.Commit(ctx)
 }
 
 type candidate struct {

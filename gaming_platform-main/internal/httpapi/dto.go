@@ -113,6 +113,8 @@ type matchResponse struct {
 	Player2Username      string   `json:"player_2_username,omitempty"`
 	Player1Badge         string   `json:"player_1_badge,omitempty"`
 	Player2Badge         string   `json:"player_2_badge,omitempty"`
+	Player1IsBot         bool     `json:"player_1_is_bot,omitempty"`
+	Player2IsBot         bool     `json:"player_2_is_bot,omitempty"`
 	CurrentTurnUserID    *int64   `json:"current_turn_user_id,omitempty"`
 	WinnerUserID         *int64   `json:"winner_user_id,omitempty"`
 	Status               string   `json:"status"`
@@ -152,6 +154,8 @@ func withPlayerProfiles(resp matchResponse, player1, player2 db.User) matchRespo
 	resp.Player2Badge = dbutil.PGTextToString(player2.SelectedBadge)
 	resp.Player1ProfileFrames = nonNilStrings(player1.SelectedProfileFrames)
 	resp.Player2ProfileFrames = nonNilStrings(player2.SelectedProfileFrames)
+	resp.Player1IsBot = player1.IsBot
+	resp.Player2IsBot = player2.IsBot
 	return resp
 }
 

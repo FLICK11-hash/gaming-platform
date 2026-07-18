@@ -75,6 +75,14 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Bot accounts (see migration 0009_bot_users.up.sql) never authenticate
+	// over HTTP; this is defense-in-depth on top of the fact that nobody
+	// knows their password.
+	if user.IsBot {
+		writeError(w, http.StatusUnauthorized, "invalid username or password")
+		return
+	}
+
 	token, err := s.issuer.Issue(user.UserID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to issue token")
