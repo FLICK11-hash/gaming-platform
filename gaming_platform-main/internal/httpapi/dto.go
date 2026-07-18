@@ -328,6 +328,7 @@ type inboundWSMessage struct {
 	To        string `json:"to,omitempty"`
 	Promotion string `json:"promotion,omitempty"`
 	Column    *int   `json:"column,omitempty"`
+	Premove   bool   `json:"premove,omitempty"`
 }
 
 // nonNilStrings ensures a nil slice serializes as [] instead of null.

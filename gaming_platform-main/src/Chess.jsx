@@ -107,11 +107,6 @@ function randomOf(list) {
   return list[Math.floor(Math.random() * list.length)]
 }
 
-function playerLabel(barColor, myColor) {
-  const capitalized = barColor.charAt(0).toUpperCase() + barColor.slice(1)
-  return barColor === myColor ? `You (${capitalized})` : `Opponent (${capitalized})`
-}
-
 function wsURL(matchId, token) {
   const apiUrl = import.meta.env.VITE_API_URL
   let proto, host
@@ -143,12 +138,16 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   const [optimisticDrop, setOptimisticDrop] = useState(null)
   const [winningSquare, setWinningSquare] = useState(null)
   const [winningCells, setWinningCells] = useState(null)
+  const [premoveSelected, setPremoveSelected] = useState(null)
+  const [premove, setPremove] = useState(null)
+  const [premoveColumn, setPremoveColumn] = useState(null)
   const [, forceTick] = useState(0)
 
   const wsRef = useRef(null)
   const clocksSyncedAt = useRef(Date.now())
   const mountedRef = useRef(true)
   const gameOverRef = useRef(false)
+  const lastMoveWasPremoveRef = useRef(false)
 
   useEffect(() => {
     api(`/matches/${matchId}`, { token }).then(setMatchInfo).catch(err => setNotice(err.message))
@@ -156,6 +155,11 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
 
   useEffect(() => {
     gameOverRef.current = !!gameOver
+    if (gameOver) {
+      setPremove(null)
+      setPremoveColumn(null)
+      setPremoveSelected(null)
+    }
   }, [gameOver])
 
   useEffect(() => {
@@ -236,7 +240,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
           case 'error':
             setOptimisticMove(null)
             setOptimisticDrop(null)
-            setNotice(msg.error || 'Error')
+            setNotice((lastMoveWasPremoveRef.current ? 'Premove failed: ' : '') + (msg.error || 'Error'))
             break
           default:
             break
@@ -254,18 +258,53 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId, token])
 
+  const isConnectFour = matchInfo?.game_type === 'connect_four'
+  const isPlayer1 = !!matchInfo && userId === matchInfo.player_1_id
+  const myColor = isConnectFour ? (isPlayer1 ? 'red' : 'green') : (isPlayer1 ? 'white' : 'black')
+  const isMyTurn = !!matchInfo && !gameOver && !waiting && !optimisticMove && !optimisticDrop && turn === myColor
+
+  // Fire any queued pre-move the instant it becomes this player's turn, so
+  // it lands as close to the turn flip as possible.
+  useEffect(() => {
+    if (!isMyTurn) return
+    if (premove) {
+      setOptimisticMove({ from: premove.from, to: premove.to, promotion: premove.promotion })
+      sendMove(premove.from, premove.to, premove.promotion, true)
+      setPremove(null)
+    } else if (premoveColumn != null) {
+      const row = lowestEmptyRow(c4Board, premoveColumn)
+      if (row !== -1) {
+        setOptimisticDrop({ column: premoveColumn, row, color: myColor === 'red' ? 1 : 2 })
+        sendDrop(premoveColumn, true)
+      }
+      setPremoveColumn(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMyTurn])
+
   if (!matchInfo) return <div className="card wide chessroom"><p className="muted">Loading match...</p></div>
 
-  const isConnectFour = matchInfo.game_type === 'connect_four'
-  const isPlayer1 = userId === matchInfo.player_1_id
-  const myColor = isConnectFour ? (isPlayer1 ? 'red' : 'green') : (isPlayer1 ? 'white' : 'black')
-  const player1Color = isConnectFour ? 'red' : 'white'
-  const player2Color = isConnectFour ? 'green' : 'black'
-  const whiteId = matchInfo.player_1_id
-  const blackId = matchInfo.player_2_id
+  // The viewer's own bar always renders at the bottom (below the board) and
+  // the opponent's always at the top, regardless of which color/player slot
+  // either of them actually occupies.
+  const me = {
+    color: myColor,
+    uid: userId,
+    username: isPlayer1 ? matchInfo.player_1_username : matchInfo.player_2_username,
+    badgeKey: isPlayer1 ? matchInfo.player_1_badge : matchInfo.player_2_badge,
+    isBot: isPlayer1 ? matchInfo.player_1_is_bot : matchInfo.player_2_is_bot,
+    frameKeys: isPlayer1 ? matchInfo.player_1_profile_frames : matchInfo.player_2_profile_frames,
+  }
+  const opponent = {
+    color: isConnectFour ? (isPlayer1 ? 'green' : 'red') : (isPlayer1 ? 'black' : 'white'),
+    uid: isPlayer1 ? matchInfo.player_2_id : matchInfo.player_1_id,
+    username: isPlayer1 ? matchInfo.player_2_username : matchInfo.player_1_username,
+    badgeKey: isPlayer1 ? matchInfo.player_2_badge : matchInfo.player_1_badge,
+    isBot: isPlayer1 ? matchInfo.player_2_is_bot : matchInfo.player_1_is_bot,
+    frameKeys: isPlayer1 ? matchInfo.player_2_profile_frames : matchInfo.player_1_profile_frames,
+  }
   const board = withOptimisticMove(parseFEN(fen), optimisticMove)
   const displayC4Board = withOptimisticDrop(c4Board, optimisticDrop)
-  const isMyTurn = !gameOver && !waiting && !optimisticMove && !optimisticDrop && turn === myColor
   const flip = !isConnectFour && myColor === 'black'
 
   function remainingFor(uid, colorForUid) {
@@ -276,14 +315,16 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
     return Math.max(0, base - elapsed)
   }
 
-  function sendMove(from, to, promotion) {
+  function sendMove(from, to, promotion, premove) {
+    lastMoveWasPremoveRef.current = !!premove
     wsRef.current?.readyState === WebSocket.OPEN &&
-      wsRef.current.send(JSON.stringify({ type: 'move', from, to, promotion }))
+      wsRef.current.send(JSON.stringify({ type: 'move', from, to, promotion, premove: !!premove }))
   }
 
-  function sendDrop(column) {
+  function sendDrop(column, premove) {
+    lastMoveWasPremoveRef.current = !!premove
     wsRef.current?.readyState === WebSocket.OPEN &&
-      wsRef.current.send(JSON.stringify({ type: 'move', column }))
+      wsRef.current.send(JSON.stringify({ type: 'move', column, premove: !!premove }))
   }
 
   function resign() {
@@ -292,17 +333,50 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   }
 
   function handleColumnClick(column) {
-    if (!isMyTurn) return
+    if (gameOver || waiting) return
     const row = lowestEmptyRow(c4Board, column)
     if (row === -1) return
+    if (!isMyTurn) {
+      setPremoveColumn(prev => (prev === column ? null : column))
+      return
+    }
     setOptimisticDrop({ column, row, color: myColor === 'red' ? 1 : 2 })
     sendDrop(column)
   }
 
+  function handlePremoveSquareClick(piece, sq) {
+    if (isConnectFour) return
+    if (!premoveSelected) {
+      if (isOwnPiece(piece, myColor)) setPremoveSelected(sq)
+      return
+    }
+    if (sq === premoveSelected) {
+      setPremoveSelected(null)
+      return
+    }
+    if (isOwnPiece(piece, myColor)) {
+      setPremoveSelected(sq)
+      return
+    }
+
+    const [selRankI, selFileI] = squareToIndices(premoveSelected)
+    const movingPiece = board[selRankI][selFileI]
+    const destRank = sq[1]
+    const isPromotion = movingPiece && movingPiece.toLowerCase() === 'p' && (destRank === '8' || destRank === '1')
+
+    setPremove({ from: premoveSelected, to: sq, promotion: isPromotion ? 'q' : '' })
+    setPremoveSelected(null)
+  }
+
   function handleSquareClick(rankIdx, fileIdx) {
-    if (!isMyTurn || pendingPromo) return
+    if (pendingPromo) return
     const piece = board[rankIdx][fileIdx]
     const sq = squareName(rankIdx, fileIdx)
+
+    if (!isMyTurn) {
+      if (!gameOver && !waiting) handlePremoveSquareClick(piece, sq)
+      return
+    }
 
     if (!selected) {
       if (isOwnPiece(piece, myColor)) setSelected(sq)
@@ -334,6 +408,12 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
     setSelected(null)
   }
 
+  function cancelPremove() {
+    setPremove(null)
+    setPremoveColumn(null)
+    setPremoveSelected(null)
+  }
+
   function choosePromotion(letter) {
     if (!pendingPromo) return
     setOptimisticMove({ from: pendingPromo.from, to: pendingPromo.to, promotion: letter })
@@ -356,14 +436,14 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
       <div className="chess-layout">
         <div>
           <PlayerBar
-            label={playerLabel(player1Color, myColor)}
-            uid={whiteId}
-            username={matchInfo.player_1_username}
-            badgeKey={matchInfo.player_1_badge}
-            isBot={matchInfo.player_1_is_bot}
-            seconds={remainingFor(whiteId, player1Color)}
-            active={turn === player1Color && !gameOver}
-            frameKeys={matchInfo.player_1_profile_frames}
+            label={`Opponent (${opponent.color.charAt(0).toUpperCase()}${opponent.color.slice(1)})`}
+            uid={opponent.uid}
+            username={opponent.username}
+            badgeKey={opponent.badgeKey}
+            isBot={opponent.isBot}
+            seconds={remainingFor(opponent.uid, opponent.color)}
+            active={turn === opponent.color && !gameOver}
+            frameKeys={opponent.frameKeys}
           />
           <div className="board-wrap">
             {countdown != null && (
@@ -378,12 +458,13 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
                   <div className="c4-row" key={rowIdx}>
                     {row.map((cell, colIdx) => {
                       const isWinning = winningCells?.some(([r, c]) => r === rowIdx && c === colIdx)
+                      const isPremoveTarget = premoveColumn === colIdx && rowIdx === lowestEmptyRow(displayC4Board, colIdx)
                       return (
                         <button
                           key={colIdx}
-                          className={`c4-cell ${cell === 1 ? 'red' : cell === 2 ? 'green' : ''} ${isWinning ? 'winning' : ''}`}
+                          className={`c4-cell ${cell === 1 ? 'red' : cell === 2 ? 'green' : ''} ${isWinning ? 'winning' : ''} ${isPremoveTarget ? 'premove-target' : ''}`}
                           onClick={() => handleColumnClick(colIdx)}
-                          disabled={!isMyTurn || c4Board[0][colIdx] !== 0}
+                          disabled={gameOver || waiting || c4Board[0][colIdx] !== 0}
                           aria-label={`Drop in column ${colIdx + 1}`}
                         />
                       )
@@ -401,12 +482,14 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
                       const dark = (rankIdx + fileIdx) % 2 === 1
                       const isSelected = selected === sq
                       const isWinning = winningSquare === sq
+                      const isPremoveFrom = premoveSelected === sq || premove?.from === sq
+                      const isPremoveTo = premove?.to === sq
                       return (
                         <button
                           key={sq}
-                          className={`chess-square ${dark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} ${isWinning ? 'winning' : ''}`}
+                          className={`chess-square ${dark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} ${isWinning ? 'winning' : ''} ${isPremoveFrom ? 'premove-selected' : ''} ${isPremoveTo ? 'premove-target' : ''}`}
                           onClick={() => handleSquareClick(rankIdx, fileIdx)}
-                          disabled={!isMyTurn}
+                          disabled={gameOver || waiting}
                         >
                           {piece && (
                             <span className={piece === piece.toUpperCase() ? 'piece-white' : 'piece-black'}>
@@ -422,14 +505,14 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
             )}
           </div>
           <PlayerBar
-            label={playerLabel(player2Color, myColor)}
-            uid={blackId}
-            username={matchInfo.player_2_username}
-            badgeKey={matchInfo.player_2_badge}
-            isBot={matchInfo.player_2_is_bot}
-            seconds={remainingFor(blackId, player2Color)}
-            active={turn === player2Color && !gameOver}
-            frameKeys={matchInfo.player_2_profile_frames}
+            label={`You (${me.color.charAt(0).toUpperCase()}${me.color.slice(1)})`}
+            uid={me.uid}
+            username={me.username}
+            badgeKey={me.badgeKey}
+            isBot={me.isBot}
+            seconds={remainingFor(me.uid, me.color)}
+            active={turn === me.color && !gameOver}
+            frameKeys={me.frameKeys}
           />
         </div>
 
@@ -437,6 +520,11 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
           {waiting && countdown == null && !gameOver && <p className="muted">Waiting for your opponent to connect...</p>}
           {countdown != null && !gameOver && <p className="muted">Both players connected. Match starts in a moment...</p>}
           {!waiting && !gameOver && <p className={isMyTurn ? 'turn-yours' : 'muted'}>{isMyTurn ? 'Your move' : "Opponent's move"}</p>}
+          {!isMyTurn && !gameOver && !waiting && (premove || premoveColumn != null) && (
+            <p className="notice premove-notice">
+              ⏩ Premove queued (costs 0.2s) <button type="button" className="link-button" onClick={cancelPremove}>Cancel</button>
+            </p>
+          )}
           {notice && <p className="notice">{notice}</p>}
 
           {pendingPromo && (

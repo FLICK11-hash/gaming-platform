@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
   Trophy,
@@ -6,7 +6,9 @@ import {
   Send,
   Search,
   Users,
-  ShieldAlert
+  ShieldAlert,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import { api } from './api.js'
 import MatchRoom from './Chess.jsx'
@@ -272,6 +274,13 @@ function Dashboard({
   const [posts, setPosts] = useState([])
 
   const [cosmetics, setCosmetics] = useState([])
+  const cosmeticsScrollRef = useRef(null)
+
+  function scrollCosmetics(direction) {
+    const el = cosmeticsScrollRef.current
+    if (!el) return
+    el.scrollBy({ left: direction * el.clientWidth * 0.9, behavior: 'smooth' })
+  }
 
   const [lookup, setLookup] = useState({
     tournamentID: '',
@@ -782,45 +791,65 @@ function Dashboard({
           Equip anything you own — up to {MAX_PROFILE_FRAMES} profile frames at once.
         </p>
 
-        <div className="cosmetics-grid">
-          {cosmetics.map(item => {
-            const equipped = isCosmeticEquipped(item, user)
-            const framesAtCap =
-              item.item_type === 'profile_frame' &&
-              !equipped &&
-              (user.selected_profile_frames || []).length >= MAX_PROFILE_FRAMES
+        <div className="cosmetics-carousel">
+          <button
+            type="button"
+            className="cosmetics-arrow cosmetics-arrow-left"
+            onClick={() => scrollCosmetics(-1)}
+            aria-label="Scroll shop left"
+          >
+            <ChevronLeft size={22} />
+          </button>
 
-            let equipLabel = 'Equip'
-            if (equipped) {
-              equipLabel = item.item_type === 'avatar' ? 'Equipped' : 'Unequip'
-            }
+          <div className="cosmetics-grid" ref={cosmeticsScrollRef}>
+            {cosmetics.map(item => {
+              const equipped = isCosmeticEquipped(item, user)
+              const framesAtCap =
+                item.item_type === 'profile_frame' &&
+                !equipped &&
+                (user.selected_profile_frames || []).length >= MAX_PROFILE_FRAMES
 
-            return (
-              <div className="cosmetic-item" key={item.cosmetic_item_id}>
-                <CosmeticIcon item={item} />
-                <b>{item.name}</b>
-                <span className="mode-detail">{item.item_type} · {item.coin_price} 🪙</span>
-                <p>{item.description}</p>
-                {item.owned ? (
-                  <button
-                    className={equipped ? 'equipped' : ''}
-                    onClick={() => equipCosmetic(item)}
-                    disabled={(equipped && item.item_type === 'avatar') || framesAtCap}
-                    title={framesAtCap ? `You can only equip ${MAX_PROFILE_FRAMES} profile frames at once.` : undefined}
-                  >
-                    {equipLabel}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => buyCosmetic(item)}
-                    disabled={coinBalance < item.coin_price}
-                  >
-                    Buy
-                  </button>
-                )}
-              </div>
-            )
-          })}
+              let equipLabel = 'Equip'
+              if (equipped) {
+                equipLabel = item.item_type === 'avatar' ? 'Equipped' : 'Unequip'
+              }
+
+              return (
+                <div className="cosmetic-item" key={item.cosmetic_item_id}>
+                  <CosmeticIcon item={item} />
+                  <b>{item.name}</b>
+                  <span className="mode-detail">{item.item_type} · {item.coin_price} 🪙</span>
+                  <p>{item.description}</p>
+                  {item.owned ? (
+                    <button
+                      className={equipped ? 'equipped' : ''}
+                      onClick={() => equipCosmetic(item)}
+                      disabled={(equipped && item.item_type === 'avatar') || framesAtCap}
+                      title={framesAtCap ? `You can only equip ${MAX_PROFILE_FRAMES} profile frames at once.` : undefined}
+                    >
+                      {equipLabel}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => buyCosmetic(item)}
+                      disabled={coinBalance < item.coin_price}
+                    >
+                      Buy
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          <button
+            type="button"
+            className="cosmetics-arrow cosmetics-arrow-right"
+            onClick={() => scrollCosmetics(1)}
+            aria-label="Scroll shop right"
+          >
+            <ChevronRight size={22} />
+          </button>
         </div>
       </div>
 

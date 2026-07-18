@@ -111,6 +111,30 @@ func TestChooseConnectFourMove_ReturnsLegalColumn(t *testing.T) {
 	}
 }
 
+func TestChooseConnectFourMove_EasyUsuallyBlocks(t *testing.T) {
+	var board connectfour.Board
+	board[5][3] = int(connectfour.Green)
+	board[4][3] = int(connectfour.Green)
+	board[3][3] = int(connectfour.Green)
+	board[5][0] = int(connectfour.Red)
+	board[5][1] = int(connectfour.Red)
+
+	blocks := 0
+	const trials = 200
+	for i := 0; i < trials; i++ {
+		col, err := ChooseConnectFourMove(board, connectfour.Red, Easy)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if col == 3 {
+			blocks++
+		}
+	}
+	if blocks < trials/2 {
+		t.Fatalf("expected Easy to block a forced loss most of the time, only blocked %d/%d", blocks, trials)
+	}
+}
+
 func TestDifficultyForElo(t *testing.T) {
 	if DifficultyForElo(1200) != Easy {
 		t.Fatalf("expected 1200 elo to be Easy")

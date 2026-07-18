@@ -47,6 +47,10 @@ type MoveInput struct {
 	To        string
 	Promotion string
 	Column    *int
+	// IsPremove marks a move that was queued during the opponent's turn and
+	// auto-fired the instant it became the mover's turn; it costs the mover
+	// PremoveCostSeconds off their own clock.
+	IsPremove bool
 }
 
 type deadline struct {
@@ -62,6 +66,18 @@ const DisconnectGracePeriod = 5 * time.Second
 // PreMatchCountdown is how long players see a "get ready" countdown after
 // both have connected, before the match clocks actually start.
 const PreMatchCountdown = 5 * time.Second
+
+// PremoveCostSeconds is deducted from a player's own clock whenever they
+// submit a move flagged as a pre-move (queued during the opponent's turn
+// and auto-fired the instant it becomes theirs), trading a small amount of
+// time for not having to react in the moment.
+const PremoveCostSeconds = 0.2
+
+// secondsToDuration converts a fractional-second clock value into a
+// time.Duration without losing the fractional part to integer truncation.
+func secondsToDuration(seconds float64) time.Duration {
+	return time.Duration(seconds * float64(time.Second))
+}
 
 type disconnectDeadline struct {
 	OpponentUserID int64
@@ -256,20 +272,22 @@ func (s *Service) startMatch(ctx context.Context, m db.Match) error {
 
 	nowPG := pgtype.Timestamptz{Time: now, Valid: true}
 	if _, err := q.CreateMatchClock(ctx, db.CreateMatchClockParams{
-		MatchID:         m.MatchID,
-		UserID:          m.Player1ID,
-		StartingSeconds: clock.DefaultStartingSeconds,
-		IsCurrentTurn:   pgtype.Bool{Bool: true, Valid: true},
-		LastStartedAt:   nowPG,
+		MatchID:          m.MatchID,
+		UserID:           m.Player1ID,
+		StartingSeconds:  clock.DefaultStartingSeconds,
+		RemainingSeconds: clock.DefaultStartingSeconds,
+		IsCurrentTurn:    pgtype.Bool{Bool: true, Valid: true},
+		LastStartedAt:    nowPG,
 	}); err != nil {
 		return err
 	}
 	if _, err := q.CreateMatchClock(ctx, db.CreateMatchClockParams{
-		MatchID:         m.MatchID,
-		UserID:          m.Player2ID,
-		StartingSeconds: clock.DefaultStartingSeconds,
-		IsCurrentTurn:   pgtype.Bool{Bool: false, Valid: true},
-		LastStartedAt:   nowPG,
+		MatchID:          m.MatchID,
+		UserID:           m.Player2ID,
+		StartingSeconds:  clock.DefaultStartingSeconds,
+		RemainingSeconds: clock.DefaultStartingSeconds,
+		IsCurrentTurn:    pgtype.Bool{Bool: false, Valid: true},
+		LastStartedAt:    nowPG,
 	}); err != nil {
 		return err
 	}
@@ -415,13 +433,19 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input M
 		return err
 	}
 	moverRemaining := clock.RemainingAt(clock.State{
-		RemainingSeconds: int(moverClock.RemainingSeconds),
+		RemainingSeconds: moverClock.RemainingSeconds,
 		IsCurrentTurn:    true,
 		LastStartedAt:    moverClock.LastStartedAt.Time,
 	}, now)
+	if input.IsPremove {
+		moverRemaining -= PremoveCostSeconds
+		if moverRemaining < 0 {
+			moverRemaining = 0
+		}
+	}
 	if _, err := q.UpdateMatchClock(ctx, db.UpdateMatchClockParams{
 		MatchClockID:     moverClock.MatchClockID,
-		RemainingSeconds: int32(moverRemaining),
+		RemainingSeconds: moverRemaining,
 		IsCurrentTurn:    pgtype.Bool{Bool: false, Valid: true},
 		LastStartedAt:    pgtype.Timestamptz{Time: now, Valid: true},
 	}); err != nil {
@@ -453,7 +477,7 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input M
 		s.deadlines[matchID] = deadline{
 			MatchID:        matchID,
 			OpponentUserID: userID,
-			At:             now.Add(time.Duration(opponentClock.RemainingSeconds) * time.Second),
+			At:             now.Add(secondsToDuration(opponentClock.RemainingSeconds)),
 		}
 		s.mu.Unlock()
 
@@ -470,7 +494,7 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input M
 	if winnerID == 0 && m.GameType == GameTypeConnectFour {
 		winnerID = winnerByRemainingTime(
 			userID, moverRemaining,
-			opponentID, int(opponentClock.RemainingSeconds),
+			opponentID, opponentClock.RemainingSeconds,
 		)
 	}
 
@@ -551,7 +575,7 @@ func (s *Service) applyConnectFourMove(m db.Match, userID int64, input MoveInput
 
 // winnerByRemainingTime picks whichever player has strictly more time left
 // on their clock, or 0 (a true draw) on an exact tie.
-func winnerByRemainingTime(userA int64, remainingA int, userB int64, remainingB int) int64 {
+func winnerByRemainingTime(userA int64, remainingA float64, userB int64, remainingB float64) int64 {
 	switch {
 	case remainingA > remainingB:
 		return userA
@@ -1035,11 +1059,13 @@ func (s *Service) clockSnapshot(ctx context.Context, matchID int64) map[string]i
 	out := make(map[string]int, len(rows))
 	for _, r := range rows {
 		state := clock.State{
-			RemainingSeconds: int(r.RemainingSeconds),
+			RemainingSeconds: r.RemainingSeconds,
 			IsCurrentTurn:    r.IsCurrentTurn.Valid && r.IsCurrentTurn.Bool,
 			LastStartedAt:    r.LastStartedAt.Time,
 		}
-		out[strconv.FormatInt(r.UserID, 10)] = clock.RemainingAt(state, now)
+		// Clients display whole seconds; fractional pre-move costs still
+		// affect this via accumulation and, more importantly, timeouts.
+		out[strconv.FormatInt(r.UserID, 10)] = int(clock.RemainingAt(state, now))
 	}
 	return out
 }
