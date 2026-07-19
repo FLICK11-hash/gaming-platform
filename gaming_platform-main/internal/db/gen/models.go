@@ -47,6 +47,12 @@ type FraudReport struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type LeaderboardRewardRun struct {
+	LeaderboardRewardRunID int64              `json:"leaderboard_reward_run_id"`
+	WeekKey                string             `json:"week_key"`
+	RunAt                  pgtype.Timestamptz `json:"run_at"`
+}
+
 type Match struct {
 	MatchID           int64              `json:"match_id"`
 	TournamentID      int64              `json:"tournament_id"`
@@ -161,6 +167,8 @@ type User struct {
 	IsBot                 bool               `json:"is_bot"`
 	CurrentLoginStreak    int32              `json:"current_login_streak"`
 	LoginStreakStartedOn  pgtype.Date        `json:"login_streak_started_on"`
+	CurrentWinStreak      int32              `json:"current_win_streak"`
+	BestWinStreak         int32              `json:"best_win_streak"`
 }
 
 type UserCosmetic struct {

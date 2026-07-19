@@ -328,6 +328,76 @@
   font-weight: 600;
 }
 
+.leaderboard-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.leaderboard-tab {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #cbd5e1;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.leaderboard-tab:hover {
+  background: #1e293b;
+}
+
+.leaderboard-tab.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.leaderboard-list {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 10px;
+}
+
+.leaderboard-rank {
+  flex: 0 0 auto;
+  width: 32px;
+  color: #facc15;
+  font-weight: 700;
+}
+
+.leaderboard-username {
+  flex: 1 1 auto;
+  font-weight: 600;
+}
+
+.leaderboard-value {
+  flex: 0 0 auto;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.leaderboard-empty {
+  padding: 14px;
+  color: #94a3b8;
+  font-size: 13px;
+  text-align: center;
+}
+
 .cosmetics-carousel {
   display: flex;
   align-items: center;

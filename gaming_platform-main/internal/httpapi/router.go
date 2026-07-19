@@ -9,24 +9,27 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"gaming_platform/internal/auth"
+	"gaming_platform/internal/domain/leaderboard"
 	"gaming_platform/internal/domain/match"
 	"gaming_platform/internal/domain/missions"
 )
 
 type Server struct {
-	pool        *pgxpool.Pool
-	issuer      *auth.TokenIssuer
-	matchSvc    *match.Service
-	missionsSvc *missions.Service
-	upgrader    websocket.Upgrader
+	pool           *pgxpool.Pool
+	issuer         *auth.TokenIssuer
+	matchSvc       *match.Service
+	missionsSvc    *missions.Service
+	leaderboardSvc *leaderboard.Service
+	upgrader       websocket.Upgrader
 }
 
-func NewServer(pool *pgxpool.Pool, issuer *auth.TokenIssuer, matchSvc *match.Service, missionsSvc *missions.Service) *Server {
+func NewServer(pool *pgxpool.Pool, issuer *auth.TokenIssuer, matchSvc *match.Service, missionsSvc *missions.Service, leaderboardSvc *leaderboard.Service) *Server {
 	return &Server{
-		pool:        pool,
-		issuer:      issuer,
-		matchSvc:    matchSvc,
-		missionsSvc: missionsSvc,
+		pool:           pool,
+		issuer:         issuer,
+		matchSvc:       matchSvc,
+		missionsSvc:    missionsSvc,
+		leaderboardSvc: leaderboardSvc,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
@@ -58,6 +61,8 @@ func (s *Server) Router() http.Handler {
 
 		r.Get("/missions", s.handleListMissions)
 		r.Post("/missions/{missionID}/claim", s.handleClaimMission)
+
+		r.Get("/leaderboards", s.handleGetLeaderboards)
 
 		r.Post("/matchmaking/queue", s.handleJoinQueue)
 		r.Delete("/matchmaking/queue/{queueID}", s.handleCancelQueue)

@@ -19,6 +19,7 @@ import (
 	"gaming_platform/internal/auth"
 	"gaming_platform/internal/config"
 	"gaming_platform/internal/domain/hub"
+	"gaming_platform/internal/domain/leaderboard"
 	"gaming_platform/internal/domain/match"
 	"gaming_platform/internal/domain/matchmaking"
 	"gaming_platform/internal/domain/missions"
@@ -47,13 +48,15 @@ func main() {
 	issuer := auth.NewTokenIssuer(cfg.JWTSecret)
 	connHub := hub.New()
 	missionsSvc := missions.NewService(pool)
-	matchSvc := match.NewService(pool, connHub, missionsSvc)
+	leaderboardSvc := leaderboard.NewService(pool)
+	matchSvc := match.NewService(pool, connHub, missionsSvc, leaderboardSvc)
 	matcher := matchmaking.New(pool)
 
 	go matcher.Run(ctx, 2*time.Second)
 	go matchSvc.RunClockWatcher(ctx)
+	go leaderboardSvc.RunWeeklyRewards(ctx)
 
-	server := httpapi.NewServer(pool, issuer, matchSvc, missionsSvc)
+	server := httpapi.NewServer(pool, issuer, matchSvc, missionsSvc, leaderboardSvc)
 	httpServer := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: server.Router(),

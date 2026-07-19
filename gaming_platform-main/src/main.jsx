@@ -9,7 +9,8 @@ import {
   ShieldAlert,
   ChevronLeft,
   ChevronRight,
-  Target
+  Target,
+  Crown
 } from 'lucide-react'
 import { api } from './api.js'
 import MatchRoom from './Chess.jsx'
@@ -18,6 +19,14 @@ import './styles.css'
 
 const FIXED_COIN_WAGER = 200
 const MAX_PROFILE_FRAMES = 5
+
+const LEADERBOARD_TABS = [
+  { key: 'elo', label: 'Overall Elo', unit: 'Elo' },
+  { key: 'weekly_wins', label: 'Weekly Wins', unit: 'wins' },
+  { key: 'tournament_champions', label: 'Tournament Champions', unit: 'titles' },
+  { key: 'win_streak', label: 'Win Streak', unit: 'streak' },
+  { key: 'coins', label: 'Richest Players', unit: 'coins' }
+]
 
 function isCosmeticEquipped(item, user) {
   if (item.item_type === 'avatar') return user.selected_avatar === item.image_key
@@ -279,6 +288,9 @@ function Dashboard({
 
   const [missions, setMissions] = useState([])
 
+  const [leaderboards, setLeaderboards] = useState(null)
+  const [leaderboardTab, setLeaderboardTab] = useState('elo')
+
   function scrollCosmetics(direction) {
     const el = cosmeticsScrollRef.current
     if (!el) return
@@ -346,6 +358,24 @@ function Dashboard({
 
     loadMissions()
     const intervalID = setInterval(loadMissions, 15000)
+
+    return () => {
+      cancelled = true
+      clearInterval(intervalID)
+    }
+  }, [token])
+
+  useEffect(() => {
+    let cancelled = false
+
+    function loadLeaderboards() {
+      api('/leaderboards', { token })
+        .then(data => { if (!cancelled) setLeaderboards(data) })
+        .catch(() => {})
+    }
+
+    loadLeaderboards()
+    const intervalID = setInterval(loadLeaderboards, 30000)
 
     return () => {
       cancelled = true
@@ -856,6 +886,41 @@ function Dashboard({
             )
           })}
         </div>
+      </div>
+
+      <div className="card wide leaderboards-card">
+        <h2>
+          <Crown />
+          Leaderboards
+        </h2>
+        <p>Top 10 players in each category. Weekly winners earn a Weekly Champion badge.</p>
+
+        <div className="leaderboard-tabs">
+          {LEADERBOARD_TABS.map(tab => (
+            <button
+              key={tab.key}
+              className={`leaderboard-tab${leaderboardTab === tab.key ? ' active' : ''}`}
+              onClick={() => setLeaderboardTab(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <ol className="leaderboard-list">
+          {(leaderboards?.[leaderboardTab] || []).map((entry, index) => (
+            <li className="leaderboard-row" key={entry.user_id}>
+              <span className="leaderboard-rank">#{index + 1}</span>
+              <span className="leaderboard-username">{entry.username}</span>
+              <span className="leaderboard-value">
+                {entry.value.toLocaleString()} {LEADERBOARD_TABS.find(t => t.key === leaderboardTab)?.unit}
+              </span>
+            </li>
+          ))}
+          {leaderboards && (leaderboards[leaderboardTab] || []).length === 0 && (
+            <li className="leaderboard-empty">No rankings yet in this category.</li>
+          )}
+        </ol>
       </div>
 
       <div className="card wide cosmetics-card">
