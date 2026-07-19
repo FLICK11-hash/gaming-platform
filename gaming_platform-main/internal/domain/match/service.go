@@ -27,6 +27,7 @@ import (
 	"gaming_platform/internal/domain/connectfour"
 	"gaming_platform/internal/domain/elo"
 	"gaming_platform/internal/domain/hub"
+	"gaming_platform/internal/domain/missions"
 	"gaming_platform/internal/domain/tournament"
 )
 
@@ -89,6 +90,7 @@ type Service struct {
 	chessEngine *chess.Engine
 	c4Engine    *connectfour.Engine
 	hub         *hub.Hub
+	missionsSvc *missions.Service
 
 	mu           sync.Mutex
 	deadlines    map[int64]deadline
@@ -96,12 +98,13 @@ type Service struct {
 	countingDown map[int64]bool
 }
 
-func NewService(pool *pgxpool.Pool, h *hub.Hub) *Service {
+func NewService(pool *pgxpool.Pool, h *hub.Hub, missionsSvc *missions.Service) *Service {
 	return &Service{
 		pool:         pool,
 		chessEngine:  chess.NewEngine(),
 		c4Engine:     connectfour.NewEngine(),
 		hub:          h,
+		missionsSvc:  missionsSvc,
 		deadlines:    make(map[int64]deadline),
 		disconnects:  make(map[int64]map[int64]disconnectDeadline),
 		countingDown: make(map[int64]bool),
@@ -814,6 +817,10 @@ func (s *Service) updateElo(ctx context.Context, player1ID, player2ID, winnerUse
 		}); err != nil {
 			return err
 		}
+	}
+
+	if s.missionsSvc != nil {
+		s.missionsSvc.RecordMatchCompletion(ctx, player1ID, player2ID, winnerUserID, p1Elo, p2Elo)
 	}
 
 	return nil

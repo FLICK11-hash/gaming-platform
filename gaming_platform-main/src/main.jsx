@@ -8,7 +8,8 @@ import {
   Users,
   ShieldAlert,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Target
 } from 'lucide-react'
 import { api } from './api.js'
 import MatchRoom from './Chess.jsx'
@@ -276,6 +277,8 @@ function Dashboard({
   const [cosmetics, setCosmetics] = useState([])
   const cosmeticsScrollRef = useRef(null)
 
+  const [missions, setMissions] = useState([])
+
   function scrollCosmetics(direction) {
     const el = cosmeticsScrollRef.current
     if (!el) return
@@ -330,6 +333,24 @@ function Dashboard({
       .then(setCosmetics)
       .catch(err => onMessage(err.message))
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token])
+
+  useEffect(() => {
+    let cancelled = false
+
+    function loadMissions() {
+      api('/missions', { token })
+        .then(data => { if (!cancelled) setMissions(data) })
+        .catch(() => {})
+    }
+
+    loadMissions()
+    const intervalID = setInterval(loadMissions, 15000)
+
+    return () => {
+      cancelled = true
+      clearInterval(intervalID)
+    }
   }, [token])
 
   async function buyCosmetic(item) {
@@ -404,6 +425,22 @@ function Dashboard({
       })
       onUser(data)
       onMessage('Daily reward claimed!')
+      api('/missions', { token }).then(setMissions).catch(() => {})
+    } catch (err) {
+      onMessage(err.message)
+    }
+  }
+
+  async function claimMission(mission) {
+    try {
+      const updated = await api(`/missions/${mission.mission_id}/claim`, {
+        token,
+        method: 'POST'
+      })
+      setMissions(list => list.map(m => (m.mission_id === updated.mission_id ? updated : m)))
+      const refreshedUser = await api('/me', { token })
+      onUser(refreshedUser)
+      onMessage(`Claimed reward for ${mission.title}.`)
     } catch (err) {
       onMessage(err.message)
     }
@@ -782,6 +819,44 @@ function Dashboard({
           }}
         />
       )}
+
+      <div className="card wide missions-card">
+        <h2>
+          <Target />
+          Missions
+        </h2>
+        <p>Complete daily objectives for coins and rewards.</p>
+        <div className="missions-grid">
+          {missions.map(m => {
+            const pct = Math.min(100, Math.round((m.progress / m.goal_count) * 100))
+            return (
+              <div className="mission-item" key={m.mission_id}>
+                <div className="mission-header">
+                  <b>{m.title}</b>
+                  <span className="mission-reward">
+                    {m.reward_coins > 0 && `+${m.reward_coins} 🪙`}
+                    {m.reward_badge_image_key && ' 🏅 Badge'}
+                  </span>
+                </div>
+                <p>{m.description}</p>
+                <div className="mission-progress-bar">
+                  <div className="mission-progress-fill" style={{ width: `${pct}%` }} />
+                </div>
+                <div className="mission-footer">
+                  <span>{Math.min(m.progress, m.goal_count)} / {m.goal_count}</span>
+                  {m.claimed ? (
+                    <span className="mission-claimed">Claimed &#10003;</span>
+                  ) : (
+                    <button onClick={() => claimMission(m)} disabled={!m.completed}>
+                      {m.completed ? 'Claim' : 'In Progress'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
 
       <div className="card wide cosmetics-card">
         <h2>

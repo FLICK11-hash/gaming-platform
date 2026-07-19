@@ -3,8 +3,10 @@ package httpapi
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"gaming_platform/internal/auth"
 	db "gaming_platform/internal/db/gen"
@@ -126,11 +128,16 @@ func (s *Server) handleClaimDailyReward(w http.ResponseWriter, r *http.Request) 
 	defer tx.Rollback(r.Context())
 	q := db.New(s.pool).WithTx(tx)
 
-	user, err := q.ClaimDailyLoginReward(r.Context(), db.ClaimDailyLoginRewardParams{
+	before, err := q.GetUserByID(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to claim daily reward")
+		return
+	}
+
+	if _, err := q.ClaimDailyLoginReward(r.Context(), db.ClaimDailyLoginRewardParams{
 		UserID:       userID,
 		RewardAmount: dailyLoginRewardCoins,
-	})
-	if err != nil {
+	}); err != nil {
 		if err == pgx.ErrNoRows {
 			writeError(w, http.StatusConflict, "daily reward already claimed; try again later")
 			return
@@ -149,10 +156,38 @@ func (s *Server) handleClaimDailyReward(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// A claim continues the login streak if the previous one was within the
+	// last 48h (one day's gap plus slack, since the only real gate is the
+	// 24h cooldown above rather than a fixed wall-clock day boundary);
+	// otherwise it starts a fresh streak.
+	now := time.Now()
+	streak := 1
+	streakStart := now
+	if before.LastDailyRewardAt.Valid && now.Sub(before.LastDailyRewardAt.Time) < 48*time.Hour {
+		streak = int(before.CurrentLoginStreak) + 1
+		if before.LoginStreakStartedOn.Valid {
+			streakStart = before.LoginStreakStartedOn.Time
+		}
+	}
+
+	updated, err := q.SetUserLoginStreak(r.Context(), db.SetUserLoginStreakParams{
+		UserID:               userID,
+		CurrentLoginStreak:   int32(streak),
+		LoginStreakStartedOn: pgtype.Date{Time: streakStart, Valid: true},
+	})
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to claim daily reward")
+		return
+	}
+
 	if err := tx.Commit(r.Context()); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to claim daily reward")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, toUserResponse(user))
+	if s.missionsSvc != nil {
+		s.missionsSvc.RecordDailyClaim(r.Context(), userID, streak, streakStart)
+	}
+
+	writeJSON(w, http.StatusOK, toUserResponse(updated))
 }
