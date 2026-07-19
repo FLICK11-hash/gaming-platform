@@ -17,6 +17,7 @@ type Querier interface {
 	// magnitude exceeds the current balance matches zero rows and comes back as
 	// pgx.ErrNoRows to the caller.
 	AdjustUserCoinBalance(ctx context.Context, arg AdjustUserCoinBalanceParams) (User, error)
+	AvgGameLengthSecondsForUser(ctx context.Context, player1ID int64) (AvgGameLengthSecondsForUserRow, error)
 	CancelQueueEntry(ctx context.Context, arg CancelQueueEntryParams) error
 	// Grants the daily reward once per rolling 24h window. Matches zero rows
 	// (pgx.ErrNoRows) if the caller already claimed within the last 24h.
@@ -24,6 +25,7 @@ type Querier interface {
 	ClaimMissionProgress(ctx context.Context, arg ClaimMissionProgressParams) (UserMissionProgress, error)
 	CompleteMatch(ctx context.Context, arg CompleteMatchParams) (Match, error)
 	CompleteTournament(ctx context.Context, arg CompleteTournamentParams) (Tournament, error)
+	CountTournamentWinsForUser(ctx context.Context, winnerUserID pgtype.Int8) (int64, error)
 	CreateCoinTransaction(ctx context.Context, arg CreateCoinTransactionParams) (CoinTransaction, error)
 	CreateFollow(ctx context.Context, arg CreateFollowParams) error
 	CreateFraudReport(ctx context.Context, arg CreateFraudReportParams) (FraudReport, error)
@@ -52,16 +54,20 @@ type Querier interface {
 	GrantCosmeticToUser(ctx context.Context, arg GrantCosmeticToUserParams) error
 	HasLeaderboardRewardRun(ctx context.Context, weekKey string) (bool, error)
 	IncrementMissionProgress(ctx context.Context, arg IncrementMissionProgressParams) (UserMissionProgress, error)
+	InsertEloHistory(ctx context.Context, arg InsertEloHistoryParams) error
 	ListActiveCosmetics(ctx context.Context) ([]CosmeticItem, error)
 	ListActiveMissions(ctx context.Context) ([]Mission, error)
+	ListChessFirstMovesForUser(ctx context.Context, player1ID int64) ([]pgtype.Text, error)
 	ListCoinTransactionsForUser(ctx context.Context, arg ListCoinTransactionsForUserParams) ([]CoinTransaction, error)
 	ListDistinctWaitingBuckets(ctx context.Context) ([]ListDistinctWaitingBucketsRow, error)
+	ListEloHistoryForUser(ctx context.Context, userID int64) ([]ListEloHistoryForUserRow, error)
 	ListFollowers(ctx context.Context, followedUserID int64) ([]Follow, error)
 	ListFollowing(ctx context.Context, followingUserID int64) ([]Follow, error)
 	ListFraudReports(ctx context.Context, status pgtype.Text) ([]FraudReport, error)
 	ListMatchClocksByMatch(ctx context.Context, matchID int64) ([]MatchClock, error)
 	ListMatchesByTournament(ctx context.Context, tournamentID int64) ([]Match, error)
 	ListPostsByUser(ctx context.Context, userID int64) ([]Post, error)
+	ListRecentCompletedMatchesForUser(ctx context.Context, userID int64) ([]ListRecentCompletedMatchesForUserRow, error)
 	ListTournamentPlayers(ctx context.Context, tournamentID int64) ([]TournamentPlayer, error)
 	ListUserCosmeticItemIDs(ctx context.Context, userID int64) ([]int64, error)
 	ListWaitingQueueEntries(ctx context.Context, arg ListWaitingQueueEntriesParams) ([]MatchmakingQueue, error)
@@ -75,6 +81,7 @@ type Querier interface {
 	RecordLeaderboardRewardRun(ctx context.Context, weekKey string) error
 	RecordWinStreak(ctx context.Context, userID int64) (User, error)
 	ResetWinStreak(ctx context.Context, userID int64) error
+	SetMatchFirstMove(ctx context.Context, arg SetMatchFirstMoveParams) error
 	SetMatchTurn(ctx context.Context, arg SetMatchTurnParams) error
 	SetSelectedAvatar(ctx context.Context, arg SetSelectedAvatarParams) (User, error)
 	SetSelectedBadge(ctx context.Context, arg SetSelectedBadgeParams) (User, error)

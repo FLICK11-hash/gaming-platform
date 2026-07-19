@@ -15,7 +15,7 @@ const activateMatch = `-- name: ActivateMatch :one
 UPDATE matches
 SET status = 'active', started_at = now(), current_turn_user_id = $2
 WHERE match_id = $1
-RETURNING match_id, tournament_id, round, match_number, player_1_id, player_2_id, current_turn_user_id, winner_user_id, status, started_at, completed_at, game_type
+RETURNING match_id, tournament_id, round, match_number, player_1_id, player_2_id, current_turn_user_id, winner_user_id, status, started_at, completed_at, game_type, first_move
 `
 
 type ActivateMatchParams struct {
@@ -39,6 +39,7 @@ func (q *Queries) ActivateMatch(ctx context.Context, arg ActivateMatchParams) (M
 		&i.StartedAt,
 		&i.CompletedAt,
 		&i.GameType,
+		&i.FirstMove,
 	)
 	return i, err
 }
@@ -47,7 +48,7 @@ const completeMatch = `-- name: CompleteMatch :one
 UPDATE matches
 SET status = 'completed', winner_user_id = $2, completed_at = now(), current_turn_user_id = NULL
 WHERE match_id = $1
-RETURNING match_id, tournament_id, round, match_number, player_1_id, player_2_id, current_turn_user_id, winner_user_id, status, started_at, completed_at, game_type
+RETURNING match_id, tournament_id, round, match_number, player_1_id, player_2_id, current_turn_user_id, winner_user_id, status, started_at, completed_at, game_type, first_move
 `
 
 type CompleteMatchParams struct {
@@ -71,6 +72,7 @@ func (q *Queries) CompleteMatch(ctx context.Context, arg CompleteMatchParams) (M
 		&i.StartedAt,
 		&i.CompletedAt,
 		&i.GameType,
+		&i.FirstMove,
 	)
 	return i, err
 }
@@ -78,7 +80,7 @@ func (q *Queries) CompleteMatch(ctx context.Context, arg CompleteMatchParams) (M
 const createMatch = `-- name: CreateMatch :one
 INSERT INTO matches (tournament_id, game_type, round, match_number, player_1_id, player_2_id, current_turn_user_id, status)
 VALUES ($1, $2, $3, $4, $5, $6, NULL, 'waiting')
-RETURNING match_id, tournament_id, round, match_number, player_1_id, player_2_id, current_turn_user_id, winner_user_id, status, started_at, completed_at, game_type
+RETURNING match_id, tournament_id, round, match_number, player_1_id, player_2_id, current_turn_user_id, winner_user_id, status, started_at, completed_at, game_type, first_move
 `
 
 type CreateMatchParams struct {
@@ -113,12 +115,13 @@ func (q *Queries) CreateMatch(ctx context.Context, arg CreateMatchParams) (Match
 		&i.StartedAt,
 		&i.CompletedAt,
 		&i.GameType,
+		&i.FirstMove,
 	)
 	return i, err
 }
 
 const getActiveMatchForUser = `-- name: GetActiveMatchForUser :one
-SELECT match_id, tournament_id, round, match_number, player_1_id, player_2_id, current_turn_user_id, winner_user_id, status, started_at, completed_at, game_type FROM matches
+SELECT match_id, tournament_id, round, match_number, player_1_id, player_2_id, current_turn_user_id, winner_user_id, status, started_at, completed_at, game_type, first_move FROM matches
 WHERE (player_1_id = $1 OR player_2_id = $1)
   AND status IN ('waiting', 'active')
 ORDER BY match_id DESC
@@ -141,12 +144,13 @@ func (q *Queries) GetActiveMatchForUser(ctx context.Context, player1ID int64) (M
 		&i.StartedAt,
 		&i.CompletedAt,
 		&i.GameType,
+		&i.FirstMove,
 	)
 	return i, err
 }
 
 const getMatch = `-- name: GetMatch :one
-SELECT match_id, tournament_id, round, match_number, player_1_id, player_2_id, current_turn_user_id, winner_user_id, status, started_at, completed_at, game_type FROM matches WHERE match_id = $1
+SELECT match_id, tournament_id, round, match_number, player_1_id, player_2_id, current_turn_user_id, winner_user_id, status, started_at, completed_at, game_type, first_move FROM matches WHERE match_id = $1
 `
 
 func (q *Queries) GetMatch(ctx context.Context, matchID int64) (Match, error) {
@@ -165,12 +169,13 @@ func (q *Queries) GetMatch(ctx context.Context, matchID int64) (Match, error) {
 		&i.StartedAt,
 		&i.CompletedAt,
 		&i.GameType,
+		&i.FirstMove,
 	)
 	return i, err
 }
 
 const listMatchesByTournament = `-- name: ListMatchesByTournament :many
-SELECT match_id, tournament_id, round, match_number, player_1_id, player_2_id, current_turn_user_id, winner_user_id, status, started_at, completed_at, game_type FROM matches WHERE tournament_id = $1 ORDER BY match_number
+SELECT match_id, tournament_id, round, match_number, player_1_id, player_2_id, current_turn_user_id, winner_user_id, status, started_at, completed_at, game_type, first_move FROM matches WHERE tournament_id = $1 ORDER BY match_number
 `
 
 func (q *Queries) ListMatchesByTournament(ctx context.Context, tournamentID int64) ([]Match, error) {
@@ -195,6 +200,7 @@ func (q *Queries) ListMatchesByTournament(ctx context.Context, tournamentID int6
 			&i.StartedAt,
 			&i.CompletedAt,
 			&i.GameType,
+			&i.FirstMove,
 		); err != nil {
 			return nil, err
 		}

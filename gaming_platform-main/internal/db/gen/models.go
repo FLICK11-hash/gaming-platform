@@ -30,6 +30,13 @@ type CosmeticItem struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type EloHistory struct {
+	EloHistoryID int64              `json:"elo_history_id"`
+	UserID       int64              `json:"user_id"`
+	Elo          int32              `json:"elo"`
+	RecordedAt   pgtype.Timestamptz `json:"recorded_at"`
+}
+
 type Follow struct {
 	FollowingUserID int64              `json:"following_user_id"`
 	FollowedUserID  int64              `json:"followed_user_id"`
@@ -66,6 +73,7 @@ type Match struct {
 	StartedAt         pgtype.Timestamptz `json:"started_at"`
 	CompletedAt       pgtype.Timestamptz `json:"completed_at"`
 	GameType          string             `json:"game_type"`
+	FirstMove         pgtype.Text        `json:"first_move"`
 }
 
 type MatchClock struct {
