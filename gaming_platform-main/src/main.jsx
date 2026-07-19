@@ -15,6 +15,7 @@ import {
 import { api } from './api.js'
 import MatchRoom from './Chess.jsx'
 import CosmeticIcon, { AvatarGlyph, EquippedBadge, ProfileFrameBanner } from './cosmeticArt.jsx'
+import Landing from './Landing.jsx'
 import './styles.css'
 
 const FIXED_COIN_WAGER = 200
@@ -43,6 +44,7 @@ function App() {
   )
   const [user, setUser] = useState(null)
   const [message, setMessage] = useState('')
+  const [showAuth, setShowAuth] = useState(false)
 
   useEffect(() => {
     if (!token) return
@@ -67,6 +69,7 @@ function App() {
     localStorage.removeItem('gp_token')
     setToken('')
     setUser(null)
+    setShowAuth(false)
     setMessage('Logged out.')
   }
 
@@ -92,10 +95,14 @@ function App() {
         {message && <div className="toast">{message}</div>}
 
         {!user ? (
-          <AuthScreen
-            onAuth={saveSession}
-            onMessage={setMessage}
-          />
+          showAuth ? (
+            <AuthScreen
+              onAuth={saveSession}
+              onMessage={setMessage}
+            />
+          ) : (
+            <Landing onGetStarted={() => setShowAuth(true)} />
+          )
         ) : (
           <Dashboard
             user={user}

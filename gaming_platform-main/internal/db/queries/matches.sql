@@ -30,3 +30,6 @@ UPDATE matches
 SET status = 'completed', winner_user_id = $2, completed_at = now(), current_turn_user_id = NULL
 WHERE match_id = $1
 RETURNING *;
+
+-- name: CountCompletedMatches :one
+SELECT COUNT(*) FROM matches WHERE status = 'completed';

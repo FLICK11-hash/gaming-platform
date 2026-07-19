@@ -75,6 +75,17 @@ func (q *Queries) CompleteMatch(ctx context.Context, arg CompleteMatchParams) (M
 	return i, err
 }
 
+const countCompletedMatches = `-- name: CountCompletedMatches :one
+SELECT COUNT(*) FROM matches WHERE status = 'completed'
+`
+
+func (q *Queries) CountCompletedMatches(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countCompletedMatches)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createMatch = `-- name: CreateMatch :one
 INSERT INTO matches (tournament_id, game_type, round, match_number, player_1_id, player_2_id, current_turn_user_id, status)
 VALUES ($1, $2, $3, $4, $5, $6, NULL, 'waiting')

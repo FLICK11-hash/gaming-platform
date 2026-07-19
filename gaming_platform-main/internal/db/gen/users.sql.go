@@ -56,6 +56,17 @@ func (q *Queries) ClaimDailyLoginReward(ctx context.Context, arg ClaimDailyLogin
 	return i, err
 }
 
+const countHumanPlayers = `-- name: CountHumanPlayers :one
+SELECT COUNT(*) FROM users WHERE is_bot = false
+`
+
+func (q *Queries) CountHumanPlayers(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countHumanPlayers)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
     username,

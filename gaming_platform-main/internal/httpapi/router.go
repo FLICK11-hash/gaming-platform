@@ -46,6 +46,7 @@ func (s *Server) Router() http.Handler {
 
 	r.Post("/register", s.handleRegister)
 	r.Post("/login", s.handleLogin)
+	r.Get("/public/landing-stats", s.handleGetLandingStats)
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.Middleware(s.issuer))

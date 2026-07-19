@@ -24,6 +24,8 @@ type Querier interface {
 	ClaimMissionProgress(ctx context.Context, arg ClaimMissionProgressParams) (UserMissionProgress, error)
 	CompleteMatch(ctx context.Context, arg CompleteMatchParams) (Match, error)
 	CompleteTournament(ctx context.Context, arg CompleteTournamentParams) (Tournament, error)
+	CountCompletedMatches(ctx context.Context) (int64, error)
+	CountHumanPlayers(ctx context.Context) (int64, error)
 	CreateCoinTransaction(ctx context.Context, arg CreateCoinTransactionParams) (CoinTransaction, error)
 	CreateFollow(ctx context.Context, arg CreateFollowParams) error
 	CreateFraudReport(ctx context.Context, arg CreateFraudReportParams) (FraudReport, error)
