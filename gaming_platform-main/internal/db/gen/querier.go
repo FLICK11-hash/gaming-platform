@@ -50,6 +50,7 @@ type Querier interface {
 	GetUserByUsername(ctx context.Context, username string) (User, error)
 	GetWaitingQueueEntryForUser(ctx context.Context, userID int64) (MatchmakingQueue, error)
 	GrantCosmeticToUser(ctx context.Context, arg GrantCosmeticToUserParams) error
+	HasLeaderboardRewardRun(ctx context.Context, weekKey string) (bool, error)
 	IncrementMissionProgress(ctx context.Context, arg IncrementMissionProgressParams) (UserMissionProgress, error)
 	ListActiveCosmetics(ctx context.Context) ([]CosmeticItem, error)
 	ListActiveMissions(ctx context.Context) ([]Mission, error)
@@ -71,6 +72,9 @@ type Querier interface {
 	LockOldestStaleWaitingQueueEntry(ctx context.Context, createdAt pgtype.Timestamptz) (MatchmakingQueue, error)
 	MarkMissionProgressCompleted(ctx context.Context, arg MarkMissionProgressCompletedParams) error
 	MarkQueueEntryMatched(ctx context.Context, queueID int64) error
+	RecordLeaderboardRewardRun(ctx context.Context, weekKey string) error
+	RecordWinStreak(ctx context.Context, userID int64) (User, error)
+	ResetWinStreak(ctx context.Context, userID int64) error
 	SetMatchTurn(ctx context.Context, arg SetMatchTurnParams) error
 	SetSelectedAvatar(ctx context.Context, arg SetSelectedAvatarParams) (User, error)
 	SetSelectedBadge(ctx context.Context, arg SetSelectedBadgeParams) (User, error)
@@ -82,6 +86,11 @@ type Querier interface {
 	// and the users_max_five_profile_frames CHECK constraint rejects the update
 	// (as a check_violation) if adding would exceed the 5-frame cap.
 	ToggleSelectedProfileFrame(ctx context.Context, arg ToggleSelectedProfileFrameParams) (User, error)
+	TopUsersByCoins(ctx context.Context) ([]TopUsersByCoinsRow, error)
+	TopUsersByElo(ctx context.Context) ([]TopUsersByEloRow, error)
+	TopUsersByTournamentChampionships(ctx context.Context) ([]TopUsersByTournamentChampionshipsRow, error)
+	TopUsersByWeeklyWins(ctx context.Context, arg TopUsersByWeeklyWinsParams) ([]TopUsersByWeeklyWinsRow, error)
+	TopUsersByWinStreak(ctx context.Context) ([]TopUsersByWinStreakRow, error)
 	UpdateFraudReportStatus(ctx context.Context, arg UpdateFraudReportStatusParams) (FraudReport, error)
 	UpdateMatchClock(ctx context.Context, arg UpdateMatchClockParams) (MatchClock, error)
 	UpdatePostStatus(ctx context.Context, arg UpdatePostStatusParams) (Post, error)

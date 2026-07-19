@@ -201,7 +201,7 @@ const setUserLoginStreak = `-- name: SetUserLoginStreak :one
 UPDATE users
 SET current_login_streak = $2, login_streak_started_on = $3
 WHERE user_id = $1
-RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames, is_bot, current_login_streak, login_streak_started_on
+RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_balance, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames, is_bot, current_login_streak, login_streak_started_on, current_win_streak, best_win_streak
 `
 
 type SetUserLoginStreakParams struct {
@@ -233,6 +233,8 @@ func (q *Queries) SetUserLoginStreak(ctx context.Context, arg SetUserLoginStreak
 		&i.IsBot,
 		&i.CurrentLoginStreak,
 		&i.LoginStreakStartedOn,
+		&i.CurrentWinStreak,
+		&i.BestWinStreak,
 	)
 	return i, err
 }
