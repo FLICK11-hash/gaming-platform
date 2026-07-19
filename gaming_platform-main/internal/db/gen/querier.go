@@ -21,6 +21,7 @@ type Querier interface {
 	// Grants the daily reward once per rolling 24h window. Matches zero rows
 	// (pgx.ErrNoRows) if the caller already claimed within the last 24h.
 	ClaimDailyLoginReward(ctx context.Context, arg ClaimDailyLoginRewardParams) (User, error)
+	ClaimMissionProgress(ctx context.Context, arg ClaimMissionProgressParams) (UserMissionProgress, error)
 	CompleteMatch(ctx context.Context, arg CompleteMatchParams) (Match, error)
 	CompleteTournament(ctx context.Context, arg CompleteTournamentParams) (Tournament, error)
 	CreateCoinTransaction(ctx context.Context, arg CreateCoinTransactionParams) (CoinTransaction, error)
@@ -36,9 +37,12 @@ type Querier interface {
 	DeleteFollow(ctx context.Context, arg DeleteFollowParams) error
 	GetActiveMatchForUser(ctx context.Context, player1ID int64) (Match, error)
 	GetCosmeticItem(ctx context.Context, cosmeticItemID int64) (CosmeticItem, error)
+	GetCosmeticItemByImageKey(ctx context.Context, imageKey string) (CosmeticItem, error)
 	GetFraudReport(ctx context.Context, fraudReportID int64) (FraudReport, error)
 	GetMatch(ctx context.Context, matchID int64) (Match, error)
 	GetMatchClockForUser(ctx context.Context, arg GetMatchClockForUserParams) (MatchClock, error)
+	GetMission(ctx context.Context, missionID int64) (Mission, error)
+	GetOrCreateUserMissionProgress(ctx context.Context, arg GetOrCreateUserMissionProgressParams) (UserMissionProgress, error)
 	GetPost(ctx context.Context, postID int64) (Post, error)
 	GetTournament(ctx context.Context, tournamentID int64) (Tournament, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
@@ -46,7 +50,9 @@ type Querier interface {
 	GetUserByUsername(ctx context.Context, username string) (User, error)
 	GetWaitingQueueEntryForUser(ctx context.Context, userID int64) (MatchmakingQueue, error)
 	GrantCosmeticToUser(ctx context.Context, arg GrantCosmeticToUserParams) error
+	IncrementMissionProgress(ctx context.Context, arg IncrementMissionProgressParams) (UserMissionProgress, error)
 	ListActiveCosmetics(ctx context.Context) ([]CosmeticItem, error)
+	ListActiveMissions(ctx context.Context) ([]Mission, error)
 	ListCoinTransactionsForUser(ctx context.Context, arg ListCoinTransactionsForUserParams) ([]CoinTransaction, error)
 	ListDistinctWaitingBuckets(ctx context.Context) ([]ListDistinctWaitingBucketsRow, error)
 	ListFollowers(ctx context.Context, followedUserID int64) ([]Follow, error)
@@ -63,11 +69,13 @@ type Querier interface {
 	// lets the caller loop this one row at a time without colliding with the
 	// regular human-pairing pass's own locks on the same table.
 	LockOldestStaleWaitingQueueEntry(ctx context.Context, createdAt pgtype.Timestamptz) (MatchmakingQueue, error)
+	MarkMissionProgressCompleted(ctx context.Context, arg MarkMissionProgressCompletedParams) error
 	MarkQueueEntryMatched(ctx context.Context, queueID int64) error
 	SetMatchTurn(ctx context.Context, arg SetMatchTurnParams) error
 	SetSelectedAvatar(ctx context.Context, arg SetSelectedAvatarParams) (User, error)
 	SetSelectedBadge(ctx context.Context, arg SetSelectedBadgeParams) (User, error)
 	SetTournamentPlayerResult(ctx context.Context, arg SetTournamentPlayerResultParams) error
+	SetUserLoginStreak(ctx context.Context, arg SetUserLoginStreakParams) (User, error)
 	StartTournament(ctx context.Context, tournamentID int64) (Tournament, error)
 	// Adds image_key to selected_profile_frames if it isn't already equipped,
 	// otherwise removes it. Atomic, so concurrent toggles can't race each other,

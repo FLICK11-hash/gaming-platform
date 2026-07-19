@@ -84,6 +84,19 @@ type MatchmakingQueue struct {
 	CoinWager int64              `json:"coin_wager"`
 }
 
+type Mission struct {
+	MissionID           int64       `json:"mission_id"`
+	Key                 string      `json:"key"`
+	ResetType           string      `json:"reset_type"`
+	Title               string      `json:"title"`
+	Description         string      `json:"description"`
+	GoalType            string      `json:"goal_type"`
+	GoalCount           int32       `json:"goal_count"`
+	RewardCoins         int64       `json:"reward_coins"`
+	RewardBadgeImageKey pgtype.Text `json:"reward_badge_image_key"`
+	IsActive            bool        `json:"is_active"`
+}
+
 type Payment struct {
 	PaymentID             int64              `json:"payment_id"`
 	UserID                int64              `json:"user_id"`
@@ -146,6 +159,8 @@ type User struct {
 	SelectedBadge         pgtype.Text        `json:"selected_badge"`
 	SelectedProfileFrames []string           `json:"selected_profile_frames"`
 	IsBot                 bool               `json:"is_bot"`
+	CurrentLoginStreak    int32              `json:"current_login_streak"`
+	LoginStreakStartedOn  pgtype.Date        `json:"login_streak_started_on"`
 }
 
 type UserCosmetic struct {
@@ -167,4 +182,14 @@ type UserHistoryLog struct {
 	BalanceBefore    pgtype.Numeric     `json:"balance_before"`
 	BalanceAfter     pgtype.Numeric     `json:"balance_after"`
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+type UserMissionProgress struct {
+	UserMissionProgressID int64              `json:"user_mission_progress_id"`
+	UserID                int64              `json:"user_id"`
+	MissionID             int64              `json:"mission_id"`
+	PeriodKey             string             `json:"period_key"`
+	ProgressCount         int32              `json:"progress_count"`
+	CompletedAt           pgtype.Timestamptz `json:"completed_at"`
+	ClaimedAt             pgtype.Timestamptz `json:"claimed_at"`
 }

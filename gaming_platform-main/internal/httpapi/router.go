@@ -10,20 +10,23 @@ import (
 
 	"gaming_platform/internal/auth"
 	"gaming_platform/internal/domain/match"
+	"gaming_platform/internal/domain/missions"
 )
 
 type Server struct {
-	pool     *pgxpool.Pool
-	issuer   *auth.TokenIssuer
-	matchSvc *match.Service
-	upgrader websocket.Upgrader
+	pool        *pgxpool.Pool
+	issuer      *auth.TokenIssuer
+	matchSvc    *match.Service
+	missionsSvc *missions.Service
+	upgrader    websocket.Upgrader
 }
 
-func NewServer(pool *pgxpool.Pool, issuer *auth.TokenIssuer, matchSvc *match.Service) *Server {
+func NewServer(pool *pgxpool.Pool, issuer *auth.TokenIssuer, matchSvc *match.Service, missionsSvc *missions.Service) *Server {
 	return &Server{
-		pool:     pool,
-		issuer:   issuer,
-		matchSvc: matchSvc,
+		pool:        pool,
+		issuer:      issuer,
+		matchSvc:    matchSvc,
+		missionsSvc: missionsSvc,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
@@ -52,6 +55,9 @@ func (s *Server) Router() http.Handler {
 
 		r.Get("/cosmetics", s.handleListCosmetics)
 		r.Post("/cosmetics/{cosmeticItemID}/purchase", s.handleBuyCosmetic)
+
+		r.Get("/missions", s.handleListMissions)
+		r.Post("/missions/{missionID}/claim", s.handleClaimMission)
 
 		r.Post("/matchmaking/queue", s.handleJoinQueue)
 		r.Delete("/matchmaking/queue/{queueID}", s.handleCancelQueue)

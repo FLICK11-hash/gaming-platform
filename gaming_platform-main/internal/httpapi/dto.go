@@ -338,3 +338,39 @@ func nonNilStrings(s []string) []string {
 	}
 	return s
 }
+
+type missionResponse struct {
+	MissionID           int64  `json:"mission_id"`
+	Key                 string `json:"key"`
+	ResetType           string `json:"reset_type"`
+	Title               string `json:"title"`
+	Description         string `json:"description"`
+	GoalType            string `json:"goal_type"`
+	GoalCount           int    `json:"goal_count"`
+	RewardCoins         int64  `json:"reward_coins"`
+	RewardBadgeImageKey string `json:"reward_badge_image_key,omitempty"`
+	Progress            int    `json:"progress"`
+	Completed           bool   `json:"completed"`
+	Claimed             bool   `json:"claimed"`
+}
+
+func toMissionResponse(m db.Mission, p db.UserMissionProgress) missionResponse {
+	progress := int(p.ProgressCount)
+	if progress > int(m.GoalCount) {
+		progress = int(m.GoalCount)
+	}
+	return missionResponse{
+		MissionID:           m.MissionID,
+		Key:                 m.Key,
+		ResetType:           m.ResetType,
+		Title:               m.Title,
+		Description:         m.Description,
+		GoalType:            m.GoalType,
+		GoalCount:           int(m.GoalCount),
+		RewardCoins:         m.RewardCoins,
+		RewardBadgeImageKey: dbutil.PGTextToString(m.RewardBadgeImageKey),
+		Progress:            progress,
+		Completed:           p.CompletedAt.Valid,
+		Claimed:             p.ClaimedAt.Valid,
+	}
+}
