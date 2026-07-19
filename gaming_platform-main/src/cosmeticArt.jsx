@@ -54,29 +54,32 @@ export const PROFILE_FRAMES = {
 }
 
 // Hand-built SVG icons for the newer profile frames - no emoji involved.
-// Each is a simple, self-contained icon on a 24x24 grid, filled solid so it
-// reads clearly against any badge-tier background.
+// Each is a simple, self-contained icon on a 24x24 grid, colored to match
+// its theme (wood tones, bronze, flame, ocean, gold, etc.) with a thin dark
+// outline for definition against any badge-tier background.
 const FRAME_ICONS = {
   hercules: ({ size }) => (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="#1e293b">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <g transform="rotate(25 12 12)">
-        <rect x="10.7" y="10" width="2.6" height="12" rx="1.3" />
-        <path d="M7.5 9 C7 6 8.5 3 12 3 C15.5 3 17 6 16.5 9 C16 11.5 14 12.5 12 12.5 C10 12.5 8 11.5 7.5 9 Z" />
+        <rect x="10.7" y="10" width="2.6" height="12" rx="1.3" fill="#92400e" stroke="#451a03" strokeWidth="0.5" />
+        <path d="M7.5 9 C7 6 8.5 3 12 3 C15.5 3 17 6 16.5 9 C16 11.5 14 12.5 12 12.5 C10 12.5 8 11.5 7.5 9 Z" fill="#c2793a" stroke="#451a03" strokeWidth="0.6" />
       </g>
     </svg>
   ),
   achilles: ({ size }) => (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="#1e293b">
-      <path d="M12 2 L20 5.2 V11 C20 16.6 16.6 20.6 12 22 C7.4 20.6 4 16.6 4 11 V5.2 Z" />
+    <svg viewBox="0 0 24 24" width={size} height={size}>
+      <path d="M12 2 L20 5.2 V11 C20 16.6 16.6 20.6 12 22 C7.4 20.6 4 16.6 4 11 V5.2 Z" fill="#b45309" stroke="#78350f" strokeWidth="0.8" />
+      <path d="M12 6 L16 8.5 V12 C16 15 14.2 17.3 12 18.3 C9.8 17.3 8 15 8 12 V8.5 Z" fill="#dc2626" />
     </svg>
   ),
   icarus: ({ size }) => (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="#1e293b">
-      <path d="M12 21 C10 16 9 11 8 3 C11 6 12.5 10 12.5 14 C13.5 10 15.5 6.5 20 5 C17.5 9 15.5 12 14 15 C16.5 14 18.5 14.5 21 17 C16.5 17.5 14.5 18.5 12 21 Z" />
+    <svg viewBox="0 0 24 24" width={size} height={size}>
+      <path d="M12 21 C10 16 9 11 8 3 C11 6 12.5 10 12.5 14 C13.5 10 15.5 6.5 20 5 C17.5 9 15.5 12 14 15 C16.5 14 18.5 14.5 21 17 C16.5 17.5 14.5 18.5 12 21 Z" fill="#f97316" stroke="#9a3412" strokeWidth="0.6" />
+      <path d="M12.5 14 C13.5 10 15.5 6.5 20 5 C17.5 9 15.5 12 14 15 Z" fill="#fde68a" opacity="0.9" />
     </svg>
   ),
   poseidon: ({ size }) => (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="#1e293b" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="#0e7490" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
       <line x1="6" y1="6" x2="18" y2="6" />
       <line x1="12" y1="6" x2="12" y2="22" />
       <line x1="12" y1="6" x2="6" y2="1" />
@@ -85,15 +88,16 @@ const FRAME_ICONS = {
     </svg>
   ),
   hades: ({ size }) => (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="#1e293b">
-      <path d="M4 12 C4 6.2 7.6 3 12 3 C16.4 3 20 6.2 20 12 V14 H15 V20 H9 V14 H4 Z" />
+    <svg viewBox="0 0 24 24" width={size} height={size}>
+      <path d="M4 12 C4 6.2 7.6 3 12 3 C16.4 3 20 6.2 20 12 V14 H15 V20 H9 V14 H4 Z" fill="#5b21b6" stroke="#2e1065" strokeWidth="0.7" />
+      <path d="M4.3 12.5 H19.7" stroke="#c4b5fd" strokeWidth="0.9" opacity="0.7" />
     </svg>
   ),
   pandora: ({ size }) => (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="#1e293b">
-      <rect x="4" y="11.5" width="16" height="8.5" rx="1.5" />
-      <path d="M4 11.5 L8 6.5 H16 L20 11.5 Z" />
-      <g stroke="#1e293b" strokeWidth="1.4" strokeLinecap="round">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
+      <rect x="4" y="11.5" width="16" height="8.5" rx="1.5" fill="#92400e" stroke="#451a03" strokeWidth="0.6" />
+      <path d="M4 11.5 L8 6.5 H16 L20 11.5 Z" fill="#c2793a" stroke="#451a03" strokeWidth="0.6" />
+      <g stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round">
         <line x1="12" y1="5" x2="12" y2="1.3" />
         <line x1="8.3" y1="6" x2="6.3" y2="2.3" />
         <line x1="15.7" y1="6" x2="17.7" y2="2.3" />
@@ -101,29 +105,32 @@ const FRAME_ICONS = {
     </svg>
   ),
   midas: ({ size }) => (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="#1e293b">
-      <path d="M3 18 L4.6 8 L9 12.2 L12 5.5 L15 12.2 L19.4 8 L21 18 Z" />
-      <circle cx="4.6" cy="8" r="1.3" />
-      <circle cx="12" cy="5.5" r="1.3" />
-      <circle cx="19.4" cy="8" r="1.3" />
+    <svg viewBox="0 0 24 24" width={size} height={size}>
+      <path d="M3 18 L4.6 8 L9 12.2 L12 5.5 L15 12.2 L19.4 8 L21 18 Z" fill="#eab308" stroke="#854d0e" strokeWidth="0.6" />
+      <circle cx="4.6" cy="8" r="1.3" fill="#dc2626" />
+      <circle cx="12" cy="5.5" r="1.3" fill="#2563eb" />
+      <circle cx="19.4" cy="8" r="1.3" fill="#16a34a" />
     </svg>
   ),
   atlas: ({ size }) => (
     <svg viewBox="0 0 24 24" width={size} height={size}>
-      <g fill="none" stroke="#1e293b" strokeWidth="2" strokeLinecap="round">
+      <g fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round">
         <line x1="4" y1="19" x2="20" y2="19" />
         <line x1="7.5" y1="19" x2="9.5" y2="14" />
         <line x1="16.5" y1="19" x2="14.5" y2="14" />
       </g>
-      <circle cx="12" cy="9" r="6.2" fill="#1e293b" />
-      <ellipse cx="12" cy="9" rx="6.2" ry="2.3" fill="none" stroke="#475569" strokeWidth="0.8" />
-      <line x1="5.8" y1="9" x2="18.2" y2="9" stroke="#475569" strokeWidth="0.8" />
+      <circle cx="12" cy="9" r="6.2" fill="#1d4ed8" />
+      <path d="M7.3 7.2 C8.8 6.2 10.3 8 9.2 9.6 C8.2 10.6 6.7 9.6 7.3 7.2 Z" fill="#16a34a" />
+      <path d="M13.5 11.2 C15 10.2 17 11.7 16 13.2 C15 14.2 13 13.2 13.5 11.2 Z" fill="#16a34a" />
+      <ellipse cx="12" cy="9" rx="6.2" ry="2.3" fill="none" stroke="#bfdbfe" strokeWidth="0.7" opacity="0.75" />
+      <line x1="5.8" y1="9" x2="18.2" y2="9" stroke="#bfdbfe" strokeWidth="0.7" opacity="0.75" />
     </svg>
   ),
   prometheus: ({ size }) => (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="#1e293b">
-      <rect x="10.6" y="13" width="2.8" height="9" rx="1.2" />
-      <path d="M12 1.5 C8.8 4.8 7.6 8 9.5 10.3 C9 8.7 9.8 7.8 10.7 8.6 C10 9.5 10.6 11 12 11 C13.4 11 14 9.5 13.3 8.6 C14.2 7.8 15 8.7 14.5 10.3 C16.4 8 15.2 4.8 12 1.5 Z" />
+    <svg viewBox="0 0 24 24" width={size} height={size}>
+      <rect x="10.6" y="13" width="2.8" height="9" rx="1.2" fill="#78350f" />
+      <path d="M12 1.5 C8.8 4.8 7.6 8 9.5 10.3 C9 8.7 9.8 7.8 10.7 8.6 C10 9.5 10.6 11 12 11 C13.4 11 14 9.5 13.3 8.6 C14.2 7.8 15 8.7 14.5 10.3 C16.4 8 15.2 4.8 12 1.5 Z" fill="#ea580c" />
+      <path d="M12 4.2 C10.4 6.1 9.8 7.8 10.8 9.1 C10.6 8.3 11 7.8 11.5 8.2 C11.1 8.7 11.4 9.4 12 9.4 C12.6 9.4 12.9 8.7 12.5 8.2 C13 7.8 13.4 8.3 13.2 9.1 C14.2 7.8 13.6 6.1 12 4.2 Z" fill="#fde047" />
     </svg>
   )
 }
