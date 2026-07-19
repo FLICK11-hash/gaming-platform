@@ -60,7 +60,7 @@ func main() {
 	go matchSvc.RunClockWatcher(ctx)
 	go leaderboardSvc.RunWeeklyRewards(ctx)
 
-	server := httpapi.NewServer(pool, issuer, matchSvc, missionsSvc, leaderboardSvc, matchHistorySvc)
+	server := httpapi.NewServer(pool, issuer, matchSvc, missionsSvc, leaderboardSvc, matchHistorySvc, achievementsSvc)
 	httpServer := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: server.Router(),

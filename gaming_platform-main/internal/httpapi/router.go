@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"gaming_platform/internal/auth"
+	"gaming_platform/internal/domain/achievements"
 	"gaming_platform/internal/domain/leaderboard"
 	"gaming_platform/internal/domain/match"
 	"gaming_platform/internal/domain/matchhistory"
@@ -22,10 +23,11 @@ type Server struct {
 	missionsSvc     *missions.Service
 	leaderboardSvc  *leaderboard.Service
 	matchHistorySvc *matchhistory.Service
+	achievementsSvc *achievements.Service
 	upgrader        websocket.Upgrader
 }
 
-func NewServer(pool *pgxpool.Pool, issuer *auth.TokenIssuer, matchSvc *match.Service, missionsSvc *missions.Service, leaderboardSvc *leaderboard.Service, matchHistorySvc *matchhistory.Service) *Server {
+func NewServer(pool *pgxpool.Pool, issuer *auth.TokenIssuer, matchSvc *match.Service, missionsSvc *missions.Service, leaderboardSvc *leaderboard.Service, matchHistorySvc *matchhistory.Service, achievementsSvc *achievements.Service) *Server {
 	return &Server{
 		pool:            pool,
 		issuer:          issuer,
@@ -33,6 +35,7 @@ func NewServer(pool *pgxpool.Pool, issuer *auth.TokenIssuer, matchSvc *match.Ser
 		missionsSvc:     missionsSvc,
 		leaderboardSvc:  leaderboardSvc,
 		matchHistorySvc: matchHistorySvc,
+		achievementsSvc: achievementsSvc,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
