@@ -189,5 +189,9 @@ func (s *Server) handleClaimDailyReward(w http.ResponseWriter, r *http.Request) 
 		s.missionsSvc.RecordDailyClaim(r.Context(), userID, streak, streakStart)
 	}
 
+	if s.achievementsSvc != nil {
+		s.achievementsSvc.CheckLoginStreakAchievement(r.Context(), userID, streak)
+	}
+
 	writeJSON(w, http.StatusOK, toUserResponse(updated))
 }

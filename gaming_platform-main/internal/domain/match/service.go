@@ -21,6 +21,7 @@ import (
 
 	db "gaming_platform/internal/db/gen"
 	"gaming_platform/internal/dbutil"
+	"gaming_platform/internal/domain/achievements"
 	"gaming_platform/internal/domain/bot"
 	"gaming_platform/internal/domain/chess"
 	"gaming_platform/internal/domain/clock"
@@ -95,6 +96,7 @@ type Service struct {
 	missionsSvc     *missions.Service
 	leaderboardSvc  *leaderboard.Service
 	matchHistorySvc *matchhistory.Service
+	achievementsSvc *achievements.Service
 
 	mu           sync.Mutex
 	deadlines    map[int64]deadline
@@ -102,7 +104,7 @@ type Service struct {
 	countingDown map[int64]bool
 }
 
-func NewService(pool *pgxpool.Pool, h *hub.Hub, missionsSvc *missions.Service, leaderboardSvc *leaderboard.Service, matchHistorySvc *matchhistory.Service) *Service {
+func NewService(pool *pgxpool.Pool, h *hub.Hub, missionsSvc *missions.Service, leaderboardSvc *leaderboard.Service, matchHistorySvc *matchhistory.Service, achievementsSvc *achievements.Service) *Service {
 	return &Service{
 		pool:            pool,
 		chessEngine:     chess.NewEngine(),
@@ -111,6 +113,7 @@ func NewService(pool *pgxpool.Pool, h *hub.Hub, missionsSvc *missions.Service, l
 		missionsSvc:     missionsSvc,
 		leaderboardSvc:  leaderboardSvc,
 		matchHistorySvc: matchHistorySvc,
+		achievementsSvc: achievementsSvc,
 		deadlines:       make(map[int64]deadline),
 		disconnects:     make(map[int64]map[int64]disconnectDeadline),
 		countingDown:    make(map[int64]bool),
@@ -854,6 +857,15 @@ func (s *Service) updateElo(ctx context.Context, player1ID, player2ID, winnerUse
 		s.leaderboardSvc.RecordMatchResult(ctx, player1ID, player2ID, winnerUserID)
 	}
 
+	if s.achievementsSvc != nil {
+		if !p1.IsBot {
+			s.achievementsSvc.CheckMatchAchievements(ctx, player1ID, dbutil.PGInt4ToInt(p1.TotalWins)+p1Wins, newP1Elo)
+		}
+		if !p2.IsBot {
+			s.achievementsSvc.CheckMatchAchievements(ctx, player2ID, dbutil.PGInt4ToInt(p2.TotalWins)+p2Wins, newP2Elo)
+		}
+	}
+
 	return nil
 }
 
@@ -1018,7 +1030,20 @@ func (s *Service) advanceBracket(ctx context.Context, tournamentID int64, comple
 		}); err != nil {
 			return err
 		}
-		return tx.Commit(ctx)
+
+		tournamentWins, err := qtx.CountTournamentWinsForUser(ctx, dbutil.Int64ToPGInt8(winnerUserID))
+		if err != nil {
+			return err
+		}
+
+		if err := tx.Commit(ctx); err != nil {
+			return err
+		}
+
+		if s.achievementsSvc != nil {
+			s.achievementsSvc.CheckTournamentAchievement(ctx, winnerUserID, int(tournamentWins))
+		}
+		return nil
 	}
 
 	return nil

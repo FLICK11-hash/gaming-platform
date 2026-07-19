@@ -18,6 +18,7 @@ import (
 
 	"gaming_platform/internal/auth"
 	"gaming_platform/internal/config"
+	"gaming_platform/internal/domain/achievements"
 	"gaming_platform/internal/domain/hub"
 	"gaming_platform/internal/domain/leaderboard"
 	"gaming_platform/internal/domain/match"
@@ -51,7 +52,8 @@ func main() {
 	missionsSvc := missions.NewService(pool)
 	leaderboardSvc := leaderboard.NewService(pool)
 	matchHistorySvc := matchhistory.NewService(pool)
-	matchSvc := match.NewService(pool, connHub, missionsSvc, leaderboardSvc, matchHistorySvc)
+	achievementsSvc := achievements.NewService(pool)
+	matchSvc := match.NewService(pool, connHub, missionsSvc, leaderboardSvc, matchHistorySvc, achievementsSvc)
 	matcher := matchmaking.New(pool)
 
 	go matcher.Run(ctx, 2*time.Second)

@@ -17,3 +17,4 @@ UPDATE tournaments
 SET status = 'completed', winner_user_id = $2, completed_at = now()
 WHERE tournament_id = $1
 RETURNING *;
+
