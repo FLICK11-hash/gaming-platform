@@ -9,27 +9,33 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"gaming_platform/internal/auth"
+	"gaming_platform/internal/domain/achievements"
 	"gaming_platform/internal/domain/leaderboard"
 	"gaming_platform/internal/domain/match"
+	"gaming_platform/internal/domain/matchhistory"
 	"gaming_platform/internal/domain/missions"
 )
 
 type Server struct {
-	pool           *pgxpool.Pool
-	issuer         *auth.TokenIssuer
-	matchSvc       *match.Service
-	missionsSvc    *missions.Service
-	leaderboardSvc *leaderboard.Service
-	upgrader       websocket.Upgrader
+	pool            *pgxpool.Pool
+	issuer          *auth.TokenIssuer
+	matchSvc        *match.Service
+	missionsSvc     *missions.Service
+	leaderboardSvc  *leaderboard.Service
+	matchHistorySvc *matchhistory.Service
+	achievementsSvc *achievements.Service
+	upgrader        websocket.Upgrader
 }
 
-func NewServer(pool *pgxpool.Pool, issuer *auth.TokenIssuer, matchSvc *match.Service, missionsSvc *missions.Service, leaderboardSvc *leaderboard.Service) *Server {
+func NewServer(pool *pgxpool.Pool, issuer *auth.TokenIssuer, matchSvc *match.Service, missionsSvc *missions.Service, leaderboardSvc *leaderboard.Service, matchHistorySvc *matchhistory.Service, achievementsSvc *achievements.Service) *Server {
 	return &Server{
-		pool:           pool,
-		issuer:         issuer,
-		matchSvc:       matchSvc,
-		missionsSvc:    missionsSvc,
-		leaderboardSvc: leaderboardSvc,
+		pool:            pool,
+		issuer:          issuer,
+		matchSvc:        matchSvc,
+		missionsSvc:     missionsSvc,
+		leaderboardSvc:  leaderboardSvc,
+		matchHistorySvc: matchHistorySvc,
+		achievementsSvc: achievementsSvc,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
@@ -46,6 +52,7 @@ func (s *Server) Router() http.Handler {
 
 	r.Post("/register", s.handleRegister)
 	r.Post("/login", s.handleLogin)
+	r.Get("/public/landing-stats", s.handleGetLandingStats)
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.Middleware(s.issuer))
@@ -83,6 +90,7 @@ func (s *Server) Router() http.Handler {
 		r.Delete("/follows/{userID}", s.handleUnfollow)
 		r.Get("/users/{userID}/followers", s.handleListFollowers)
 		r.Get("/users/{userID}/following", s.handleListFollowing)
+		r.Get("/users/{userID}/profile", s.handleGetUserProfile)
 
 		r.Post("/posts", s.handleCreatePost)
 		r.Get("/posts/{postID}", s.handleGetPost)

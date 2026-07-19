@@ -73,3 +73,6 @@ SET selected_profile_frames = CASE
 END
 WHERE user_id = sqlc.arg('user_id')
 RETURNING *;
+
+-- name: CountHumanPlayers :one
+SELECT COUNT(*) FROM users WHERE is_bot = false;

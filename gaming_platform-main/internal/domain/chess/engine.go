@@ -18,6 +18,12 @@ var (
 	ErrIllegalMove  = errors.New("chess: illegal move")
 )
 
+// StartFEN is the FEN of a fresh game with no moves played, exactly what
+// StartGame's MoveResult.FEN holds before any ApplyMove call. Callers can
+// compare a live State().FEN against this to detect "no moves yet" without
+// this package needing to track move counts itself.
+const StartFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
 // Color mirrors nchess.Color so callers outside this package don't need to
 // import notnil/chess directly.
 type Color = nchess.Color
