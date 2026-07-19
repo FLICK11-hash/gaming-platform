@@ -28,6 +28,7 @@ import (
 	"gaming_platform/internal/domain/elo"
 	"gaming_platform/internal/domain/hub"
 	"gaming_platform/internal/domain/leaderboard"
+	"gaming_platform/internal/domain/matchhistory"
 	"gaming_platform/internal/domain/missions"
 	"gaming_platform/internal/domain/tournament"
 )
@@ -87,12 +88,13 @@ type disconnectDeadline struct {
 }
 
 type Service struct {
-	pool           *pgxpool.Pool
-	chessEngine    *chess.Engine
-	c4Engine       *connectfour.Engine
-	hub            *hub.Hub
-	missionsSvc    *missions.Service
-	leaderboardSvc *leaderboard.Service
+	pool            *pgxpool.Pool
+	chessEngine     *chess.Engine
+	c4Engine        *connectfour.Engine
+	hub             *hub.Hub
+	missionsSvc     *missions.Service
+	leaderboardSvc  *leaderboard.Service
+	matchHistorySvc *matchhistory.Service
 
 	mu           sync.Mutex
 	deadlines    map[int64]deadline
@@ -100,17 +102,18 @@ type Service struct {
 	countingDown map[int64]bool
 }
 
-func NewService(pool *pgxpool.Pool, h *hub.Hub, missionsSvc *missions.Service, leaderboardSvc *leaderboard.Service) *Service {
+func NewService(pool *pgxpool.Pool, h *hub.Hub, missionsSvc *missions.Service, leaderboardSvc *leaderboard.Service, matchHistorySvc *matchhistory.Service) *Service {
 	return &Service{
-		pool:           pool,
-		chessEngine:    chess.NewEngine(),
-		c4Engine:       connectfour.NewEngine(),
-		hub:            h,
-		missionsSvc:    missionsSvc,
-		leaderboardSvc: leaderboardSvc,
-		deadlines:      make(map[int64]deadline),
-		disconnects:    make(map[int64]map[int64]disconnectDeadline),
-		countingDown:   make(map[int64]bool),
+		pool:            pool,
+		chessEngine:     chess.NewEngine(),
+		c4Engine:        connectfour.NewEngine(),
+		hub:             h,
+		missionsSvc:     missionsSvc,
+		leaderboardSvc:  leaderboardSvc,
+		matchHistorySvc: matchHistorySvc,
+		deadlines:       make(map[int64]deadline),
+		disconnects:     make(map[int64]map[int64]disconnectDeadline),
+		countingDown:    make(map[int64]bool),
 	}
 }
 
@@ -428,9 +431,24 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input M
 		opponentID = m.Player1ID
 	}
 
+	// Capture the opening move before it's applied - the live game state
+	// this reads from is discarded once the match completes (see
+	// chess.Engine.EndGame), so this is the only chance to persist it for
+	// the profile's favorite-opening stat.
+	isFirstChessMove := false
+	if m.GameType != GameTypeConnectFour {
+		if state, err := s.chessEngine.State(matchID); err == nil && state.FEN == chess.StartFEN {
+			isFirstChessMove = true
+		}
+	}
+
 	finished, winnerID, highlight, err := s.applyMove(m, userID, input)
 	if err != nil {
 		return err
+	}
+
+	if isFirstChessMove && s.matchHistorySvc != nil {
+		s.matchHistorySvc.RecordFirstMove(ctx, matchID, input.From, input.To)
 	}
 
 	now := time.Now()
@@ -809,6 +827,9 @@ func (s *Service) updateElo(ctx context.Context, player1ID, player2ID, winnerUse
 		}); err != nil {
 			return err
 		}
+		if s.matchHistorySvc != nil {
+			s.matchHistorySvc.RecordEloSnapshot(ctx, player1ID, newP1Elo)
+		}
 	}
 	if !p2.IsBot {
 		if _, err := q.UpdateUserEloAndStats(ctx, db.UpdateUserEloAndStatsParams{
@@ -819,6 +840,9 @@ func (s *Service) updateElo(ctx context.Context, player1ID, player2ID, winnerUse
 			NumGames:    dbutil.IntToPGInt4(dbutil.PGInt4ToInt(p2.NumGames) + 1),
 		}); err != nil {
 			return err
+		}
+		if s.matchHistorySvc != nil {
+			s.matchHistorySvc.RecordEloSnapshot(ctx, player2ID, newP2Elo)
 		}
 	}
 

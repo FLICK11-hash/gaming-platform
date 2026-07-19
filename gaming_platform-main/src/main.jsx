@@ -10,7 +10,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Target,
-  Crown
+  Crown,
+  UserCircle
 } from 'lucide-react'
 import { api } from './api.js'
 import MatchRoom from './Chess.jsx'
@@ -298,6 +299,9 @@ function Dashboard({
   const [leaderboards, setLeaderboards] = useState(null)
   const [leaderboardTab, setLeaderboardTab] = useState('elo')
 
+  const [profile, setProfile] = useState(null)
+  const [profileLookupID, setProfileLookupID] = useState(String(user.user_id))
+
   function scrollCosmetics(direction) {
     const el = cosmeticsScrollRef.current
     if (!el) return
@@ -389,6 +393,27 @@ function Dashboard({
       clearInterval(intervalID)
     }
   }, [token])
+
+  useEffect(() => {
+    api(`/users/${user.user_id}/profile`, { token })
+      .then(setProfile)
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, user.user_id])
+
+  async function viewProfile(idOverride) {
+    const id = (idOverride ?? profileLookupID).trim()
+    if (!id) {
+      onMessage('Enter a user ID first.')
+      return
+    }
+    try {
+      const data = await api(`/users/${id}/profile`, { token })
+      setProfile(data)
+    } catch (err) {
+      onMessage(err.message)
+    }
+  }
 
   async function buyCosmetic(item) {
     try {
@@ -853,6 +878,7 @@ function Dashboard({
           onExit={() => {
             setActiveMatch(null)
             window.scrollTo({ top: 0, behavior: 'smooth' })
+            viewProfile(profile ? String(profile.user_id) : String(user.user_id))
           }}
         />
       )}
@@ -928,6 +954,93 @@ function Dashboard({
             <li className="leaderboard-empty">No rankings yet in this category.</li>
           )}
         </ol>
+      </div>
+
+      <div className="card wide player-profile-card">
+        <h2>
+          <UserCircle />
+          Player Profile
+        </h2>
+        <p>Elo history, win/loss record, and recent matches for any player.</p>
+
+        <div className="profile-lookup">
+          <input
+            placeholder="User ID"
+            value={profileLookupID}
+            onChange={event => setProfileLookupID(event.target.value)}
+          />
+          <button onClick={() => viewProfile()}>View Profile</button>
+          <button
+            className="ghost"
+            onClick={() => {
+              setProfileLookupID(String(user.user_id))
+              viewProfile(String(user.user_id))
+            }}
+          >
+            My Profile
+          </button>
+        </div>
+
+        {profile && (
+          <>
+            <div className="profile-header">
+              <div className="avatar">
+                <AvatarGlyph avatarKey={profile.selected_avatar} />
+              </div>
+              <div className="profile-header-name">
+                <b>{profile.username}</b>
+                <span>
+                  {profile.selected_badge && <EquippedBadge badgeKey={profile.selected_badge} />}
+                  {' '}
+                  <ProfileFrameBanner frameKeys={profile.selected_profile_frames} size="small" />
+                </span>
+              </div>
+            </div>
+
+            <div className="profile-stats-grid">
+              <Stat label="Current Elo" value={profile.current_elo} />
+              <Stat label="Record" value={`${profile.total_wins}-${profile.total_losses}`} />
+              <Stat label="Games Played" value={profile.num_games} />
+              <Stat label="Tournament Wins" value={profile.tournament_wins} />
+              <Stat
+                label="Avg Game Length"
+                value={
+                  profile.avg_game_length_seconds != null
+                    ? `${Math.round(profile.avg_game_length_seconds)}s`
+                    : '—'
+                }
+              />
+              <Stat label="Favorite Opening" value={profile.favorite_opening || '—'} />
+            </div>
+
+            <div className="profile-chart-section">
+              <h3>Elo Over Time</h3>
+              <div className="elo-chart-wrap">
+                <EloChart points={profile.elo_history} />
+              </div>
+            </div>
+
+            <div className="profile-chart-section">
+              <h3>Recent Matches</h3>
+              {profile.recent_matches.length === 0 ? (
+                <p className="profile-empty">No completed matches yet.</p>
+              ) : (
+                <ol className="profile-matches-list">
+                  {profile.recent_matches.map(m => (
+                    <li className="profile-match-row" key={m.match_id}>
+                      <span className={`profile-match-result ${m.result}`}>{m.result}</span>
+                      <span className="profile-match-opponent">vs {m.opponent_username}</span>
+                      <span className="profile-match-type">{m.game_type}</span>
+                      <span className="profile-match-date">
+                        {new Date(m.completed_at).toLocaleString()}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="card wide cosmetics-card">
@@ -1156,6 +1269,46 @@ function Dashboard({
         </p>
       </div>
     </section>
+  )
+}
+
+// EloChart draws a simple normalized line chart of a player's Elo over time
+// from scratch - no charting library is installed, and this feature doesn't
+// need one.
+function EloChart({ points }) {
+  if (!points || points.length === 0) {
+    return <p className="profile-empty">No Elo history yet — play a match to start the graph.</p>
+  }
+
+  const width = 300
+  const height = 120
+  const pad = 6
+
+  const values = points.map(p => p.elo)
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const range = max - min || 1
+
+  const coords = points.map((p, i) => {
+    const x = points.length === 1 ? width / 2 : pad + (i / (points.length - 1)) * (width - pad * 2)
+    const y = height - pad - ((p.elo - min) / range) * (height - pad * 2)
+    return [x, y]
+  })
+
+  return (
+    <svg className="elo-chart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+      <polyline
+        points={coords.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')}
+        fill="none"
+        stroke="#2563eb"
+        strokeWidth="2"
+      />
+      {coords.map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r="2.5" fill="#facc15">
+          <title>{`${points[i].elo} Elo — ${new Date(points[i].recorded_at).toLocaleString()}`}</title>
+        </circle>
+      ))}
+    </svg>
   )
 }
 
