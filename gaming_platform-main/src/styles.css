@@ -393,9 +393,12 @@
   box-shadow: 0 10px 30px rgba(219, 39, 119, .35);
 }
 
-.profile-frame-emoji {
-  font-size: 40px;
+.profile-frame-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35));
 }
 
 .profile-frame-label {
@@ -412,19 +415,11 @@
   border-radius: 12px;
 }
 
-.profile-frame-banner-small .profile-frame-emoji {
-  font-size: 22px;
-}
-
 .profile-frame-banner-small .profile-frame-label {
   font-size: 12px;
 }
 
 @media (max-width: 500px) {
-  .profile-frame-emoji {
-    font-size: 30px;
-  }
-
   .profile-frame-label {
     font-size: 15px;
   }
