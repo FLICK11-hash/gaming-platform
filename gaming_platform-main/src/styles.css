@@ -567,6 +567,17 @@
   background: #15803d;
 }
 
+.cosmetic-item button.locked {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+}
+
+.cosmetic-item button.locked:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+}
+
 .avatar span {
   font-size: 34px;
   line-height: 1;

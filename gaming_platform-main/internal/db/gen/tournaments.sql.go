@@ -43,6 +43,17 @@ func (q *Queries) CompleteTournament(ctx context.Context, arg CompleteTournament
 	return i, err
 }
 
+const countTournamentWinsByUser = `-- name: CountTournamentWinsByUser :one
+SELECT COUNT(*) FROM tournaments WHERE winner_user_id = $1 AND status = 'completed'
+`
+
+func (q *Queries) CountTournamentWinsByUser(ctx context.Context, winnerUserID pgtype.Int8) (int64, error) {
+	row := q.db.QueryRow(ctx, countTournamentWinsByUser, winnerUserID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createTournament = `-- name: CreateTournament :one
 INSERT INTO tournaments (game_type, game_mode, status, coin_wager, total_coin_pool, winner_coin_prize, bonus_coins)
 VALUES ($1, $2, $3, $4, $5, $6, $7)

@@ -18,6 +18,14 @@ import (
 	"gaming_platform/internal/dbutil"
 )
 
+// starterAvatarImageKey is the one cosmetic every user starts with
+// (users.selected_avatar defaults to it, see migration 0002_virtual_coins)
+// without ever getting an explicit user_cosmetics row. It's the only
+// coin_price = 0 item that should be treated as always-owned: the other
+// coin_price = 0 items (mission/leaderboard/achievement rewards) must
+// actually be earned before they're owned or equippable.
+const starterAvatarImageKey = "rook"
+
 // handleListCosmetics returns the active cosmetic catalog, flagging which
 // items the caller already owns.
 func (s *Server) handleListCosmetics(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +55,8 @@ func (s *Server) handleListCosmetics(w http.ResponseWriter, r *http.Request) {
 
 	resp := make([]cosmeticItemResponse, 0, len(items))
 	for _, item := range items {
-		resp = append(resp, toCosmeticItemResponse(item, owned[item.CosmeticItemID] || item.CoinPrice == 0))
+		isOwned := owned[item.CosmeticItemID] || (item.CoinPrice == 0 && item.ImageKey == starterAvatarImageKey)
+		resp = append(resp, toCosmeticItemResponse(item, isOwned))
 	}
 	writeJSON(w, http.StatusOK, resp)
 }
@@ -76,6 +85,10 @@ func (s *Server) handleBuyCosmetic(w http.ResponseWriter, r *http.Request) {
 	}
 	if !item.IsActive {
 		writeError(w, http.StatusBadRequest, "cosmetic item is not available")
+		return
+	}
+	if item.CoinPrice == 0 {
+		writeError(w, http.StatusBadRequest, "this item cannot be purchased; it must be unlocked")
 		return
 	}
 
@@ -150,7 +163,7 @@ func (s *Server) ownsOrFreeCosmetic(r *http.Request, q *db.Queries, userID, cosm
 	if item.ItemType != wantType {
 		return db.CosmeticItem{}, pgx.ErrNoRows
 	}
-	if item.CoinPrice == 0 {
+	if item.CoinPrice == 0 && item.ImageKey == starterAvatarImageKey {
 		return item, nil
 	}
 	owned, err := q.UserOwnsCosmetic(r.Context(), db.UserOwnsCosmeticParams{

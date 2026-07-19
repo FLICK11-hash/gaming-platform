@@ -10,7 +10,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Target,
-  Crown
+  Crown,
+  Lock
 } from 'lucide-react'
 import { api } from './api.js'
 import MatchRoom from './Chess.jsx'
@@ -958,11 +959,15 @@ function Dashboard({
                 equipLabel = item.item_type === 'avatar' ? 'Equipped' : 'Unequip'
               }
 
+              const locked = !item.owned && item.coin_price === 0
+
               return (
                 <div className="cosmetic-item" key={item.cosmetic_item_id}>
                   <CosmeticIcon item={item} />
                   <b>{item.name}</b>
-                  <span className="mode-detail">{item.item_type} · {item.coin_price} 🪙</span>
+                  <span className="mode-detail">
+                    {item.item_type} · {item.coin_price === 0 ? 'Reward' : `${item.coin_price} 🪙`}
+                  </span>
                   <p>{item.description}</p>
                   {item.owned ? (
                     <button
@@ -972,6 +977,11 @@ function Dashboard({
                       title={framesAtCap ? `You can only equip ${MAX_PROFILE_FRAMES} profile frames at once.` : undefined}
                     >
                       {equipLabel}
+                    </button>
+                  ) : locked ? (
+                    <button className="locked" disabled title={item.description}>
+                      <Lock size={14} />
+                      Locked
                     </button>
                   ) : (
                     <button
