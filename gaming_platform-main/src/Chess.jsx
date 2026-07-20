@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Flag, Wifi, WifiOff } from 'lucide-react'
 import { api } from './api.js'
 import { EquippedBadge, ProfileFrameBanner } from './cosmeticArt.jsx'
@@ -82,6 +82,29 @@ function lowestEmptyRow(board, column) {
   return -1
 }
 
+// Best-effort diff between two board snapshots, used to figure out what an
+// incoming server 'state' broadcast changed (so we know which sound/highlight
+// to show for a move we didn't initiate ourselves). Not a full move parser —
+// multi-square moves like castling just yield *a* plausible from/to pair.
+function diffBoards(oldBoard, newBoard) {
+  let from = null
+  let to = null
+  let captured = false
+  for (let r = 0; r < 8; r++) {
+    for (let f = 0; f < 8; f++) {
+      const o = oldBoard[r][f]
+      const n = newBoard[r][f]
+      if (o === n) continue
+      if (n == null && o != null) from = squareName(r, f)
+      if (n != null) {
+        to = squareName(r, f)
+        if (o != null) captured = true
+      }
+    }
+  }
+  return from && to ? { from, to, captured } : null
+}
+
 const WIN_MESSAGES = [
   '🏆 Victory! You crushed it!',
   '🎉 GG! You won!',
@@ -121,6 +144,52 @@ function wsURL(matchId, token) {
   return `${proto}//${host}/matches/${matchId}/ws?token=${encodeURIComponent(token)}`
 }
 
+// --- Lightweight synthesized sound effects (no audio assets, zero network
+// latency). One shared AudioContext, lazily created on the first user
+// gesture so the browser's autoplay policy doesn't block it. ---
+let sharedAudioCtx = null
+function getAudioCtx() {
+  if (typeof window === 'undefined') return null
+  const Ctx = window.AudioContext || window.webkitAudioContext
+  if (!Ctx) return null
+  if (!sharedAudioCtx) sharedAudioCtx = new Ctx()
+  if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume()
+  return sharedAudioCtx
+}
+
+function tone(ctx, freq, start, duration, type = 'sine', gain = 0.16) {
+  const osc = ctx.createOscillator()
+  const g = ctx.createGain()
+  osc.type = type
+  osc.frequency.value = freq
+  const t0 = ctx.currentTime + start
+  g.gain.setValueAtTime(0, t0)
+  g.gain.linearRampToValueAtTime(gain, t0 + 0.008)
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration)
+  osc.connect(g)
+  g.connect(ctx.destination)
+  osc.start(t0)
+  osc.stop(t0 + duration + 0.02)
+}
+
+const SOUND_PLAYERS = {
+  move: ctx => tone(ctx, 720, 0, 0.09, 'sine', 0.16),
+  capture: ctx => { tone(ctx, 480, 0, 0.07, 'square', 0.14); tone(ctx, 260, 0.03, 0.12, 'square', 0.12) },
+  drop: ctx => tone(ctx, 620, 0, 0.1, 'triangle', 0.16),
+  illegal: ctx => tone(ctx, 160, 0, 0.16, 'sawtooth', 0.12),
+  start: ctx => { tone(ctx, 523, 0, 0.09); tone(ctx, 784, 0.09, 0.16) },
+  win: ctx => { tone(ctx, 523, 0, 0.1); tone(ctx, 659, 0.1, 0.1); tone(ctx, 784, 0.2, 0.24) },
+  loss: ctx => { tone(ctx, 392, 0, 0.13, 'sine', 0.14); tone(ctx, 293, 0.12, 0.18, 'sine', 0.12) },
+  draw: ctx => { tone(ctx, 440, 0, 0.12); tone(ctx, 440, 0.15, 0.14) },
+}
+
+function playSound(kind) {
+  const ctx = getAudioCtx()
+  if (!ctx) return
+  const player = SOUND_PLAYERS[kind]
+  if (player) player(ctx)
+}
+
 export default function MatchRoom({ matchId, token, userId, onExit }) {
   const [matchInfo, setMatchInfo] = useState(null)
   const [fen, setFen] = useState(START_FEN)
@@ -141,6 +210,9 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   const [premoveSelected, setPremoveSelected] = useState(null)
   const [premove, setPremove] = useState(null)
   const [premoveColumn, setPremoveColumn] = useState(null)
+  const [lastMove, setLastMove] = useState(null)
+  const [draggingFrom, setDraggingFrom] = useState(null)
+  const [dragOverSquare, setDragOverSquare] = useState(null)
   const [, forceTick] = useState(0)
 
   const wsRef = useRef(null)
@@ -148,6 +220,11 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   const mountedRef = useRef(true)
   const gameOverRef = useRef(false)
   const lastMoveWasPremoveRef = useRef(false)
+  const prevFenRef = useRef(START_FEN)
+  const lastSentMoveRef = useRef(null)
+  const boardRef = useRef(null)
+  const dragInfoRef = useRef(null)
+  const dragGhostRef = useRef(null)
 
   useEffect(() => {
     api(`/matches/${matchId}`, { token }).then(setMatchInfo).catch(err => setNotice(err.message))
@@ -159,7 +236,9 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
       setPremove(null)
       setPremoveColumn(null)
       setPremoveSelected(null)
+      playSound(gameOver.isDraw ? 'draw' : gameOver.isWinner ? 'win' : 'loss')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameOver])
 
   useEffect(() => {
@@ -170,6 +249,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   useEffect(() => {
     if (countdown == null) return
     if (countdown <= 0) {
+      playSound('start')
       setCountdown(null)
       return
     }
@@ -180,6 +260,8 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   useEffect(() => {
     mountedRef.current = true
     let reconnectTimer = null
+    prevFenRef.current = START_FEN
+    lastSentMoveRef.current = null
 
     function connect() {
       if (!mountedRef.current) return
@@ -209,8 +291,23 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
             setCountdown(null)
             setOptimisticMove(null)
             setOptimisticDrop(null)
-            if (msg.board) setC4Board(msg.board)
-            else setFen(msg.fen || START_FEN)
+            if (msg.board) {
+              setC4Board(msg.board)
+            } else {
+              const newFen = msg.fen || START_FEN
+              if (newFen !== prevFenRef.current) {
+                const diff = diffBoards(parseFEN(prevFenRef.current), parseFEN(newFen))
+                const sent = lastSentMoveRef.current
+                const isOwn = diff && sent && diff.from === sent.from && diff.to === sent.to
+                if (diff && !isOwn) {
+                  playSound(diff.captured ? 'capture' : 'move')
+                  setLastMove({ from: diff.from, to: diff.to })
+                }
+                lastSentMoveRef.current = null
+                prevFenRef.current = newFen
+              }
+              setFen(newFen)
+            }
             setTurn(msg.turn || 'white')
             setWinningSquare(msg.winning_square || null)
             setWinningCells(msg.winning_cells || null)
@@ -240,6 +337,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
           case 'error':
             setOptimisticMove(null)
             setOptimisticDrop(null)
+            if (!lastMoveWasPremoveRef.current) playSound('illegal')
             setNotice((lastMoveWasPremoveRef.current ? 'Premove failed: ' : '') + (msg.error || 'Error'))
             break
           default:
@@ -269,12 +367,14 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
     if (!isMyTurn) return
     if (premove) {
       setOptimisticMove({ from: premove.from, to: premove.to, promotion: premove.promotion })
+      setLastMove({ from: premove.from, to: premove.to })
       sendMove(premove.from, premove.to, premove.promotion, true)
       setPremove(null)
     } else if (premoveColumn != null) {
       const row = lowestEmptyRow(c4Board, premoveColumn)
       if (row !== -1) {
         setOptimisticDrop({ column: premoveColumn, row, color: myColor === 'red' ? 1 : 2 })
+        playSound('drop')
         sendDrop(premoveColumn, true)
       }
       setPremoveColumn(null)
@@ -306,6 +406,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   const board = withOptimisticMove(parseFEN(fen), optimisticMove)
   const displayC4Board = withOptimisticDrop(c4Board, optimisticDrop)
   const flip = !isConnectFour && myColor === 'black'
+  const interactive = !gameOver && !waiting
 
   function remainingFor(uid, colorForUid) {
     const base = clocks[String(uid)]
@@ -320,6 +421,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
 
   function sendMove(from, to, promotion, premove) {
     lastMoveWasPremoveRef.current = !!premove
+    lastSentMoveRef.current = { from, to }
     wsRef.current?.readyState === WebSocket.OPEN &&
       wsRef.current.send(JSON.stringify({ type: 'move', from, to, promotion, premove: !!premove }))
   }
@@ -345,6 +447,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
       return
     }
     setOptimisticDrop({ column, row, color: myColor === 'red' ? 1 : 2 })
+    playSound('drop')
     sendDrop(column)
   }
 
@@ -407,7 +510,10 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
       return
     }
 
+    const captured = !!piece
     setOptimisticMove({ from: selected, to: sq, promotion: '' })
+    setLastMove({ from: selected, to: sq })
+    playSound(captured ? 'capture' : 'move')
     sendMove(selected, sq, '')
     setSelected(null)
   }
@@ -420,13 +526,112 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
 
   function choosePromotion(letter) {
     if (!pendingPromo) return
+    const [toRank, toFile] = squareToIndices(pendingPromo.to)
+    const captured = !!board[toRank][toFile]
     setOptimisticMove({ from: pendingPromo.from, to: pendingPromo.to, promotion: letter })
+    setLastMove({ from: pendingPromo.from, to: pendingPromo.to })
+    playSound(captured ? 'capture' : 'move')
     sendMove(pendingPromo.from, pendingPromo.to, letter)
     setPendingPromo(null)
   }
 
+  // --- Drag & drop (chess.com-style: click-to-move still works unchanged;
+  // dragging a piece is layered on top and funnels into the exact same
+  // handleSquareClick logic a two-click move would use, so there's only one
+  // source of truth for move legality/UX). ---
+  function squareFromPoint(clientX, clientY, rect) {
+    const x = clientX - rect.left
+    const y = clientY - rect.top
+    if (x < 0 || y < 0 || x >= rect.width || y >= rect.height) return null
+    let fileIdx = Math.min(7, Math.floor((x / rect.width) * 8))
+    let rankIdx = Math.min(7, Math.floor((y / rect.height) * 8))
+    if (flip) {
+      fileIdx = 7 - fileIdx
+      rankIdx = 7 - rankIdx
+    }
+    return { rank: rankIdx, file: fileIdx }
+  }
+
+  function positionGhost(clientX, clientY) {
+    if (dragGhostRef.current) {
+      dragGhostRef.current.style.transform = `translate(${clientX}px, ${clientY}px) translate(-50%, -50%)`
+    }
+  }
+
+  function onSquarePointerDown(e, rankIdx, fileIdx) {
+    if (isConnectFour || !interactive || pendingPromo || dragInfoRef.current) return
+    const rect = boardRef.current.getBoundingClientRect()
+    dragInfoRef.current = {
+      fromRank: rankIdx,
+      fromFile: fileIdx,
+      startX: e.clientX,
+      startY: e.clientY,
+      lastX: e.clientX,
+      lastY: e.clientY,
+      rect,
+      squareSize: rect.width / 8,
+      pointerId: e.pointerId,
+      moved: false,
+      draggable: isOwnPiece(board[rankIdx][fileIdx], myColor),
+    }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  function onSquarePointerMove(e) {
+    const info = dragInfoRef.current
+    if (!info || info.pointerId !== e.pointerId) return
+    info.lastX = e.clientX
+    info.lastY = e.clientY
+    if (!info.draggable) return
+    if (!info.moved) {
+      const dx = e.clientX - info.startX
+      const dy = e.clientY - info.startY
+      if (Math.hypot(dx, dy) > 4) {
+        info.moved = true
+        setDraggingFrom(squareName(info.fromRank, info.fromFile))
+        handleSquareClick(info.fromRank, info.fromFile)
+      }
+    }
+    if (info.moved) {
+      positionGhost(e.clientX, e.clientY)
+      const dest = squareFromPoint(e.clientX, e.clientY, info.rect)
+      const destSq = dest ? squareName(dest.rank, dest.file) : null
+      setDragOverSquare(prev => (prev === destSq ? prev : destSq))
+    }
+  }
+
+  function onSquarePointerUp(e) {
+    const info = dragInfoRef.current
+    if (!info || info.pointerId !== e.pointerId) return
+    dragInfoRef.current = null
+    if (info.moved) {
+      setDraggingFrom(null)
+      setDragOverSquare(null)
+      const dest = squareFromPoint(e.clientX, e.clientY, info.rect)
+      if (!dest || (dest.rank === info.fromRank && dest.file === info.fromFile)) {
+        if (isMyTurn) setSelected(null)
+        else setPremoveSelected(null)
+      } else {
+        handleSquareClick(dest.rank, dest.file)
+      }
+    } else {
+      handleSquareClick(info.fromRank, info.fromFile)
+    }
+  }
+
+  useLayoutEffect(() => {
+    if (draggingFrom && dragInfoRef.current) {
+      positionGhost(dragInfoRef.current.lastX, dragInfoRef.current.lastY)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draggingFrom])
+
   const displayRanks = flip ? [...Array(8).keys()].reverse() : [...Array(8).keys()]
   const displayFiles = flip ? [...Array(8).keys()].reverse() : [...Array(8).keys()]
+  const bottomRank = displayRanks[displayRanks.length - 1]
+  const leftFile = displayFiles[0]
+  const draggingPiece = draggingFrom ? board[squareToIndices(draggingFrom)[0]][squareToIndices(draggingFrom)[1]] : null
+  const dragSquareSize = dragInfoRef.current?.squareSize || 0
 
   return (
     <div className="card wide chessroom">
@@ -438,13 +643,14 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
       </div>
 
       <div className="chess-layout">
-        <div>
+        <div className="board-column">
           <PlayerBar
-            label={`Opponent (${opponent.color.charAt(0).toUpperCase()}${opponent.color.slice(1)})`}
+            isYou={false}
             uid={opponent.uid}
             username={opponent.username}
             badgeKey={opponent.badgeKey}
             isBot={opponent.isBot}
+            color={opponent.color}
             seconds={remainingFor(opponent.uid, opponent.color)}
             active={turn === opponent.color && !gameOver}
             frameKeys={opponent.frameKeys}
@@ -477,7 +683,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
                 ))}
               </div>
             ) : (
-              <div className="chessboard">
+              <div className={`chessboard ${draggingFrom ? 'dragging' : ''}`} ref={boardRef}>
                 {displayRanks.map(rankIdx => (
                   <div className="chess-row" key={rankIdx}>
                     {displayFiles.map(fileIdx => {
@@ -488,32 +694,59 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
                       const isWinning = winningSquare === sq
                       const isPremoveFrom = premoveSelected === sq || premove?.from === sq
                       const isPremoveTo = premove?.to === sq
+                      const isLastMove = lastMove && (lastMove.from === sq || lastMove.to === sq)
+                      const isDragOver = dragOverSquare === sq
+                      const isDraggingPiece = draggingFrom === sq
+                      const hasOwnPiece = interactive && isOwnPiece(piece, myColor)
                       return (
-                        <button
+                        <div
                           key={sq}
-                          className={`chess-square ${dark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} ${isWinning ? 'winning' : ''} ${isPremoveFrom ? 'premove-selected' : ''} ${isPremoveTo ? 'premove-target' : ''}`}
-                          onClick={() => handleSquareClick(rankIdx, fileIdx)}
-                          disabled={gameOver || waiting}
+                          role="button"
+                          tabIndex={interactive ? 0 : -1}
+                          data-file={rankIdx === bottomRank ? String.fromCharCode(97 + fileIdx) : undefined}
+                          data-rank={fileIdx === leftFile ? String(8 - rankIdx) : undefined}
+                          className={`chess-square ${dark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} ${isWinning ? 'winning' : ''} ${isPremoveFrom ? 'premove-selected' : ''} ${isPremoveTo ? 'premove-target' : ''} ${isLastMove ? 'last-move' : ''} ${isDragOver ? 'drag-over' : ''} ${hasOwnPiece ? 'has-own-piece' : ''}`}
+                          onPointerDown={e => onSquarePointerDown(e, rankIdx, fileIdx)}
+                          onPointerMove={onSquarePointerMove}
+                          onPointerUp={onSquarePointerUp}
+                          onKeyDown={e => {
+                            if ((e.key === 'Enter' || e.key === ' ') && interactive) {
+                              e.preventDefault()
+                              handleSquareClick(rankIdx, fileIdx)
+                            }
+                          }}
                         >
-                          {piece && (
+                          {piece && !isDraggingPiece && (
                             <span className={piece === piece.toUpperCase() ? 'piece-white' : 'piece-black'}>
                               {PIECE_GLYPHS[piece]}
                             </span>
                           )}
-                        </button>
+                        </div>
                       )
                     })}
                   </div>
                 ))}
+                {draggingFrom && draggingPiece && (
+                  <div
+                    ref={dragGhostRef}
+                    className="drag-ghost"
+                    style={{ width: dragSquareSize, height: dragSquareSize, fontSize: dragSquareSize * 0.72 }}
+                  >
+                    <span className={draggingPiece === draggingPiece.toUpperCase() ? 'piece-white' : 'piece-black'}>
+                      {PIECE_GLYPHS[draggingPiece]}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
           <PlayerBar
-            label={`You (${me.color.charAt(0).toUpperCase()}${me.color.slice(1)})`}
+            isYou
             uid={me.uid}
             username={me.username}
             badgeKey={me.badgeKey}
             isBot={me.isBot}
+            color={me.color}
             seconds={remainingFor(me.uid, me.color)}
             active={turn === me.color && !gameOver}
             frameKeys={me.frameKeys}
@@ -564,14 +797,17 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
   )
 }
 
-function PlayerBar({ label, uid, username, badgeKey, isBot, seconds, active, frameKeys }) {
+function PlayerBar({ isYou, uid, username, badgeKey, isBot, color, seconds, active, frameKeys }) {
   const mm = seconds == null ? '--' : String(Math.floor(seconds / 60)).padStart(2, '0')
   const ss = seconds == null ? '--' : String(seconds % 60).padStart(2, '0')
   return (
     <div>
       <div className={`player-bar ${active ? 'active' : ''}`}>
-        <span>
-          {label} · {username || `#${uid}`}
+        <span className="player-bar-id">
+          <span className={`side-dot side-${color}`} title={color} />
+          <span className="player-bar-name">
+            {isYou ? 'You' : 'Opponent'} · {username || `#${uid}`}
+          </span>
           {isBot && <span className="bot-indicator" title="Computer opponent"> 🤖 Bot</span>}
           <EquippedBadge badgeKey={badgeKey} />
         </span>
