@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sort"
+	"math/rand"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -209,16 +209,20 @@ func (m *Matcher) matchOneStaleEntryWithBot(ctx context.Context, cutoff time.Tim
 		}
 	}
 
-	// The human is always seated as player 1 (moves first in both games);
-	// the match service triggers the bot's own moves autonomously whenever
-	// it becomes player 2's turn.
+	// Who's seated player 1 (and therefore moves first) is randomized; the
+	// match service triggers the bot's own moves autonomously based on whose
+	// turn it currently is, not which player slot it occupies.
+	player1ID, player2ID := human.UserID, botUser.UserID
+	if rand.Intn(2) == 0 {
+		player1ID, player2ID = player2ID, player1ID
+	}
 	if _, err := q.CreateMatch(ctx, db.CreateMatchParams{
 		TournamentID: createdTournament.TournamentID,
 		GameType:     entry.GameType,
 		Round:        "final",
 		MatchNumber:  dbutil.IntToPGInt4(1),
-		Player1ID:    human.UserID,
-		Player2ID:    botUser.UserID,
+		Player1ID:    player1ID,
+		Player2ID:    player2ID,
 	}); err != nil {
 		return false, err
 	}
@@ -308,8 +312,10 @@ func (m *Matcher) matchBucket(
 		return nil
 	}
 
-	sort.Slice(group, func(i, j int) bool {
-		return group[i].Elo > group[j].Elo
+	// Randomize seating order so who's seeded player 1 (and therefore moves
+	// first) is random rather than always the higher-Elo player.
+	rand.Shuffle(len(group), func(i, j int) {
+		group[i], group[j] = group[j], group[i]
 	})
 
 	totalCoinPool :=

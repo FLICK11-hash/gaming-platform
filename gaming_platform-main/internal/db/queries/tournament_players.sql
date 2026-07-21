@@ -3,9 +3,6 @@ INSERT INTO tournament_players (tournament_id, user_id, seed_number)
 VALUES ($1, $2, $3)
 RETURNING *;
 
--- name: ListTournamentPlayers :many
-SELECT * FROM tournament_players WHERE tournament_id = $1 ORDER BY seed_number;
-
 -- name: SetTournamentPlayerResult :exec
 UPDATE tournament_players
 SET final_result = $3

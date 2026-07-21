@@ -74,28 +74,13 @@ func (s *Server) Router() http.Handler {
 		r.Post("/matchmaking/queue", s.handleJoinQueue)
 		r.Delete("/matchmaking/queue/{queueID}", s.handleCancelQueue)
 
-		r.Get("/tournaments/{tournamentID}", s.handleGetTournament)
-
 		r.Get("/matches/mine", s.handleGetMyActiveMatch)
 		r.Get("/matches/{matchID}", s.handleGetMatch)
 		r.Post("/matches/{matchID}/resign", s.handleResign)
 		r.Get("/matches/{matchID}/ws", s.handleMatchWS)
 
-		r.Post("/fraud-reports", s.handleCreateFraudReport)
-		r.Get("/fraud-reports", s.handleListFraudReports)
-		r.Get("/fraud-reports/{fraudReportID}", s.handleGetFraudReport)
-		r.Patch("/fraud-reports/{fraudReportID}", s.handleUpdateFraudReportStatus)
-
-		r.Post("/follows/{userID}", s.handleFollow)
-		r.Delete("/follows/{userID}", s.handleUnfollow)
-		r.Get("/users/{userID}/followers", s.handleListFollowers)
-		r.Get("/users/{userID}/following", s.handleListFollowing)
-		r.Get("/users/{userID}/profile", s.handleGetUserProfile)
-
-		r.Post("/posts", s.handleCreatePost)
-		r.Get("/posts/{postID}", s.handleGetPost)
-		r.Get("/users/{userID}/posts", s.handleListPostsByUser)
-		r.Patch("/posts/{postID}", s.handleUpdatePostStatus)
+		r.Get("/profiles/{username}", s.handleGetUserProfile)
+		r.Post("/users/{userID}/challenge", s.handleChallengeUser)
 	})
 
 	return r

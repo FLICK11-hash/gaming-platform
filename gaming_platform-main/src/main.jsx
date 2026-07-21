@@ -3,8 +3,6 @@ import { createRoot } from 'react-dom/client'
 import {
   Trophy,
   LogOut,
-  Send,
-  Search,
   Users,
   ShieldAlert,
   ChevronLeft,
@@ -12,7 +10,8 @@ import {
   Target,
   Crown,
   UserCircle,
-  Lock
+  Lock,
+  Swords
 } from 'lucide-react'
 import { api } from './api.js'
 import MatchRoom from './Chess.jsx'
@@ -285,13 +284,6 @@ function Dashboard({
 
   const coinWager = FIXED_COIN_WAGER
 
-  const [post, setPost] = useState({
-    title: 'First post',
-    body: 'Testing the gaming platform frontend.'
-  })
-
-  const [posts, setPosts] = useState([])
-
   const [cosmetics, setCosmetics] = useState([])
   const cosmeticsScrollRef = useRef(null)
 
@@ -301,21 +293,13 @@ function Dashboard({
   const [leaderboardTab, setLeaderboardTab] = useState('elo')
 
   const [profile, setProfile] = useState(null)
-  const [profileLookupID, setProfileLookupID] = useState(String(user.user_id))
+  const [profileLookupUsername, setProfileLookupUsername] = useState(user.username)
 
   function scrollCosmetics(direction) {
     const el = cosmeticsScrollRef.current
     if (!el) return
     el.scrollBy({ left: direction * el.clientWidth * 0.9, behavior: 'smooth' })
   }
-
-  const [lookup, setLookup] = useState({
-    tournamentID: '',
-    matchID: '',
-    postID: ''
-  })
-
-  const [result, setResult] = useState(null)
 
   const record = useMemo(
     () => `${user.total_wins}-${user.total_losses}`,
@@ -396,21 +380,36 @@ function Dashboard({
   }, [token])
 
   useEffect(() => {
-    api(`/users/${user.user_id}/profile`, { token })
+    api(`/profiles/${user.username}`, { token })
       .then(setProfile)
       .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, user.user_id])
+  }, [token, user.username])
 
-  async function viewProfile(idOverride) {
-    const id = (idOverride ?? profileLookupID).trim()
-    if (!id) {
-      onMessage('Enter a user ID first.')
+  async function viewProfile(usernameOverride) {
+    const username = (usernameOverride ?? profileLookupUsername).trim()
+    if (!username) {
+      onMessage('Enter a username first.')
       return
     }
     try {
-      const data = await api(`/users/${id}/profile`, { token })
+      const data = await api(`/profiles/${username}`, { token })
       setProfile(data)
+    } catch (err) {
+      onMessage(err.message)
+    }
+  }
+
+  async function challengeUser(gameType) {
+    if (!profile) return
+    try {
+      const match = await api(`/users/${profile.user_id}/challenge`, {
+        token,
+        method: 'POST',
+        body: { game_type: gameType }
+      })
+      setActiveMatch(match)
+      onMessage(`Challenge sent to ${profile.username}.`)
     } catch (err) {
       onMessage(err.message)
     }
@@ -550,61 +549,6 @@ function Dashboard({
 
       setQueue(null)
       onMessage('Queue entry cancelled.')
-    } catch (err) {
-      onMessage(err.message)
-    }
-  }
-
-  async function createPost(event) {
-    event.preventDefault()
-
-    try {
-      const data = await api('/posts', {
-        token,
-        method: 'POST',
-        body: post
-      })
-
-      setPosts(currentPosts => [
-        data,
-        ...currentPosts
-      ])
-
-      onMessage('Post created.')
-    } catch (err) {
-      onMessage(err.message)
-    }
-  }
-
-  async function loadMyPosts() {
-    try {
-      const data = await api(
-        `/users/${user.user_id}/posts`,
-        { token }
-      )
-
-      setPosts(data)
-      onMessage('Posts loaded.')
-    } catch (err) {
-      onMessage(err.message)
-    }
-  }
-
-  async function fetchThing(type) {
-    try {
-      const id = lookup[`${type}ID`]
-
-      if (!id) {
-        onMessage(`Enter a ${type} ID first.`)
-        return
-      }
-
-      const data = await api(
-        `/${type}s/${id}`,
-        { token }
-      )
-
-      setResult(data)
     } catch (err) {
       onMessage(err.message)
     }
@@ -879,7 +823,7 @@ function Dashboard({
           onExit={() => {
             setActiveMatch(null)
             window.scrollTo({ top: 0, behavior: 'smooth' })
-            viewProfile(profile ? String(profile.user_id) : String(user.user_id))
+            viewProfile(profile ? profile.username : user.username)
           }}
         />
       )}
@@ -962,20 +906,20 @@ function Dashboard({
           <UserCircle />
           Player Profile
         </h2>
-        <p>Elo history, win/loss record, and recent matches for any player.</p>
+        <p>Search up any player by username to see their stats and challenge them.</p>
 
         <div className="profile-lookup">
           <input
-            placeholder="User ID"
-            value={profileLookupID}
-            onChange={event => setProfileLookupID(event.target.value)}
+            placeholder="Username"
+            value={profileLookupUsername}
+            onChange={event => setProfileLookupUsername(event.target.value)}
           />
           <button onClick={() => viewProfile()}>View Profile</button>
           <button
             className="ghost"
             onClick={() => {
-              setProfileLookupID(String(user.user_id))
-              viewProfile(String(user.user_id))
+              setProfileLookupUsername(user.username)
+              viewProfile(user.username)
             }}
           >
             My Profile
@@ -996,6 +940,16 @@ function Dashboard({
                   <ProfileFrameBanner frameKeys={profile.selected_profile_frames} size="small" />
                 </span>
               </div>
+              {profile.user_id !== user.user_id && (
+                <div className="profile-challenge-actions">
+                  <button onClick={() => challengeUser('chess')}>
+                    <Swords size={16} /> Challenge to Chess
+                  </button>
+                  <button onClick={() => challengeUser('connect_four')}>
+                    <Swords size={16} /> Challenge to Connect Four
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="profile-stats-grid">
@@ -1128,143 +1082,6 @@ function Dashboard({
         </div>
       </div>
 
-      <div className="card">
-        <h2>
-          <Send />
-          Social Post
-        </h2>
-
-        <form onSubmit={createPost}>
-          <label>
-            Title
-            <input
-              value={post.title}
-              onChange={event =>
-                setPost({
-                  ...post,
-                  title: event.target.value
-                })
-              }
-            />
-          </label>
-
-          <label>
-            Body
-            <textarea
-              value={post.body}
-              onChange={event =>
-                setPost({
-                  ...post,
-                  body: event.target.value
-                })
-              }
-            />
-          </label>
-
-          <div className="row">
-            <button>Create Post</button>
-
-            <button
-              type="button"
-              onClick={loadMyPosts}
-            >
-              Load My Posts
-            </button>
-          </div>
-        </form>
-
-        {posts.map(item => (
-          <article
-            className="post"
-            key={item.post_id}
-          >
-            <b>{item.title}</b>
-
-            <span>
-              #{item.post_id} · {item.status}
-            </span>
-
-            <p>{item.body}</p>
-          </article>
-        ))}
-      </div>
-
-      <div className="card">
-        <h2>
-          <Search />
-          Lookups
-        </h2>
-
-        <div className="lookup">
-          <input
-            placeholder="Tournament ID"
-            value={lookup.tournamentID}
-            onChange={event =>
-              setLookup({
-                ...lookup,
-                tournamentID: event.target.value
-              })
-            }
-          />
-
-          <button
-            onClick={() =>
-              fetchThing('tournament')
-            }
-          >
-            Get
-          </button>
-        </div>
-
-        <div className="lookup">
-          <input
-            placeholder="Match ID"
-            value={lookup.matchID}
-            onChange={event =>
-              setLookup({
-                ...lookup,
-                matchID: event.target.value
-              })
-            }
-          />
-
-          <button
-            onClick={() =>
-              fetchThing('match')
-            }
-          >
-            Get
-          </button>
-        </div>
-
-        <div className="lookup">
-          <input
-            placeholder="Post ID"
-            value={lookup.postID}
-            onChange={event =>
-              setLookup({
-                ...lookup,
-                postID: event.target.value
-              })
-            }
-          />
-
-          <button
-            onClick={() =>
-              fetchThing('post')
-            }
-          >
-            Get
-          </button>
-        </div>
-
-        {result && (
-          <pre>
-            {JSON.stringify(result, null, 2)}
-          </pre>
-        )}
-      </div>
-
       <div className="card wide">
         <h2>
           <ShieldAlert />
@@ -1275,7 +1092,8 @@ function Dashboard({
           Select 1v1 or tournament mode, choose a virtual
           coin wager, and enter matchmaking. Once matched,
           the live chess board will appear and connect
-          through WebSockets.
+          through WebSockets. Or search up a player above
+          and challenge them directly.
         </p>
       </div>
     </section>

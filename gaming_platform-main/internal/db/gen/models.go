@@ -37,23 +37,6 @@ type EloHistory struct {
 	RecordedAt   pgtype.Timestamptz `json:"recorded_at"`
 }
 
-type Follow struct {
-	FollowingUserID int64              `json:"following_user_id"`
-	FollowedUserID  int64              `json:"followed_user_id"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
-}
-
-type FraudReport struct {
-	FraudReportID  int64              `json:"fraud_report_id"`
-	ReporterUserID int64              `json:"reporter_user_id"`
-	ReportedUserID int64              `json:"reported_user_id"`
-	TournamentID   pgtype.Int8        `json:"tournament_id"`
-	MatchID        pgtype.Int8        `json:"match_id"`
-	Reason         pgtype.Text        `json:"reason"`
-	Status         pgtype.Text        `json:"status"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-}
-
 type LeaderboardRewardRun struct {
 	LeaderboardRewardRunID int64              `json:"leaderboard_reward_run_id"`
 	WeekKey                string             `json:"week_key"`
@@ -120,15 +103,6 @@ type Payment struct {
 	PaymentStatus         pgtype.Text        `json:"payment_status"`
 	ExternalTransactionID pgtype.Text        `json:"external_transaction_id"`
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
-}
-
-type Post struct {
-	PostID    int64              `json:"post_id"`
-	UserID    int64              `json:"user_id"`
-	Title     pgtype.Text        `json:"title"`
-	Body      pgtype.Text        `json:"body"`
-	Status    pgtype.Text        `json:"status"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type Tournament struct {

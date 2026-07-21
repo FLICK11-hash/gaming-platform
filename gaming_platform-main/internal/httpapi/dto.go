@@ -87,18 +87,8 @@ func toQueueResponse(q db.MatchmakingQueue) queueResponse {
 	}
 }
 
-type tournamentPlayerResponse struct {
-	UserID      int64  `json:"user_id"`
-	SeedNumber  int    `json:"seed_number"`
-	FinalResult string `json:"final_result,omitempty"`
-}
-
-func toTournamentPlayerResponse(p db.TournamentPlayer) tournamentPlayerResponse {
-	return tournamentPlayerResponse{
-		UserID:      p.UserID,
-		SeedNumber:  dbutil.PGInt4ToInt(p.SeedNumber),
-		FinalResult: dbutil.PGTextToString(p.FinalResult),
-	}
+type challengeRequest struct {
+	GameType string `json:"game_type"`
 }
 
 type matchResponse struct {
@@ -159,60 +149,6 @@ func withPlayerProfiles(resp matchResponse, player1, player2 db.User) matchRespo
 	return resp
 }
 
-type tournamentResponse struct {
-	TournamentID    int64                      `json:"tournament_id"`
-	GameType        string                     `json:"game_type"`
-	GameMode        string                     `json:"game_mode"`
-	Status          string                     `json:"status"`
-	CoinWager       int64                      `json:"coin_wager"`
-	TotalCoinPool   int64                      `json:"total_coin_pool"`
-	WinnerCoinPrize int64                      `json:"winner_coin_prize"`
-	BonusCoins      int64                      `json:"bonus_coins"`
-	WinnerUserID    *int64                     `json:"winner_user_id,omitempty"`
-	Players         []tournamentPlayerResponse `json:"players"`
-	Matches         []matchResponse            `json:"matches"`
-}
-
-func toTournamentResponse(
-	t db.Tournament,
-	players []db.TournamentPlayer,
-	matches []db.Match,
-) tournamentResponse {
-	resp := tournamentResponse{
-		TournamentID:    t.TournamentID,
-		GameType:        t.GameType,
-		GameMode:        t.GameMode,
-		Status:          t.Status,
-		CoinWager:       t.CoinWager,
-		TotalCoinPool:   t.TotalCoinPool,
-		WinnerCoinPrize: t.WinnerCoinPrize,
-		BonusCoins:      t.BonusCoins,
-		Players:         make([]tournamentPlayerResponse, 0, len(players)),
-		Matches:         make([]matchResponse, 0, len(matches)),
-	}
-
-	if t.WinnerUserID.Valid {
-		value := t.WinnerUserID.Int64
-		resp.WinnerUserID = &value
-	}
-
-	for _, player := range players {
-		resp.Players = append(
-			resp.Players,
-			toTournamentPlayerResponse(player),
-		)
-	}
-
-	for _, match := range matches {
-		resp.Matches = append(
-			resp.Matches,
-			toMatchResponse(match),
-		)
-	}
-
-	return resp
-}
-
 type cosmeticItemResponse struct {
 	CosmeticItemID int64  `json:"cosmetic_item_id"`
 	Name           string `json:"name"`
@@ -237,89 +173,6 @@ func toCosmeticItemResponse(item db.CosmeticItem, owned bool) cosmeticItemRespon
 
 type equipCosmeticRequest struct {
 	CosmeticItemID int64 `json:"cosmetic_item_id"`
-}
-
-type createFraudReportRequest struct {
-	ReportedUserID int64  `json:"reported_user_id"`
-	TournamentID   *int64 `json:"tournament_id"`
-	MatchID        *int64 `json:"match_id"`
-	Reason         string `json:"reason"`
-}
-
-type updateFraudReportStatusRequest struct {
-	Status string `json:"status"`
-}
-
-type fraudReportResponse struct {
-	FraudReportID  int64  `json:"fraud_report_id"`
-	ReporterUserID int64  `json:"reporter_user_id"`
-	ReportedUserID int64  `json:"reported_user_id"`
-	TournamentID   *int64 `json:"tournament_id,omitempty"`
-	MatchID        *int64 `json:"match_id,omitempty"`
-	Reason         string `json:"reason"`
-	Status         string `json:"status"`
-}
-
-func toFraudReportResponse(f db.FraudReport) fraudReportResponse {
-	resp := fraudReportResponse{
-		FraudReportID:  f.FraudReportID,
-		ReporterUserID: f.ReporterUserID,
-		ReportedUserID: f.ReportedUserID,
-		Reason:         dbutil.PGTextToString(f.Reason),
-		Status:         dbutil.PGTextToString(f.Status),
-	}
-	if f.TournamentID.Valid {
-		v := f.TournamentID.Int64
-		resp.TournamentID = &v
-	}
-	if f.MatchID.Valid {
-		v := f.MatchID.Int64
-		resp.MatchID = &v
-	}
-	return resp
-}
-
-type createPostRequest struct {
-	Title string `json:"title"`
-	Body  string `json:"body"`
-}
-
-type updatePostStatusRequest struct {
-	Status string `json:"status"`
-}
-
-type postResponse struct {
-	PostID    int64     `json:"post_id"`
-	UserID    int64     `json:"user_id"`
-	Title     string    `json:"title"`
-	Body      string    `json:"body"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
-func toPostResponse(p db.Post) postResponse {
-	return postResponse{
-		PostID:    p.PostID,
-		UserID:    p.UserID,
-		Title:     dbutil.PGTextToString(p.Title),
-		Body:      dbutil.PGTextToString(p.Body),
-		Status:    dbutil.PGTextToString(p.Status),
-		CreatedAt: p.CreatedAt.Time,
-	}
-}
-
-type followResponse struct {
-	FollowingUserID int64     `json:"following_user_id"`
-	FollowedUserID  int64     `json:"followed_user_id"`
-	CreatedAt       time.Time `json:"created_at"`
-}
-
-func toFollowResponse(f db.Follow) followResponse {
-	return followResponse{
-		FollowingUserID: f.FollowingUserID,
-		FollowedUserID:  f.FollowedUserID,
-		CreatedAt:       f.CreatedAt.Time,
-	}
 }
 
 type inboundWSMessage struct {
