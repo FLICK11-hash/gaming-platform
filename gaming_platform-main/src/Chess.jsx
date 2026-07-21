@@ -382,6 +382,15 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMyTurn])
 
+  // Keeps the dragged-piece ghost glued to the pointer even when a drag
+  // starts moving before React re-renders with the new draggingFrom state.
+  useLayoutEffect(() => {
+    if (draggingFrom && dragInfoRef.current) {
+      positionGhost(dragInfoRef.current.lastX, dragInfoRef.current.lastY)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draggingFrom])
+
   if (!matchInfo) return <div className="card wide chessroom"><p className="muted">Loading match...</p></div>
 
   // The viewer's own bar always renders at the bottom (below the board) and
@@ -618,13 +627,6 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
       handleSquareClick(info.fromRank, info.fromFile)
     }
   }
-
-  useLayoutEffect(() => {
-    if (draggingFrom && dragInfoRef.current) {
-      positionGhost(dragInfoRef.current.lastX, dragInfoRef.current.lastY)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draggingFrom])
 
   const displayRanks = flip ? [...Array(8).keys()].reverse() : [...Array(8).keys()]
   const displayFiles = flip ? [...Array(8).keys()].reverse() : [...Array(8).keys()]
