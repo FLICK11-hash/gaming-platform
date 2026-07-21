@@ -37,37 +37,6 @@ func (q *Queries) CreateTournamentPlayer(ctx context.Context, arg CreateTourname
 	return i, err
 }
 
-const listTournamentPlayers = `-- name: ListTournamentPlayers :many
-SELECT tournament_player_id, tournament_id, user_id, seed_number, final_result, joined_at FROM tournament_players WHERE tournament_id = $1 ORDER BY seed_number
-`
-
-func (q *Queries) ListTournamentPlayers(ctx context.Context, tournamentID int64) ([]TournamentPlayer, error) {
-	rows, err := q.db.Query(ctx, listTournamentPlayers, tournamentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []TournamentPlayer{}
-	for rows.Next() {
-		var i TournamentPlayer
-		if err := rows.Scan(
-			&i.TournamentPlayerID,
-			&i.TournamentID,
-			&i.UserID,
-			&i.SeedNumber,
-			&i.FinalResult,
-			&i.JoinedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const setTournamentPlayerResult = `-- name: SetTournamentPlayerResult :exec
 UPDATE tournament_players
 SET final_result = $3
