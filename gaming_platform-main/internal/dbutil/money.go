@@ -3,32 +3,8 @@
 package dbutil
 
 import (
-	"math"
-	"math/big"
-
 	"github.com/jackc/pgx/v5/pgtype"
 )
-
-// NumericToFloat64 converts a pgtype.Numeric (as used for decimal columns)
-// to a float64. Callers should only use this for display/arithmetic on
-// dollar amounts, not for anything requiring exact decimal precision.
-func NumericToFloat64(n pgtype.Numeric) float64 {
-	if !n.Valid {
-		return 0
-	}
-	f, err := n.Float64Value()
-	if err != nil || !f.Valid {
-		return 0
-	}
-	return f.Float64
-}
-
-// Float64ToNumeric converts a float64 dollar amount to a pgtype.Numeric with
-// 2 decimal places of precision.
-func Float64ToNumeric(f float64) pgtype.Numeric {
-	cents := int64(math.Round(f * 100))
-	return pgtype.Numeric{Int: big.NewInt(cents), Exp: -2, Valid: true}
-}
 
 // IntToPGInt4 converts a plain int to a pgtype.Int4.
 func IntToPGInt4(v int) pgtype.Int4 {
