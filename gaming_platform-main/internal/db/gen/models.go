@@ -94,17 +94,6 @@ type Mission struct {
 	IsActive            bool        `json:"is_active"`
 }
 
-type Payment struct {
-	PaymentID             int64              `json:"payment_id"`
-	UserID                int64              `json:"user_id"`
-	TournamentID          pgtype.Int8        `json:"tournament_id"`
-	Amount                pgtype.Numeric     `json:"amount"`
-	PaymentType           pgtype.Text        `json:"payment_type"`
-	PaymentStatus         pgtype.Text        `json:"payment_status"`
-	ExternalTransactionID pgtype.Text        `json:"external_transaction_id"`
-	CreatedAt             pgtype.Timestamptz `json:"created_at"`
-}
-
 type Tournament struct {
 	TournamentID    int64              `json:"tournament_id"`
 	GameType        string             `json:"game_type"`
@@ -138,7 +127,6 @@ type User struct {
 	TotalWins             pgtype.Int4        `json:"total_wins"`
 	TotalLosses           pgtype.Int4        `json:"total_losses"`
 	NumGames              pgtype.Int4        `json:"num_games"`
-	AccountBalance        pgtype.Numeric     `json:"account_balance"`
 	AccountStatus         pgtype.Text        `json:"account_status"`
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 	CoinBalance           int64              `json:"coin_balance"`
@@ -157,21 +145,6 @@ type UserCosmetic struct {
 	UserID         int64              `json:"user_id"`
 	CosmeticItemID int64              `json:"cosmetic_item_id"`
 	PurchasedAt    pgtype.Timestamptz `json:"purchased_at"`
-}
-
-type UserHistoryLog struct {
-	UserHistoryLogID int64              `json:"user_history_log_id"`
-	UserID           int64              `json:"user_id"`
-	TournamentID     int64              `json:"tournament_id"`
-	MatchID          pgtype.Int8        `json:"match_id"`
-	Result           pgtype.Text        `json:"result"`
-	WinsAfterGame    pgtype.Int4        `json:"wins_after_game"`
-	LossesAfterGame  pgtype.Int4        `json:"losses_after_game"`
-	EloBefore        pgtype.Int4        `json:"elo_before"`
-	EloAfter         pgtype.Int4        `json:"elo_after"`
-	BalanceBefore    pgtype.Numeric     `json:"balance_before"`
-	BalanceAfter     pgtype.Numeric     `json:"balance_after"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 }
 
 type UserMissionProgress struct {
