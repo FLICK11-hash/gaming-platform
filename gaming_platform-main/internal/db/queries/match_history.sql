@@ -1,5 +1,6 @@
 -- name: InsertEloHistory :exec
-INSERT INTO elo_history (user_id, elo) VALUES ($1, $2);
+INSERT INTO elo_history (user_id, match_id, elo_before, elo)
+VALUES (sqlc.arg('user_id'), sqlc.arg('match_id'), sqlc.arg('elo_before'), sqlc.arg('elo'));
 
 -- name: ListEloHistoryForUser :many
 SELECT elo, recorded_at FROM elo_history WHERE user_id = $1 ORDER BY recorded_at ASC;

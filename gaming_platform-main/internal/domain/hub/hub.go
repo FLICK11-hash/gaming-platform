@@ -69,6 +69,23 @@ func (h *Hub) ConnectedCount(matchID int64) int {
 	return len(h.conns[matchID])
 }
 
+// SendTo writes v as JSON to a single user's connection in matchID, if they
+// currently have one registered, and is a no-op otherwise. Safe to call
+// concurrently with Broadcast against the same connection - both go through
+// that connection's own write lock, so callers that need to write to a
+// registered connection outside of a broadcast (e.g. a direct error reply)
+// should always go through here rather than writing to the raw
+// *websocket.Conn themselves.
+func (h *Hub) SendTo(matchID, userID int64, v any) error {
+	h.mu.Lock()
+	c, ok := h.conns[matchID][userID]
+	h.mu.Unlock()
+	if !ok {
+		return nil
+	}
+	return c.writeJSON(v)
+}
+
 // Broadcast sends v as JSON to every connection currently registered for
 // matchID.
 func (h *Hub) Broadcast(matchID int64, v any) {

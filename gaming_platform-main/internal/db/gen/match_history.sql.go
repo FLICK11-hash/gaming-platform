@@ -46,16 +46,24 @@ func (q *Queries) CountTournamentWinsForUser(ctx context.Context, winnerUserID p
 }
 
 const insertEloHistory = `-- name: InsertEloHistory :exec
-INSERT INTO elo_history (user_id, elo) VALUES ($1, $2)
+INSERT INTO elo_history (user_id, match_id, elo_before, elo)
+VALUES ($1, $2, $3, $4)
 `
 
 type InsertEloHistoryParams struct {
-	UserID int64 `json:"user_id"`
-	Elo    int32 `json:"elo"`
+	UserID    int64       `json:"user_id"`
+	MatchID   pgtype.Int8 `json:"match_id"`
+	EloBefore pgtype.Int4 `json:"elo_before"`
+	Elo       int32       `json:"elo"`
 }
 
 func (q *Queries) InsertEloHistory(ctx context.Context, arg InsertEloHistoryParams) error {
-	_, err := q.db.Exec(ctx, insertEloHistory, arg.UserID, arg.Elo)
+	_, err := q.db.Exec(ctx, insertEloHistory,
+		arg.UserID,
+		arg.MatchID,
+		arg.EloBefore,
+		arg.Elo,
+	)
 	return err
 }
 

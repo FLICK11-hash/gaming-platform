@@ -11,6 +11,40 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const applyMoveClocks = `-- name: ApplyMoveClocks :exec
+UPDATE match_clocks
+SET
+    remaining_seconds = CASE WHEN user_id = $1 THEN $2 ELSE remaining_seconds END,
+    is_current_turn = (user_id = $3),
+    last_started_at = $4
+WHERE match_id = $5
+  AND user_id IN ($1, $3)
+`
+
+type ApplyMoveClocksParams struct {
+	MoverUserID           int64              `json:"mover_user_id"`
+	MoverRemainingSeconds float64            `json:"mover_remaining_seconds"`
+	OpponentUserID        int64              `json:"opponent_user_id"`
+	LastStartedAt         pgtype.Timestamptz `json:"last_started_at"`
+	MatchID               int64              `json:"match_id"`
+}
+
+// Applies both clocks' post-move state in a single round trip instead of two
+// separate reads plus two separate writes: the mover's new remaining time
+// and the turn handoff are set together, since every move touches exactly
+// these two rows. Bullet chess gives each side 60 seconds total, so cutting
+// per-move database round trips matters for keeping the clock fair.
+func (q *Queries) ApplyMoveClocks(ctx context.Context, arg ApplyMoveClocksParams) error {
+	_, err := q.db.Exec(ctx, applyMoveClocks,
+		arg.MoverUserID,
+		arg.MoverRemainingSeconds,
+		arg.OpponentUserID,
+		arg.LastStartedAt,
+		arg.MatchID,
+	)
+	return err
+}
+
 const createMatchClock = `-- name: CreateMatchClock :one
 INSERT INTO match_clocks (match_id, user_id, starting_seconds, remaining_seconds, is_current_turn, last_started_at)
 VALUES ($1, $2, $3, $4, $5, $6)

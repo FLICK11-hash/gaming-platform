@@ -35,6 +35,8 @@ type EloHistory struct {
 	UserID       int64              `json:"user_id"`
 	Elo          int32              `json:"elo"`
 	RecordedAt   pgtype.Timestamptz `json:"recorded_at"`
+	MatchID      pgtype.Int8        `json:"match_id"`
+	EloBefore    pgtype.Int4        `json:"elo_before"`
 }
 
 type LeaderboardRewardRun struct {

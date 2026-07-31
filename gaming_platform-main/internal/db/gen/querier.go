@@ -17,12 +17,23 @@ type Querier interface {
 	// magnitude exceeds the current balance matches zero rows and comes back as
 	// pgx.ErrNoRows to the caller.
 	AdjustUserCoinBalance(ctx context.Context, arg AdjustUserCoinBalanceParams) (User, error)
+	// Applies both clocks' post-move state in a single round trip instead of two
+	// separate reads plus two separate writes: the mover's new remaining time
+	// and the turn handoff are set together, since every move touches exactly
+	// these two rows. Bullet chess gives each side 60 seconds total, so cutting
+	// per-move database round trips matters for keeping the clock fair.
+	ApplyMoveClocks(ctx context.Context, arg ApplyMoveClocksParams) error
 	AvgGameLengthSecondsForUser(ctx context.Context, player1ID int64) (AvgGameLengthSecondsForUserRow, error)
 	CancelQueueEntry(ctx context.Context, arg CancelQueueEntryParams) error
 	// Grants the daily reward once per rolling 24h window. Matches zero rows
 	// (pgx.ErrNoRows) if the caller already claimed within the last 24h.
 	ClaimDailyLoginReward(ctx context.Context, arg ClaimDailyLoginRewardParams) (User, error)
 	ClaimMissionProgress(ctx context.Context, arg ClaimMissionProgressParams) (UserMissionProgress, error)
+	// Guarded on status = 'active' so two concurrent completion paths for the
+	// same match (e.g. a move delivering checkmate racing a clock-watcher
+	// timeout, or a resign racing a disconnect forfeit) can't both succeed: only
+	// the first writer gets a row back, the second gets pgx.ErrNoRows and knows
+	// to stand down instead of double-paying Elo/coins for the same result.
 	CompleteMatch(ctx context.Context, arg CompleteMatchParams) (Match, error)
 	CompleteTournament(ctx context.Context, arg CompleteTournamentParams) (Tournament, error)
 	CountCompletedMatches(ctx context.Context) (int64, error)

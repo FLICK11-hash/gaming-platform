@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -120,6 +121,13 @@ func NewService(pool *pgxpool.Pool, h *hub.Hub, missionsSvc *missions.Service, l
 	}
 }
 
+// SendError delivers an error reply to a single connected player's websocket,
+// going through the hub's per-connection write lock so it can never race with
+// a concurrent Broadcast to the same connection.
+func (s *Service) SendError(matchID, userID int64, message string) {
+	_ = s.hub.SendTo(matchID, userID, map[string]string{"type": "error", "error": message})
+}
+
 // wsOutbound is broadcast/sent to clients over the match websocket.
 type wsOutbound struct {
 	Type          string         `json:"type"`
@@ -132,8 +140,14 @@ type wsOutbound struct {
 	Seconds       int            `json:"seconds,omitempty"`
 	WinningSquare string         `json:"winning_square,omitempty"`
 	WinningCells  [][2]int       `json:"winning_cells,omitempty"`
+	Reason        string         `json:"reason,omitempty"`
 	Error         string         `json:"error,omitempty"`
 }
+
+// MatchOverReasonC4TimeTiebreak marks a match_over message where a Connect
+// Four board filled up with nobody connecting four, so the win was decided
+// by whoever had more clock time left rather than an actual connection.
+const MatchOverReasonC4TimeTiebreak = "c4_time_tiebreak"
 
 // moveHighlight identifies what to visually call out in the final position
 // of a just-finished game: the checkmating square in chess, or the winning
@@ -455,9 +469,21 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input M
 	}
 
 	now := time.Now()
-	moverClock, err := q.GetMatchClockForUser(ctx, db.GetMatchClockForUserParams{MatchID: matchID, UserID: userID})
+	// One round trip for both clocks instead of a per-player read, so the
+	// clock reads for a bullet game (60s total per side) don't pile up
+	// database latency the way two separate GetMatchClockForUser calls did.
+	clocks, err := q.ListMatchClocksByMatch(ctx, matchID)
 	if err != nil {
 		return err
+	}
+	var moverClock, opponentClock db.MatchClock
+	for _, c := range clocks {
+		switch c.UserID {
+		case userID:
+			moverClock = c
+		case opponentID:
+			opponentClock = c
+		}
 	}
 	moverRemaining := clock.RemainingAt(clock.State{
 		RemainingSeconds: moverClock.RemainingSeconds,
@@ -470,24 +496,14 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input M
 			moverRemaining = 0
 		}
 	}
-	if _, err := q.UpdateMatchClock(ctx, db.UpdateMatchClockParams{
-		MatchClockID:     moverClock.MatchClockID,
-		RemainingSeconds: moverRemaining,
-		IsCurrentTurn:    pgtype.Bool{Bool: false, Valid: true},
-		LastStartedAt:    pgtype.Timestamptz{Time: now, Valid: true},
-	}); err != nil {
-		return err
-	}
-
-	opponentClock, err := q.GetMatchClockForUser(ctx, db.GetMatchClockForUserParams{MatchID: matchID, UserID: opponentID})
-	if err != nil {
-		return err
-	}
-	if _, err := q.UpdateMatchClock(ctx, db.UpdateMatchClockParams{
-		MatchClockID:     opponentClock.MatchClockID,
-		RemainingSeconds: opponentClock.RemainingSeconds,
-		IsCurrentTurn:    pgtype.Bool{Bool: true, Valid: true},
-		LastStartedAt:    pgtype.Timestamptz{Time: now, Valid: true},
+	// Both clocks' post-move state (mover's new remaining time, the turn
+	// handoff) lands in a single write instead of two.
+	if err := q.ApplyMoveClocks(ctx, db.ApplyMoveClocksParams{
+		MatchID:               matchID,
+		MoverUserID:           userID,
+		MoverRemainingSeconds: moverRemaining,
+		OpponentUserID:        opponentID,
+		LastStartedAt:         pgtype.Timestamptz{Time: now, Valid: true},
 	}); err != nil {
 		return err
 	}
@@ -518,11 +534,13 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input M
 	// their clock at that moment wins, so every game reaches a winner.
 	// moverRemaining and opponentClock.RemainingSeconds are both snapshots
 	// as of `now`, so they're directly comparable.
+	reason := ""
 	if winnerID == 0 && m.GameType == GameTypeConnectFour {
 		winnerID = winnerByRemainingTime(
 			userID, moverRemaining,
 			opponentID, opponentClock.RemainingSeconds,
 		)
+		reason = MatchOverReasonC4TimeTiebreak
 	}
 
 	s.mu.Lock()
@@ -536,7 +554,7 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input M
 	// had already seen it applied locally; the opponent never received it.
 	s.broadcastState(ctx, m, highlight)
 
-	return s.finishMatch(ctx, matchID, winnerID)
+	return s.finishMatch(ctx, matchID, winnerID, reason)
 }
 
 // applyMove dispatches a move to the correct game engine and reports whether
@@ -644,7 +662,7 @@ func (s *Service) HandleResign(ctx context.Context, matchID, userID int64) error
 	delete(s.deadlines, matchID)
 	s.mu.Unlock()
 
-	return s.finishMatch(ctx, matchID, opponentID)
+	return s.finishMatch(ctx, matchID, opponentID, "")
 }
 
 // popIfExpired removes and reports whether matchID's clock has already run
@@ -702,7 +720,7 @@ func (s *Service) checkDisconnects(ctx context.Context) {
 	s.mu.Unlock()
 
 	for _, f := range expired {
-		if err := s.finishMatch(ctx, f.MatchID, f.OpponentUserID); err != nil {
+		if err := s.finishMatch(ctx, f.MatchID, f.OpponentUserID, ""); err != nil {
 			log.Printf("match: disconnect forfeit error for match %d: %v", f.MatchID, err)
 		}
 	}
@@ -740,27 +758,29 @@ func (s *Service) completeMatch(ctx context.Context, matchID int64) error {
 	if !ok {
 		return nil
 	}
-	return s.finishMatch(ctx, matchID, d.OpponentUserID)
+	return s.finishMatch(ctx, matchID, d.OpponentUserID, "")
 }
 
 // finishMatch persists the match result, updates both players' Elo/stats,
 // and advances the tournament bracket. winnerUserID is 0 for a draw.
-func (s *Service) finishMatch(ctx context.Context, matchID, winnerUserID int64) error {
+func (s *Service) finishMatch(ctx context.Context, matchID, winnerUserID int64, reason string) error {
 	q := db.New(s.pool)
-
-	m, err := q.GetMatch(ctx, matchID)
-	if err != nil {
-		return err
-	}
-	if m.Status.String == "completed" || m.Status.String == "cancelled" {
-		return nil // already finished by a concurrent path
-	}
 
 	var winnerPG pgtype.Int8
 	if winnerUserID != 0 {
 		winnerPG = dbutil.Int64ToPGInt8(winnerUserID)
 	}
-	if _, err := q.CompleteMatch(ctx, db.CompleteMatchParams{MatchID: matchID, WinnerUserID: winnerPG}); err != nil {
+	// CompleteMatch only affects a row still in status 'active', so this
+	// doubles as the concurrency guard: if a checkmate detected from a move
+	// races a clock-watcher timeout (or a resign races a disconnect
+	// forfeit) for the same match, only the first caller gets a row back -
+	// the second gets pgx.ErrNoRows and stands down instead of running Elo
+	// and prize payout a second time for the same result.
+	m, err := q.CompleteMatch(ctx, db.CompleteMatchParams{MatchID: matchID, WinnerUserID: winnerPG})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil // already finished by a concurrent path
+		}
 		return err
 	}
 	if m.GameType == GameTypeConnectFour {
@@ -773,11 +793,11 @@ func (s *Service) finishMatch(ctx context.Context, matchID, winnerUserID int64) 
 	delete(s.disconnects, matchID)
 	s.mu.Unlock()
 
-	if err := s.updateElo(ctx, m.Player1ID, m.Player2ID, winnerUserID); err != nil {
+	if err := s.updateElo(ctx, matchID, m.Player1ID, m.Player2ID, winnerUserID); err != nil {
 		log.Printf("match: elo update error for match %d: %v", matchID, err)
 	}
 
-	s.hub.Broadcast(matchID, wsOutbound{Type: "match_over", Winner: winnerUserID})
+	s.hub.Broadcast(matchID, wsOutbound{Type: "match_over", Winner: winnerUserID, Reason: reason})
 
 	if err := s.advanceBracket(ctx, m.TournamentID, m, winnerUserID); err != nil {
 		log.Printf("match: bracket advancement error for tournament %d: %v", m.TournamentID, err)
@@ -786,7 +806,7 @@ func (s *Service) finishMatch(ctx context.Context, matchID, winnerUserID int64) 
 	return nil
 }
 
-func (s *Service) updateElo(ctx context.Context, player1ID, player2ID, winnerUserID int64) error {
+func (s *Service) updateElo(ctx context.Context, matchID, player1ID, player2ID, winnerUserID int64) error {
 	q := db.New(s.pool)
 
 	p1, err := q.GetUserByID(ctx, player1ID)
@@ -831,7 +851,7 @@ func (s *Service) updateElo(ctx context.Context, player1ID, player2ID, winnerUse
 			return err
 		}
 		if s.matchHistorySvc != nil {
-			s.matchHistorySvc.RecordEloSnapshot(ctx, player1ID, newP1Elo)
+			s.matchHistorySvc.RecordEloSnapshot(ctx, player1ID, matchID, p1Elo, newP1Elo)
 		}
 	}
 	if !p2.IsBot {
@@ -845,7 +865,7 @@ func (s *Service) updateElo(ctx context.Context, player1ID, player2ID, winnerUse
 			return err
 		}
 		if s.matchHistorySvc != nil {
-			s.matchHistorySvc.RecordEloSnapshot(ctx, player2ID, newP2Elo)
+			s.matchHistorySvc.RecordEloSnapshot(ctx, player2ID, matchID, p2Elo, newP2Elo)
 		}
 	}
 

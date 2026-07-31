@@ -47,7 +47,7 @@ func (q *Queries) ActivateMatch(ctx context.Context, arg ActivateMatchParams) (M
 const completeMatch = `-- name: CompleteMatch :one
 UPDATE matches
 SET status = 'completed', winner_user_id = $2, completed_at = now(), current_turn_user_id = NULL
-WHERE match_id = $1
+WHERE match_id = $1 AND status = 'active'
 RETURNING match_id, tournament_id, round, match_number, player_1_id, player_2_id, current_turn_user_id, winner_user_id, status, started_at, completed_at, game_type, first_move
 `
 
@@ -56,6 +56,11 @@ type CompleteMatchParams struct {
 	WinnerUserID pgtype.Int8 `json:"winner_user_id"`
 }
 
+// Guarded on status = 'active' so two concurrent completion paths for the
+// same match (e.g. a move delivering checkmate racing a clock-watcher
+// timeout, or a resign racing a disconnect forfeit) can't both succeed: only
+// the first writer gets a row back, the second gets pgx.ErrNoRows and knows
+// to stand down instead of double-paying Elo/coins for the same result.
 func (q *Queries) CompleteMatch(ctx context.Context, arg CompleteMatchParams) (Match, error) {
 	row := q.db.QueryRow(ctx, completeMatch, arg.MatchID, arg.WinnerUserID)
 	var i Match

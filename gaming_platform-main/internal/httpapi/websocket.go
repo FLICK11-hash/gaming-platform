@@ -49,14 +49,14 @@ func (s *Server) handleMatchWS(w http.ResponseWriter, r *http.Request) {
 		case "move":
 			input := match.MoveInput{From: msg.From, To: msg.To, Promotion: msg.Promotion, Column: msg.Column, IsPremove: msg.Premove}
 			if err := s.matchSvc.HandleMove(ctx, matchID, userID, input); err != nil {
-				_ = conn.WriteJSON(map[string]string{"type": "error", "error": err.Error()})
+				s.matchSvc.SendError(matchID, userID, err.Error())
 			}
 		case "resign":
 			if err := s.matchSvc.HandleResign(ctx, matchID, userID); err != nil {
-				_ = conn.WriteJSON(map[string]string{"type": "error", "error": err.Error()})
+				s.matchSvc.SendError(matchID, userID, err.Error())
 			}
 		default:
-			_ = conn.WriteJSON(map[string]string{"type": "error", "error": "unknown message type"})
+			s.matchSvc.SendError(matchID, userID, "unknown message type")
 		}
 	}
 }

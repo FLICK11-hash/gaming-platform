@@ -70,11 +70,13 @@ func NewService(pool *pgxpool.Pool) *Service {
 
 // RecordEloSnapshot appends a point to userID's Elo history. Called right
 // after a non-bot player's Elo is updated at the end of a match.
-func (s *Service) RecordEloSnapshot(ctx context.Context, userID int64, newElo int) {
+func (s *Service) RecordEloSnapshot(ctx context.Context, userID, matchID int64, eloBefore, eloAfter int) {
 	q := db.New(s.pool)
 	if err := q.InsertEloHistory(ctx, db.InsertEloHistoryParams{
-		UserID: userID,
-		Elo:    int32(newElo),
+		UserID:    userID,
+		MatchID:   dbutil.Int64ToPGInt8(matchID),
+		EloBefore: dbutil.IntToPGInt4(eloBefore),
+		Elo:       int32(eloAfter),
 	}); err != nil {
 		log.Printf("matchhistory: record elo snapshot error for user %d: %v", userID, err)
 	}

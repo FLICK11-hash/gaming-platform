@@ -30,25 +30,38 @@ func New(pool *pgxpool.Pool) *Matcher {
 	return &Matcher{pool: pool}
 }
 
+// jitterUpTo returns a random duration in [0, max), used to spread ticks out
+// so concurrent runs (or a slow database) don't pile every tick up at the
+// exact same instant.
+func jitterUpTo(max time.Duration) time.Duration {
+	if max <= 0 {
+		return 0
+	}
+	return time.Duration(rand.Int63n(int64(max)))
+}
+
 func (m *Matcher) Run(
 	ctx context.Context,
 	interval time.Duration,
 ) {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
+	const maxJitter = 500 * time.Millisecond
+
+	timer := time.NewTimer(interval + jitterUpTo(maxJitter))
+	defer timer.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
 
-		case <-ticker.C:
+		case <-timer.C:
 			if err := m.tick(ctx); err != nil {
 				log.Printf(
 					"matchmaking: tick error: %v",
 					err,
 				)
 			}
+			timer.Reset(interval + jitterUpTo(maxJitter))
 		}
 	}
 }

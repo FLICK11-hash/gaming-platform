@@ -325,6 +325,7 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
               isDraw,
               isWinner,
               message: randomOf(isDraw ? DRAW_MESSAGES : isWinner ? WIN_MESSAGES : LOSS_MESSAGES),
+              isTimeTiebreak: msg.reason === 'c4_time_tiebreak',
             })
             break
           }
@@ -786,6 +787,11 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
                 {gameOver.isDraw ? '🤝' : gameOver.isWinner ? '🏆' : '💀'}
               </div>
               <b>{gameOver.message}</b>
+              {gameOver.isTimeTiebreak && (
+                <p className="tiebreak-note">
+                  Board full with no winner — player with more time remaining wins.
+                </p>
+              )}
               <button onClick={onExit}>Back to Lobby</button>
             </div>
           )}
