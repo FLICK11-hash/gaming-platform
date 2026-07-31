@@ -23,6 +23,7 @@ import (
 	"gaming_platform/internal/domain/matchhistory"
 	"gaming_platform/internal/domain/matchmaking"
 	"gaming_platform/internal/domain/missions"
+	"gaming_platform/internal/domain/research"
 )
 
 // TestEndToEnd_ChessMatchToCheckmate spins up the real server against a
@@ -57,13 +58,14 @@ func TestEndToEnd_ChessMatchToCheckmate(t *testing.T) {
 	achievementsSvc := achievements.NewService(pool)
 	matchSvc := match.NewService(pool, connHub, missionsSvc, leaderboardSvc, matchHistorySvc, achievementsSvc)
 	matcher := matchmaking.New(pool)
+	researchRunner := research.NewRunner(research.DefaultGamesPerOpening, research.DefaultConnectFourGames)
 
 	matchCtx, cancelMatch := context.WithCancel(ctx)
 	defer cancelMatch()
 	go matcher.Run(matchCtx, 2*time.Second)
 	go matchSvc.RunClockWatcher(matchCtx)
 
-	server := NewServer(pool, issuer, matchSvc, missionsSvc, leaderboardSvc, matchHistorySvc, achievementsSvc)
+	server := NewServer(pool, issuer, matchSvc, missionsSvc, leaderboardSvc, matchHistorySvc, achievementsSvc, researchRunner, "conradflick11")
 	httpSrv := httptest.NewServer(server.Router())
 	defer httpSrv.Close()
 

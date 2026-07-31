@@ -7,25 +7,6 @@ import (
 	"gaming_platform/internal/domain/bot"
 )
 
-// chessOpeningBook is a fixed set of well-known, legal first moves for
-// White. Both chooseHardMove and chooseEasyMove are otherwise deterministic
-// enough (chooseHardMove entirely so; chooseEasyMove only occasionally not)
-// that letting the bot pick its own opening every game would barely vary
-// it - sampling from here instead is what actually lets a batch explore
-// different opening lines.
-var chessOpeningBook = []string{
-	"e2e4", // King's Pawn
-	"d2d4", // Queen's Pawn
-	"g1f3", // Reti
-	"c2c4", // English
-	"e2e3", // Van 't Kruijs
-	"d2d3", // King's Indian Attack setup
-	"b1c3", // Van Geet
-	"g2g3", // King's Fianchetto
-	"f2f4", // Bird's Opening
-	"b2b3", // Nimzo-Larsen
-}
-
 // OpeningStat aggregates every game played that opened with a given move.
 type OpeningStat struct {
 	Games          int     `json:"games"`
@@ -34,7 +15,10 @@ type OpeningStat struct {
 	WinRate        float64 `json:"win_rate"`
 }
 
-// BatchStats aggregates a batch of simulated games.
+// BatchStats aggregates a batch of simulated games in which both sides play
+// at the same difficulty, so the only asymmetry being measured is who moves
+// first: White in chess, Red in Connect Four (both games fix that by rule -
+// there's nothing to randomize there, only to measure).
 type BatchStats struct {
 	Games              int                    `json:"games"`
 	FirstMoverWins     int                    `json:"first_mover_wins"`
@@ -92,34 +76,38 @@ func (b *BatchStats) finalize() {
 	}
 }
 
-// RunChessBatch plays n chess games at the given difficulty (both sides
-// play at the same strength, isolating move-order as the only asymmetry)
-// and aggregates the results. Which side moves first is randomized every
-// game. If randomizeOpening is true, the first mover's opening move is
-// sampled from chessOpeningBook instead of chosen by its own AI, so the
-// results can be broken down per opening; if false, the bot picks its own
-// (much less varied) opening every game.
+// RunChessBatch plays n chess games at the given difficulty and aggregates
+// the results from White's perspective (White always moves first by rule).
+// If randomizeOpening is true, White's opening move is sampled from
+// WhiteChessOpenings instead of chosen by its own AI, so the results can be
+// broken down per opening; if false, the bot picks its own (much less
+// varied) opening every game.
 func RunChessBatch(n int, difficulty bot.Difficulty, randomizeOpening bool) (BatchStats, error) {
 	var stats BatchStats
 	for i := 0; i < n; i++ {
-		opening := ""
+		var forced []string
 		if randomizeOpening {
-			opening = chessOpeningBook[rand.Intn(len(chessOpeningBook))]
+			forced = []string{WhiteChessOpenings[rand.Intn(len(WhiteChessOpenings))]}
 		}
-		result, err := PlayChessGame(difficulty, difficulty, opening)
+		result, err := PlayChessGame(difficulty, difficulty, forced)
 		if err != nil {
 			return BatchStats{}, err
 		}
-		stats.record(result.FirstMoverWon, result.SecondMoverWon, result.Plies, result.OpeningMove)
+		opening := ""
+		if len(result.MovesPlayed) > 0 {
+			opening = result.MovesPlayed[0]
+		}
+		stats.record(result.WhiteWon, result.BlackWon, result.Plies, opening)
 	}
 	stats.finalize()
 	return stats, nil
 }
 
 // RunConnectFourBatch mirrors RunChessBatch for Connect Four: n games at a
-// single difficulty for both sides, first mover randomized every game, and
-// (if randomizeOpening) the first mover's opening column sampled uniformly
-// from all 7 columns instead of chosen by its own AI.
+// single difficulty for both sides, aggregated from Red's perspective (Red
+// always moves first by rule), and (if randomizeOpening) Red's opening
+// column sampled uniformly from all 7 columns instead of chosen by its own
+// AI.
 func RunConnectFourBatch(n int, difficulty bot.Difficulty, randomizeOpening bool) (BatchStats, error) {
 	var stats BatchStats
 	for i := 0; i < n; i++ {
@@ -135,7 +123,7 @@ func RunConnectFourBatch(n int, difficulty bot.Difficulty, randomizeOpening bool
 		if randomizeOpening {
 			opening = columnLabel(result.OpeningColumn)
 		}
-		stats.record(result.FirstMoverWon, result.SecondMoverWon, result.Plies, opening)
+		stats.record(result.RedWon, result.GreenWon, result.Plies, opening)
 	}
 	stats.finalize()
 	return stats, nil
@@ -171,4 +159,74 @@ func (b BatchStats) SortedOpenings() []struct {
 		return out[i].Opening < out[j].Opening
 	})
 	return out
+}
+
+// OpeningColor selects which side of the board RunChessOpeningBook tests -
+// White's opening choices, or Black's replies to BlackOpeningReplyTo.
+type OpeningColor int
+
+const (
+	White OpeningColor = iota
+	Black
+)
+
+// ChessOpeningReport aggregates every game played testing one specific
+// opening (for White) or reply (for Black), from that color's perspective.
+type ChessOpeningReport struct {
+	Opening      string  `json:"opening"`
+	Games        int     `json:"games"`
+	Wins         int     `json:"wins"`
+	Losses       int     `json:"losses"`
+	Draws        int     `json:"draws"`
+	WinRate      float64 `json:"win_rate"`
+	AveragePlies float64 `json:"average_plies"`
+}
+
+// RunChessOpeningBook plays gamesPerOpening games for every opening in
+// color's book (WhiteChessOpenings or BlackChessOpenings), always seating
+// the bot under study on that color - a "defense" only means something
+// played as Black, the same way an "opening" only means something played
+// as White. Both bots play at difficulty.
+func RunChessOpeningBook(gamesPerOpening int, difficulty bot.Difficulty, color OpeningColor) ([]ChessOpeningReport, error) {
+	book := WhiteChessOpenings
+	if color == Black {
+		book = BlackChessOpenings
+	}
+
+	reports := make([]ChessOpeningReport, 0, len(book))
+	for _, opening := range book {
+		forced := []string{opening}
+		if color == Black {
+			forced = []string{BlackOpeningReplyTo, opening}
+		}
+
+		report := ChessOpeningReport{Opening: opening}
+		for i := 0; i < gamesPerOpening; i++ {
+			result, err := PlayChessGame(difficulty, difficulty, forced)
+			if err != nil {
+				return nil, err
+			}
+			report.Games++
+			report.AveragePlies += float64(result.Plies)
+
+			won := result.WhiteWon
+			if color == Black {
+				won = result.BlackWon
+			}
+			switch {
+			case won:
+				report.Wins++
+			case result.Draw:
+				report.Draws++
+			default:
+				report.Losses++
+			}
+		}
+		if report.Games > 0 {
+			report.WinRate = float64(report.Wins) / float64(report.Games)
+			report.AveragePlies /= float64(report.Games)
+		}
+		reports = append(reports, report)
+	}
+	return reports, nil
 }

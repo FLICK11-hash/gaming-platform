@@ -11,7 +11,8 @@ import {
   Crown,
   UserCircle,
   Lock,
-  Swords
+  Swords,
+  FlaskConical
 } from 'lucide-react'
 import { api } from './api.js'
 import MatchRoom from './Chess.jsx'
@@ -1096,7 +1097,213 @@ function Dashboard({
           and challenge them directly.
         </p>
       </div>
+
+      <ResearchSimulationCard token={token} />
     </section>
+  )
+}
+
+// OPENING_NAMES gives the coordinate-notation openings/replies the
+// simulation harness tests a human-readable label, matching the names in
+// internal/research/simulate/openings.go.
+const OPENING_NAMES = {
+  e2e4: "King's Pawn",
+  d2d4: "Queen's Pawn",
+  g1f3: 'Reti',
+  c2c4: 'English',
+  e2e3: "Van 't Kruijs",
+  d2d3: "King's Indian Attack",
+  b1c3: 'Van Geet',
+  g2g3: "King's Fianchetto",
+  f2f4: "Bird's Opening",
+  b2b3: 'Nimzo-Larsen',
+  e7e5: 'Open Game',
+  c7c5: 'Sicilian Defense',
+  e7e6: 'French Defense',
+  c7c6: 'Caro-Kann Defense',
+  d7d5: 'Scandinavian Defense',
+  d7d6: 'Pirc-style Defense',
+  g7g6: 'Modern Defense',
+  g8f6: "Alekhine's Defense",
+  b8c6: 'Nimzowitsch Defense',
+  a7a6: 'St. George Defense'
+}
+
+function openingLabel(move) {
+  const name = OPENING_NAMES[move]
+  return name ? `${name} (${move})` : move
+}
+
+function aggregateChessBook(reports) {
+  const totals = (reports || []).reduce(
+    (acc, r) => ({
+      games: acc.games + r.games,
+      wins: acc.wins + r.wins,
+      draws: acc.draws + r.draws,
+      losses: acc.losses + r.losses
+    }),
+    { games: 0, wins: 0, draws: 0, losses: 0 }
+  )
+  return {
+    ...totals,
+    winRate: totals.games ? totals.wins / totals.games : 0,
+    drawRate: totals.games ? totals.draws / totals.games : 0
+  }
+}
+
+// OpeningBarChart draws a horizontal win-rate bar per opening, in the same
+// hand-rolled style as EloChart below - one accent color per chart (a
+// single series), direct-labeled bars instead of a legend, and a native
+// title tooltip for the exact numbers on hover.
+function OpeningBarChart({ title, accent, bars }) {
+  return (
+    <div className="research-chart">
+      <h4>{title}</h4>
+      {bars.length === 0 ? (
+        <p className="profile-empty">No data yet.</p>
+      ) : (
+        <div className="bar-chart">
+          {bars.map(bar => (
+            <div className="bar-row" key={bar.label} title={bar.detail}>
+              <span className="bar-label">{bar.label}</span>
+              <div className="bar-track">
+                <div
+                  className="bar-fill"
+                  style={{ width: `${Math.max(2, Math.round(bar.value * 100))}%`, background: accent }}
+                />
+              </div>
+              <span className="bar-value">{Math.round(bar.value * 100)}%</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ResearchSimulationCard({ token }) {
+  const [sim, setSim] = useState(null)
+  const [runError, setRunError] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    function loadSim() {
+      api('/research/simulation', { token })
+        .then(data => { if (!cancelled) setSim(data) })
+        .catch(() => {})
+    }
+
+    loadSim()
+    const intervalID = setInterval(loadSim, 5000)
+
+    return () => {
+      cancelled = true
+      clearInterval(intervalID)
+    }
+  }, [token])
+
+  async function runSimulation() {
+    setRunError(null)
+    try {
+      await api('/research/simulation/run', { token, method: 'POST' })
+      setSim(s => (s ? { ...s, status: 'running' } : s))
+    } catch (err) {
+      setRunError(err.message)
+    }
+  }
+
+  if (!sim) return null
+
+  const { status, can_run: canRun, error, result } = sim
+
+  const whiteTotals = result ? aggregateChessBook(result.white_openings) : null
+  const blackTotals = result ? aggregateChessBook(result.black_openings) : null
+
+  const whiteBars = result
+    ? result.white_openings.map(r => ({
+        label: openingLabel(r.opening),
+        value: r.win_rate,
+        detail: `${r.wins}W / ${r.losses}L / ${r.draws}D over ${r.games} games, avg ${r.average_plies.toFixed(1)} plies`
+      }))
+    : []
+  const blackBars = result
+    ? result.black_openings.map(r => ({
+        label: openingLabel(r.opening),
+        value: r.win_rate,
+        detail: `${r.wins}W / ${r.losses}L / ${r.draws}D over ${r.games} games, avg ${r.average_plies.toFixed(1)} plies`
+      }))
+    : []
+  const c4Bars =
+    result && result.connect_four.by_opening
+      ? result.connect_four.by_opening.map(o => ({
+          label: o.opening,
+          value: o.win_rate,
+          detail: `${o.first_mover_wins} first-mover wins / ${o.draws} draws over ${o.games} games`
+        }))
+      : []
+
+  return (
+    <div className="card wide research-card">
+      <h2>
+        <FlaskConical />
+        Monte Carlo Bot Research
+      </h2>
+      <p>
+        Thousands of automated bot-vs-bot games, played entirely on the server, to answer
+        two questions: how much of an edge does moving first give you, and how much does
+        the specific opening you play change the outcome?
+      </p>
+
+      <div className="research-controls">
+        {canRun ? (
+          <button onClick={runSimulation} disabled={status === 'running'}>
+            {status === 'running' ? 'Running…' : 'Run Simulation'}
+          </button>
+        ) : (
+          <span className="muted">Only the site owner can trigger a new run.</span>
+        )}
+        {status === 'running' && (
+          <span className="research-status running">Running now — this can take a minute or two.</span>
+        )}
+        {status === 'error' && error && (
+          <span className="research-status error">Last run failed: {error}</span>
+        )}
+        {runError && <span className="research-status error">{runError}</span>}
+      </div>
+
+      {!result ? (
+        <p className="profile-empty">No simulation has been run yet.</p>
+      ) : (
+        <>
+          <p className="research-meta">
+            Last run finished {new Date(result.finished_at).toLocaleString()} ·{' '}
+            {result.games_per_opening} games per opening
+          </p>
+
+          <div className="profile-stats-grid">
+            <Stat label="White win rate (chess)" value={`${Math.round(whiteTotals.winRate * 100)}%`} />
+            <Stat label="Black win rate (chess)" value={`${Math.round(blackTotals.winRate * 100)}%`} />
+            <Stat
+              label="First-mover win rate (Connect Four)"
+              value={`${Math.round(result.connect_four.first_mover_win_rate * 100)}%`}
+            />
+            <Stat
+              label="Second-mover win rate (Connect Four)"
+              value={`${Math.round(result.connect_four.second_mover_win_rate * 100)}%`}
+            />
+          </div>
+
+          <OpeningBarChart title="Top White Openings — Win Rate" accent="#3b82f6" bars={whiteBars} />
+          <OpeningBarChart title="Top Black Openings — Win Rate" accent="#facc15" bars={blackBars} />
+          <OpeningBarChart
+            title="Connect Four Opening Column — Red (First Mover) Win Rate"
+            accent="#ef4444"
+            bars={c4Bars}
+          />
+        </>
+      )}
+    </div>
   )
 }
 

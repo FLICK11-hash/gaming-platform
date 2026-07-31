@@ -25,9 +25,11 @@ import (
 
 func main() {
 	game := flag.String("game", "chess", `which game to simulate: "chess" or "connectfour"`)
-	games := flag.Int("games", 1000, "number of games to simulate")
+	games := flag.Int("games", 1000, "number of games to simulate (ignored when -book is set)")
 	difficultyName := flag.String("difficulty", "easy", `bot difficulty for both sides: "easy" or "hard" (both sides always play the same difficulty, isolating move-order as the only asymmetry)`)
 	randomizeOpenings := flag.Bool("openings", true, "sample the opening move/column at random instead of letting the bot choose it, and break results down per opening")
+	book := flag.String("book", "", `chess only: "white" or "black" - instead of randomizing, play gamesPerOpening games against every opening in that color's book (a "black opening" only means something played as Black, so this always seats the bot on that color)`)
+	gamesPerOpening := flag.Int("games-per-opening", 50, "chess only, with -book set: how many games to play per opening")
 	asJSON := flag.Bool("json", false, "print the full result as JSON instead of a summary table")
 	flag.Parse()
 
@@ -39,6 +41,35 @@ func main() {
 		difficulty = bot.Hard
 	default:
 		log.Fatalf("unknown -difficulty %q: want \"easy\" or \"hard\"", *difficultyName)
+	}
+
+	if *book != "" {
+		if *game != "chess" {
+			log.Fatalf("-book only applies to -game chess")
+		}
+		var color simulate.OpeningColor
+		switch *book {
+		case "white":
+			color = simulate.White
+		case "black":
+			color = simulate.Black
+		default:
+			log.Fatalf("unknown -book %q: want \"white\" or \"black\"", *book)
+		}
+		reports, err := simulate.RunChessOpeningBook(*gamesPerOpening, difficulty, color)
+		if err != nil {
+			log.Fatalf("simulation error: %v", err)
+		}
+		if *asJSON {
+			enc := json.NewEncoder(os.Stdout)
+			enc.SetIndent("", "  ")
+			if err := enc.Encode(reports); err != nil {
+				log.Fatalf("encode result: %v", err)
+			}
+			return
+		}
+		printOpeningBook(*book, *difficultyName, reports)
+		return
 	}
 
 	var stats simulate.BatchStats
@@ -65,6 +96,14 @@ func main() {
 	}
 
 	printSummary(*game, *difficultyName, stats)
+}
+
+func printOpeningBook(color, difficulty string, reports []simulate.ChessOpeningReport) {
+	fmt.Printf("chess, %s book, %s difficulty\n", color, difficulty)
+	fmt.Printf("  %-8s %8s %8s %12s %10s\n", "opening", "games", "wins", color+" win%", "avg plies")
+	for _, r := range reports {
+		fmt.Printf("  %-8s %8d %8d %11.1f%% %10.1f\n", r.Opening, r.Games, r.Wins, r.WinRate*100, r.AveragePlies)
+	}
 }
 
 func printSummary(game, difficulty string, stats simulate.BatchStats) {

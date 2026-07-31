@@ -1,11 +1,11 @@
 // Package simulate plays out complete bot-vs-bot games entirely in memory -
 // no database, no websocket, no HTTP server - so the platform's own game
 // engines and bot AI can be run thousands of times in a batch to answer
-// questions a single live match never could: how much does moving first
-// actually matter, and how much does the opening line change the outcome?
-// It reuses the exact same chess/connectfour engines and bot move-choosing
-// logic real matches use, so results reflect the platform's actual bots,
-// not a separate model of them.
+// questions a single live match never could: how much of an edge does the
+// side that moves first actually have, and how much does the specific
+// opening line change the outcome? It reuses the exact same chess/
+// connectfour engines and bot move-choosing logic real matches use, so
+// results reflect the platform's actual bots, not a separate model of them.
 package simulate
 
 import (
@@ -29,26 +29,30 @@ const maxPlies = 300
 
 // ChessGameResult is the outcome of one simulated chess game.
 type ChessGameResult struct {
-	// FirstMoverWon/SecondMoverWon/Draw are mutually exclusive; exactly one
-	// is true, mirroring how a real match settles (see
-	// connectfour.Outcome's tiebreak for the one platform-specific
-	// exception, which doesn't apply here since chess draws stay draws).
-	FirstMoverWon  bool
-	SecondMoverWon bool
-	Draw           bool
-	// OpeningMove is the first move played, in from+to square form (e.g.
-	// "e2e4"), letting a batch runner group results by opening.
-	OpeningMove string
+	// WhiteWon/BlackWon/Draw are mutually exclusive; exactly one is true.
+	WhiteWon bool
+	BlackWon bool
+	Draw     bool
+	// MovesPlayed holds every forced opening move actually played (in
+	// from+to square form, e.g. "e2e4"), i.e. the prefix passed to
+	// PlayChessGame as forcedMoves - not the whole game, just the part a
+	// batch runner held fixed on purpose.
+	MovesPlayed []string
 	Plies       int
 }
 
-// PlayChessGame plays one complete game between two bots, whichever moves
-// first at firstDifficulty and whichever moves second at secondDifficulty.
-// If forcedOpening is non-empty (a legal first move in from+to square form,
-// e.g. "e2e4"), the first mover is made to play it instead of consulting
-// its own move-choosing logic, so a batch runner can hold the opening fixed
-// while varying everything downstream of it.
-func PlayChessGame(firstDifficulty, secondDifficulty bot.Difficulty, forcedOpening string) (ChessGameResult, error) {
+// PlayChessGame plays one complete game between whiteDifficulty (playing
+// White) and blackDifficulty (playing Black). Chess always has White move
+// first, so which side moves first isn't a variable to control here -
+// which color you assign the stronger/weaker bot to is.
+//
+// forcedMoves, if non-empty, is a sequence of legal moves (from+to square
+// form, e.g. []string{"e2e4", "c7c5"}) played in order at the very start of
+// the game instead of consulting the bots' own move-choosing logic; play
+// resumes with the bots once the sequence is exhausted. This lets a batch
+// runner hold an opening (or a specific reply to it) fixed while varying
+// everything downstream.
+func PlayChessGame(whiteDifficulty, blackDifficulty bot.Difficulty, forcedMoves []string) (ChessGameResult, error) {
 	engine := chess.NewEngine()
 	engine.StartGame(simMatchID)
 	defer engine.EndGame(simMatchID)
@@ -63,23 +67,23 @@ func PlayChessGame(firstDifficulty, secondDifficulty bot.Difficulty, forcedOpeni
 			result.Plies = ply
 			switch state.Outcome {
 			case chess.WhiteWon:
-				result.FirstMoverWon = true
+				result.WhiteWon = true
 			case chess.BlackWon:
-				result.SecondMoverWon = true
+				result.BlackWon = true
 			default:
 				result.Draw = true
 			}
 			return result, nil
 		}
 
-		difficulty := firstDifficulty
+		difficulty := whiteDifficulty
 		if ply%2 == 1 {
-			difficulty = secondDifficulty
+			difficulty = blackDifficulty
 		}
 
 		var from, to, promo string
-		if ply == 0 && forcedOpening != "" {
-			from, to = forcedOpening[:2], forcedOpening[2:]
+		if ply < len(forcedMoves) {
+			from, to = forcedMoves[ply][:2], forcedMoves[ply][2:]
 		} else {
 			from, to, promo, err = bot.ChooseChessMove(state.FEN, difficulty)
 			if err != nil {
@@ -87,8 +91,8 @@ func PlayChessGame(firstDifficulty, secondDifficulty bot.Difficulty, forcedOpeni
 			}
 		}
 
-		if ply == 0 {
-			result.OpeningMove = from + to
+		if ply < len(forcedMoves) {
+			result.MovesPlayed = append(result.MovesPlayed, from+to)
 		}
 		if _, err := engine.ApplyMove(simMatchID, from, to, promo); err != nil {
 			return ChessGameResult{}, fmt.Errorf("simulate: apply chess move %s%s: %w", from, to, err)
@@ -105,19 +109,21 @@ func PlayChessGame(firstDifficulty, secondDifficulty bot.Difficulty, forcedOpeni
 
 // ConnectFourGameResult is the outcome of one simulated Connect Four game.
 type ConnectFourGameResult struct {
-	FirstMoverWon  bool
-	SecondMoverWon bool
-	Draw           bool
-	// OpeningColumn is the column (0-indexed) the first mover dropped into.
+	RedWon   bool
+	GreenWon bool
+	Draw     bool
+	// OpeningColumn is the column (0-indexed) Red, who always moves first,
+	// dropped into.
 	OpeningColumn int
 	Plies         int
 }
 
-// PlayConnectFourGame plays one complete game the same way PlayChessGame
-// does: firstDifficulty moves first (as Red), secondDifficulty moves second
-// (as Green), and forcedOpeningColumn (if >= 0) overrides the first mover's
-// opening column.
-func PlayConnectFourGame(firstDifficulty, secondDifficulty bot.Difficulty, forcedOpeningColumn int) (ConnectFourGameResult, error) {
+// PlayConnectFourGame plays one complete game between redDifficulty
+// (playing Red, who always moves first) and greenDifficulty (playing
+// Green). If forcedOpeningColumn is >= 0, Red is made to open there instead
+// of consulting its own move-choosing logic, so a batch runner can hold the
+// opening column fixed while varying everything downstream of it.
+func PlayConnectFourGame(redDifficulty, greenDifficulty bot.Difficulty, forcedOpeningColumn int) (ConnectFourGameResult, error) {
 	engine := connectfour.NewEngine()
 	engine.StartGame(simMatchID)
 	defer engine.EndGame(simMatchID)
@@ -132,18 +138,18 @@ func PlayConnectFourGame(firstDifficulty, secondDifficulty bot.Difficulty, force
 			result.Plies = ply
 			switch state.Outcome {
 			case connectfour.RedWon:
-				result.FirstMoverWon = true
+				result.RedWon = true
 			case connectfour.GreenWon:
-				result.SecondMoverWon = true
+				result.GreenWon = true
 			default:
 				result.Draw = true
 			}
 			return result, nil
 		}
 
-		difficulty := firstDifficulty
+		difficulty := redDifficulty
 		if ply%2 == 1 {
-			difficulty = secondDifficulty
+			difficulty = greenDifficulty
 		}
 
 		column := forcedOpeningColumn

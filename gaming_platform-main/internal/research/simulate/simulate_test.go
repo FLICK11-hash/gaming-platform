@@ -7,7 +7,7 @@ import (
 )
 
 func TestPlayChessGame_TerminatesWithExactlyOneOutcome(t *testing.T) {
-	result, err := PlayChessGame(bot.Easy, bot.Easy, "")
+	result, err := PlayChessGame(bot.Easy, bot.Easy, nil)
 	if err != nil {
 		t.Fatalf("PlayChessGame: %v", err)
 	}
@@ -16,24 +16,24 @@ func TestPlayChessGame_TerminatesWithExactlyOneOutcome(t *testing.T) {
 	}
 
 	outcomes := 0
-	for _, v := range []bool{result.FirstMoverWon, result.SecondMoverWon, result.Draw} {
+	for _, v := range []bool{result.WhiteWon, result.BlackWon, result.Draw} {
 		if v {
 			outcomes++
 		}
 	}
 	if outcomes != 1 {
-		t.Fatalf("expected exactly one outcome flag set, got FirstMoverWon=%v SecondMoverWon=%v Draw=%v",
-			result.FirstMoverWon, result.SecondMoverWon, result.Draw)
+		t.Fatalf("expected exactly one outcome flag set, got WhiteWon=%v BlackWon=%v Draw=%v",
+			result.WhiteWon, result.BlackWon, result.Draw)
 	}
 }
 
-func TestPlayChessGame_ForcedOpeningIsPlayedFirst(t *testing.T) {
-	result, err := PlayChessGame(bot.Easy, bot.Easy, "d2d4")
+func TestPlayChessGame_ForcedMovesArePlayedInOrder(t *testing.T) {
+	result, err := PlayChessGame(bot.Easy, bot.Easy, []string{"d2d4", "d7d5"})
 	if err != nil {
 		t.Fatalf("PlayChessGame: %v", err)
 	}
-	if result.OpeningMove != "d2d4" {
-		t.Fatalf("OpeningMove = %q, want %q", result.OpeningMove, "d2d4")
+	if len(result.MovesPlayed) != 2 || result.MovesPlayed[0] != "d2d4" || result.MovesPlayed[1] != "d7d5" {
+		t.Fatalf("MovesPlayed = %v, want [d2d4 d7d5]", result.MovesPlayed)
 	}
 }
 
@@ -47,14 +47,14 @@ func TestPlayConnectFourGame_TerminatesWithExactlyOneOutcome(t *testing.T) {
 	}
 
 	outcomes := 0
-	for _, v := range []bool{result.FirstMoverWon, result.SecondMoverWon, result.Draw} {
+	for _, v := range []bool{result.RedWon, result.GreenWon, result.Draw} {
 		if v {
 			outcomes++
 		}
 	}
 	if outcomes != 1 {
-		t.Fatalf("expected exactly one outcome flag set, got FirstMoverWon=%v SecondMoverWon=%v Draw=%v",
-			result.FirstMoverWon, result.SecondMoverWon, result.Draw)
+		t.Fatalf("expected exactly one outcome flag set, got RedWon=%v GreenWon=%v Draw=%v",
+			result.RedWon, result.GreenWon, result.Draw)
 	}
 }
 
@@ -125,5 +125,40 @@ func TestSortedOpenings_OrderedByGameCountDescending(t *testing.T) {
 	}
 	if sorted[2].Opening != "e2e4" {
 		t.Fatalf("expected e2e4 last, got %q", sorted[2].Opening)
+	}
+}
+
+func TestRunChessOpeningBook_White_SeatsBotAsWhiteEveryGame(t *testing.T) {
+	const gamesPerOpening = 3
+	reports, err := RunChessOpeningBook(gamesPerOpening, bot.Easy, White)
+	if err != nil {
+		t.Fatalf("RunChessOpeningBook: %v", err)
+	}
+	if len(reports) != len(WhiteChessOpenings) {
+		t.Fatalf("len(reports) = %d, want %d", len(reports), len(WhiteChessOpenings))
+	}
+	for _, r := range reports {
+		if r.Games != gamesPerOpening {
+			t.Fatalf("opening %s: Games = %d, want %d", r.Opening, r.Games, gamesPerOpening)
+		}
+		if got := r.Wins + r.Losses + r.Draws; got != gamesPerOpening {
+			t.Fatalf("opening %s: Wins+Losses+Draws = %d, want %d", r.Opening, got, gamesPerOpening)
+		}
+	}
+}
+
+func TestRunChessOpeningBook_Black_SeatsBotAsBlackEveryGame(t *testing.T) {
+	const gamesPerOpening = 3
+	reports, err := RunChessOpeningBook(gamesPerOpening, bot.Easy, Black)
+	if err != nil {
+		t.Fatalf("RunChessOpeningBook: %v", err)
+	}
+	if len(reports) != len(BlackChessOpenings) {
+		t.Fatalf("len(reports) = %d, want %d", len(reports), len(BlackChessOpenings))
+	}
+	for _, r := range reports {
+		if r.Games != gamesPerOpening {
+			t.Fatalf("opening %s: Games = %d, want %d", r.Opening, r.Games, gamesPerOpening)
+		}
 	}
 }

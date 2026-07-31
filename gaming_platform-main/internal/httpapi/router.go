@@ -14,28 +14,33 @@ import (
 	"gaming_platform/internal/domain/match"
 	"gaming_platform/internal/domain/matchhistory"
 	"gaming_platform/internal/domain/missions"
+	"gaming_platform/internal/domain/research"
 )
 
 type Server struct {
-	pool            *pgxpool.Pool
-	issuer          *auth.TokenIssuer
-	matchSvc        *match.Service
-	missionsSvc     *missions.Service
-	leaderboardSvc  *leaderboard.Service
-	matchHistorySvc *matchhistory.Service
-	achievementsSvc *achievements.Service
-	upgrader        websocket.Upgrader
+	pool                  *pgxpool.Pool
+	issuer                *auth.TokenIssuer
+	matchSvc              *match.Service
+	missionsSvc           *missions.Service
+	leaderboardSvc        *leaderboard.Service
+	matchHistorySvc       *matchhistory.Service
+	achievementsSvc       *achievements.Service
+	researchRunner        *research.Runner
+	researchAdminUsername string
+	upgrader              websocket.Upgrader
 }
 
-func NewServer(pool *pgxpool.Pool, issuer *auth.TokenIssuer, matchSvc *match.Service, missionsSvc *missions.Service, leaderboardSvc *leaderboard.Service, matchHistorySvc *matchhistory.Service, achievementsSvc *achievements.Service) *Server {
+func NewServer(pool *pgxpool.Pool, issuer *auth.TokenIssuer, matchSvc *match.Service, missionsSvc *missions.Service, leaderboardSvc *leaderboard.Service, matchHistorySvc *matchhistory.Service, achievementsSvc *achievements.Service, researchRunner *research.Runner, researchAdminUsername string) *Server {
 	return &Server{
-		pool:            pool,
-		issuer:          issuer,
-		matchSvc:        matchSvc,
-		missionsSvc:     missionsSvc,
-		leaderboardSvc:  leaderboardSvc,
-		matchHistorySvc: matchHistorySvc,
-		achievementsSvc: achievementsSvc,
+		pool:                  pool,
+		issuer:                issuer,
+		matchSvc:              matchSvc,
+		missionsSvc:           missionsSvc,
+		leaderboardSvc:        leaderboardSvc,
+		matchHistorySvc:       matchHistorySvc,
+		achievementsSvc:       achievementsSvc,
+		researchRunner:        researchRunner,
+		researchAdminUsername: researchAdminUsername,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
@@ -81,6 +86,9 @@ func (s *Server) Router() http.Handler {
 
 		r.Get("/profiles/{username}", s.handleGetUserProfile)
 		r.Post("/users/{userID}/challenge", s.handleChallengeUser)
+
+		r.Get("/research/simulation", s.handleGetResearchSimulation)
+		r.Post("/research/simulation/run", s.handleRunResearchSimulation)
 	})
 
 	return r
