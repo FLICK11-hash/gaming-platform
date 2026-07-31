@@ -20,40 +20,31 @@ type researchOpeningReportDTO struct {
 	AveragePlies float64 `json:"average_plies"`
 }
 
-type researchOpeningStatDTO struct {
-	Opening        string  `json:"opening"`
-	Games          int     `json:"games"`
-	FirstMoverWins int     `json:"first_mover_wins"`
-	Draws          int     `json:"draws"`
-	WinRate        float64 `json:"win_rate"`
-}
-
-type researchConnectFourDTO struct {
-	Games              int                      `json:"games"`
-	FirstMoverWins     int                      `json:"first_mover_wins"`
-	SecondMoverWins    int                      `json:"second_mover_wins"`
-	Draws              int                      `json:"draws"`
-	FirstMoverWinRate  float64                  `json:"first_mover_win_rate"`
-	SecondMoverWinRate float64                  `json:"second_mover_win_rate"`
-	DrawRate           float64                  `json:"draw_rate"`
-	AveragePlies       float64                  `json:"average_plies"`
-	ByOpening          []researchOpeningStatDTO `json:"by_opening"`
+type researchConnectFourReportDTO struct {
+	Column       int     `json:"column"`
+	Games        int     `json:"games"`
+	Wins         int     `json:"wins"`
+	Losses       int     `json:"losses"`
+	Draws        int     `json:"draws"`
+	WinRate      float64 `json:"win_rate"`
+	AveragePlies float64 `json:"average_plies"`
 }
 
 type researchResultDTO struct {
-	StartedAt       string                     `json:"started_at"`
-	FinishedAt      string                     `json:"finished_at"`
-	GamesPerOpening int                        `json:"games_per_opening"`
-	WhiteOpenings   []researchOpeningReportDTO `json:"white_openings"`
-	BlackOpenings   []researchOpeningReportDTO `json:"black_openings"`
-	ConnectFour     researchConnectFourDTO     `json:"connect_four"`
+	StartedAt       string                         `json:"started_at"`
+	FinishedAt      string                         `json:"finished_at"`
+	GamesPerOpening int                            `json:"games_per_opening"`
+	WhiteOpenings   []researchOpeningReportDTO     `json:"white_openings"`
+	BlackOpenings   []researchOpeningReportDTO     `json:"black_openings"`
+	ConnectFour     []researchConnectFourReportDTO `json:"connect_four"`
 }
 
 type researchStatusResponse struct {
-	Status  string              `json:"status"`
-	CanRun  bool                `json:"can_run"`
-	Error   string              `json:"error,omitempty"`
-	Result  *researchResultDTO  `json:"result,omitempty"`
+	Status            string             `json:"status"`
+	CanRun            bool               `json:"can_run"`
+	Error             string             `json:"error,omitempty"`
+	Result            *researchResultDTO `json:"result,omitempty"`
+	RunningForSeconds float64            `json:"running_for_seconds,omitempty"`
 }
 
 func toOpeningReportDTOs(reports []simulate.ChessOpeningReport) []researchOpeningReportDTO {
@@ -77,15 +68,17 @@ func toResultDTO(res *research.Result) *researchResultDTO {
 		return nil
 	}
 
-	byOpening := make([]researchOpeningStatDTO, 0, len(res.ConnectFour.ByOpening))
-	for _, entry := range res.ConnectFour.SortedOpenings() {
-		byOpening = append(byOpening, researchOpeningStatDTO{
-			Opening:        entry.Opening,
-			Games:          entry.Stat.Games,
-			FirstMoverWins: entry.Stat.FirstMoverWins,
-			Draws:          entry.Stat.Draws,
-			WinRate:        entry.Stat.WinRate,
-		})
+	connectFour := make([]researchConnectFourReportDTO, len(res.ConnectFour))
+	for i, c := range res.ConnectFour {
+		connectFour[i] = researchConnectFourReportDTO{
+			Column:       c.Column,
+			Games:        c.Games,
+			Wins:         c.Wins,
+			Losses:       c.Losses,
+			Draws:        c.Draws,
+			WinRate:      c.WinRate,
+			AveragePlies: c.AveragePlies,
+		}
 	}
 
 	return &researchResultDTO{
@@ -94,17 +87,7 @@ func toResultDTO(res *research.Result) *researchResultDTO {
 		GamesPerOpening: res.GamesPerOpening,
 		WhiteOpenings:   toOpeningReportDTOs(res.WhiteOpenings),
 		BlackOpenings:   toOpeningReportDTOs(res.BlackOpenings),
-		ConnectFour: researchConnectFourDTO{
-			Games:              res.ConnectFour.Games,
-			FirstMoverWins:     res.ConnectFour.FirstMoverWins,
-			SecondMoverWins:    res.ConnectFour.SecondMoverWins,
-			Draws:              res.ConnectFour.Draws,
-			FirstMoverWinRate:  res.ConnectFour.FirstMoverWinRate,
-			SecondMoverWinRate: res.ConnectFour.SecondMoverWinRate,
-			DrawRate:           res.ConnectFour.DrawRate,
-			AveragePlies:       res.ConnectFour.AveragePlies,
-			ByOpening:          byOpening,
-		},
+		ConnectFour:     connectFour,
 	}
 }
 
@@ -121,13 +104,14 @@ func (s *Server) canRunResearch(r *http.Request) bool {
 }
 
 func (s *Server) handleGetResearchSimulation(w http.ResponseWriter, r *http.Request) {
-	status, result, errMsg := s.researchRunner.Snapshot()
+	status, result, errMsg, runningFor := s.researchRunner.Snapshot()
 
 	writeJSON(w, http.StatusOK, researchStatusResponse{
-		Status: string(status),
-		CanRun: s.canRunResearch(r),
-		Error:  errMsg,
-		Result: toResultDTO(result),
+		Status:            string(status),
+		CanRun:            s.canRunResearch(r),
+		Error:             errMsg,
+		Result:            toResultDTO(result),
+		RunningForSeconds: runningFor.Seconds(),
 	})
 }
 

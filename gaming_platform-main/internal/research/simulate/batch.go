@@ -230,3 +230,51 @@ func RunChessOpeningBook(gamesPerOpening int, difficulty bot.Difficulty, color O
 	}
 	return reports, nil
 }
+
+// ConnectFourOpeningReport aggregates every game played testing one
+// specific opening column for Red, who always moves first.
+type ConnectFourOpeningReport struct {
+	Column       int     `json:"column"`
+	Games        int     `json:"games"`
+	Wins         int     `json:"wins"`
+	Losses       int     `json:"losses"`
+	Draws        int     `json:"draws"`
+	WinRate      float64 `json:"win_rate"`
+	AveragePlies float64 `json:"average_plies"`
+}
+
+// RunConnectFourOpeningBook plays gamesPerColumn games for every one of
+// Connect Four's 7 opening columns, always seating the bot under study as
+// Red (who always moves first). Unlike RunConnectFourBatch, every column
+// gets exactly the same number of games instead of a random share of a
+// fixed total - the same guarantee RunChessOpeningBook gives each opening -
+// so a per-column win rate isn't quietly built on a smaller, noisier
+// sample than its neighbors.
+func RunConnectFourOpeningBook(gamesPerColumn int, difficulty bot.Difficulty) ([]ConnectFourOpeningReport, error) {
+	reports := make([]ConnectFourOpeningReport, 0, connectFourColumns)
+	for col := 0; col < connectFourColumns; col++ {
+		report := ConnectFourOpeningReport{Column: col}
+		for i := 0; i < gamesPerColumn; i++ {
+			result, err := PlayConnectFourGame(difficulty, difficulty, col)
+			if err != nil {
+				return nil, err
+			}
+			report.Games++
+			report.AveragePlies += float64(result.Plies)
+			switch {
+			case result.RedWon:
+				report.Wins++
+			case result.Draw:
+				report.Draws++
+			default:
+				report.Losses++
+			}
+		}
+		if report.Games > 0 {
+			report.WinRate = float64(report.Wins) / float64(report.Games)
+			report.AveragePlies /= float64(report.Games)
+		}
+		reports = append(reports, report)
+	}
+	return reports, nil
+}

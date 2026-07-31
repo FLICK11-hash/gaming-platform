@@ -1134,7 +1134,18 @@ function openingLabel(move) {
   return name ? `${name} (${move})` : move
 }
 
-function aggregateChessBook(reports) {
+function formatDuration(seconds) {
+  const total = Math.round(seconds)
+  const mins = Math.floor(total / 60)
+  const secs = total % 60
+  return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`
+}
+
+// aggregateBook rolls up a list of {games, wins, draws, losses} reports
+// (one per opening/column) into a single overall rate - used both for the
+// chess opening books and for Connect Four's per-column reports, which
+// share the same shape.
+function aggregateBook(reports) {
   const totals = (reports || []).reduce(
     (acc, r) => ({
       games: acc.games + r.games,
@@ -1151,6 +1162,13 @@ function aggregateChessBook(reports) {
   }
 }
 
+// sortedBars orders bars by win rate descending, so every chart reads as a
+// ranked list (best opening first) instead of the arbitrary order the data
+// arrived in.
+function sortedBars(bars) {
+  return [...bars].sort((a, b) => b.value - a.value)
+}
+
 // OpeningBarChart draws a horizontal win-rate bar per opening, in the same
 // hand-rolled style as EloChart below - one accent color per chart (a
 // single series), direct-labeled bars instead of a legend, and a native
@@ -1163,7 +1181,7 @@ function OpeningBarChart({ title, accent, bars }) {
         <p className="profile-empty">No data yet.</p>
       ) : (
         <div className="bar-chart">
-          {bars.map(bar => (
+          {sortedBars(bars).map(bar => (
             <div className="bar-row" key={bar.label} title={bar.detail}>
               <span className="bar-label">{bar.label}</span>
               <div className="bar-track">
@@ -1215,10 +1233,11 @@ function ResearchSimulationCard({ token }) {
 
   if (!sim) return null
 
-  const { status, can_run: canRun, error, result } = sim
+  const { status, can_run: canRun, error, result, running_for_seconds: runningForSeconds } = sim
 
-  const whiteTotals = result ? aggregateChessBook(result.white_openings) : null
-  const blackTotals = result ? aggregateChessBook(result.black_openings) : null
+  const whiteTotals = result ? aggregateBook(result.white_openings) : null
+  const blackTotals = result ? aggregateBook(result.black_openings) : null
+  const c4Totals = result ? aggregateBook(result.connect_four) : null
 
   const whiteBars = result
     ? result.white_openings.map(r => ({
@@ -1234,14 +1253,13 @@ function ResearchSimulationCard({ token }) {
         detail: `${r.wins}W / ${r.losses}L / ${r.draws}D over ${r.games} games, avg ${r.average_plies.toFixed(1)} plies`
       }))
     : []
-  const c4Bars =
-    result && result.connect_four.by_opening
-      ? result.connect_four.by_opening.map(o => ({
-          label: o.opening,
-          value: o.win_rate,
-          detail: `${o.first_mover_wins} first-mover wins / ${o.draws} draws over ${o.games} games`
-        }))
-      : []
+  const c4Bars = result
+    ? result.connect_four.map(c => ({
+        label: `Column ${c.column + 1}`,
+        value: c.win_rate,
+        detail: `${c.wins}W / ${c.losses}L / ${c.draws}D over ${c.games} games, avg ${c.average_plies.toFixed(1)} plies`
+      }))
+    : []
 
   return (
     <div className="card wide research-card">
@@ -1264,7 +1282,10 @@ function ResearchSimulationCard({ token }) {
           <span className="muted">Only the site owner can trigger a new run.</span>
         )}
         {status === 'running' && (
-          <span className="research-status running">Running now — this can take a minute or two.</span>
+          <span className="research-status running">
+            Running now{runningForSeconds ? ` — ${formatDuration(runningForSeconds)} so far` : ''}. This
+            usually takes a minute or two; slower on a busy free-tier server.
+          </span>
         )}
         {status === 'error' && error && (
           <span className="research-status error">Last run failed: {error}</span>
@@ -1278,20 +1299,16 @@ function ResearchSimulationCard({ token }) {
         <>
           <p className="research-meta">
             Last run finished {new Date(result.finished_at).toLocaleString()} ·{' '}
-            {result.games_per_opening} games per opening
+            {result.games_per_opening} games per opening/column · sorted best to worst. With a
+            sample this size, an individual opening's win rate is noisy on its own — the overall
+            rates below (pooled across all openings) are the more reliable read.
           </p>
 
           <div className="profile-stats-grid">
             <Stat label="White win rate (chess)" value={`${Math.round(whiteTotals.winRate * 100)}%`} />
             <Stat label="Black win rate (chess)" value={`${Math.round(blackTotals.winRate * 100)}%`} />
-            <Stat
-              label="First-mover win rate (Connect Four)"
-              value={`${Math.round(result.connect_four.first_mover_win_rate * 100)}%`}
-            />
-            <Stat
-              label="Second-mover win rate (Connect Four)"
-              value={`${Math.round(result.connect_four.second_mover_win_rate * 100)}%`}
-            />
+            <Stat label="Red / first-mover win rate (Connect Four)" value={`${Math.round(c4Totals.winRate * 100)}%`} />
+            <Stat label="Green / second-mover win rate (Connect Four)" value={`${Math.round(c4Totals.losses / c4Totals.games * 100)}%`} />
           </div>
 
           <OpeningBarChart title="Top White Openings — Win Rate" accent="#3b82f6" bars={whiteBars} />
