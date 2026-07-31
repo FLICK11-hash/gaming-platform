@@ -27,6 +27,9 @@ RETURNING *;
 -- name: GetUserByID :one
 SELECT * FROM users WHERE user_id = $1;
 
+-- name: GetUsersByIDs :many
+SELECT * FROM users WHERE user_id = ANY(sqlc.arg('user_ids')::bigint[]);
+
 -- name: GetUserByUsername :one
 SELECT * FROM users WHERE username = $1;
 

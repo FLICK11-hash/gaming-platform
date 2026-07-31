@@ -224,6 +224,51 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 	return i, err
 }
 
+const getUsersByIDs = `-- name: GetUsersByIDs :many
+SELECT user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames, is_bot, current_login_streak, login_streak_started_on, current_win_streak, best_win_streak FROM users WHERE user_id = ANY($1::bigint[])
+`
+
+func (q *Queries) GetUsersByIDs(ctx context.Context, userIds []int64) ([]User, error) {
+	rows, err := q.db.Query(ctx, getUsersByIDs, userIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []User{}
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.UserID,
+			&i.Username,
+			&i.Email,
+			&i.Password,
+			&i.CurrentElo,
+			&i.TotalWins,
+			&i.TotalLosses,
+			&i.NumGames,
+			&i.AccountStatus,
+			&i.CreatedAt,
+			&i.CoinBalance,
+			&i.LastDailyRewardAt,
+			&i.SelectedAvatar,
+			&i.SelectedBadge,
+			&i.SelectedProfileFrames,
+			&i.IsBot,
+			&i.CurrentLoginStreak,
+			&i.LoginStreakStartedOn,
+			&i.CurrentWinStreak,
+			&i.BestWinStreak,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setSelectedAvatar = `-- name: SetSelectedAvatar :one
 UPDATE users SET selected_avatar = $2 WHERE user_id = $1
 RETURNING user_id, username, email, password, current_elo, total_wins, total_losses, num_games, account_status, created_at, coin_balance, last_daily_reward_at, selected_avatar, selected_badge, selected_profile_frames, is_bot, current_login_streak, login_streak_started_on, current_win_streak, best_win_streak

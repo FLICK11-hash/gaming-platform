@@ -53,10 +53,17 @@ type Querier interface {
 	GetMatchClockForUser(ctx context.Context, arg GetMatchClockForUserParams) (MatchClock, error)
 	GetMission(ctx context.Context, missionID int64) (Mission, error)
 	GetOrCreateUserMissionProgress(ctx context.Context, arg GetOrCreateUserMissionProgressParams) (UserMissionProgress, error)
+	// Same upsert as GetOrCreateUserMissionProgress, but for every active
+	// mission in one round trip instead of one per mission: mission_ids and
+	// period_keys are matched pairwise (unnest walks both arrays in lockstep),
+	// so the missions list endpoint - polled repeatedly by every logged-in
+	// client - doesn't do a query per mission on every load.
+	GetOrCreateUserMissionProgressBatch(ctx context.Context, arg GetOrCreateUserMissionProgressBatchParams) ([]UserMissionProgress, error)
 	GetTournament(ctx context.Context, tournamentID int64) (Tournament, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, userID int64) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
+	GetUsersByIDs(ctx context.Context, userIds []int64) ([]User, error)
 	GetWaitingQueueEntryForUser(ctx context.Context, userID int64) (MatchmakingQueue, error)
 	GrantCosmeticToUser(ctx context.Context, arg GrantCosmeticToUserParams) error
 	HasLeaderboardRewardRun(ctx context.Context, weekKey string) (bool, error)

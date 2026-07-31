@@ -287,6 +287,22 @@ func (m *Matcher) matchBucket(
 		return nil
 	}
 
+	// One query for every waiting entry's user instead of one per entry -
+	// this tick runs every ~2s for every distinct bucket, so a per-entry
+	// round trip here scales badly with queue size.
+	userIDs := make([]int64, len(entries))
+	for i, entry := range entries {
+		userIDs[i] = entry.UserID
+	}
+	users, err := q.GetUsersByIDs(ctx, userIDs)
+	if err != nil {
+		return err
+	}
+	usersByID := make(map[int64]db.User, len(users))
+	for _, u := range users {
+		usersByID[u.UserID] = u
+	}
+
 	candidates := make(
 		[]candidate,
 		0,
@@ -294,15 +310,8 @@ func (m *Matcher) matchBucket(
 	)
 
 	for _, entry := range entries {
-		user, err := q.GetUserByID(
-			ctx,
-			entry.UserID,
-		)
-		if err != nil {
-			return err
-		}
-
-		if user.CoinBalance < coinWager {
+		user, ok := usersByID[entry.UserID]
+		if !ok || user.CoinBalance < coinWager {
 			continue
 		}
 

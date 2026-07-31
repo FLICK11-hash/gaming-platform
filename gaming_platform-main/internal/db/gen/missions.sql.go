@@ -110,6 +110,52 @@ func (q *Queries) GetOrCreateUserMissionProgress(ctx context.Context, arg GetOrC
 	return i, err
 }
 
+const getOrCreateUserMissionProgressBatch = `-- name: GetOrCreateUserMissionProgressBatch :many
+INSERT INTO user_mission_progress (user_id, mission_id, period_key, progress_count)
+SELECT $1::bigint, unnest($2::bigint[]), unnest($3::text[]), 0
+ON CONFLICT (user_id, mission_id, period_key) DO UPDATE SET user_id = EXCLUDED.user_id
+RETURNING user_mission_progress_id, user_id, mission_id, period_key, progress_count, completed_at, claimed_at
+`
+
+type GetOrCreateUserMissionProgressBatchParams struct {
+	UserID     int64    `json:"user_id"`
+	MissionIds []int64  `json:"mission_ids"`
+	PeriodKeys []string `json:"period_keys"`
+}
+
+// Same upsert as GetOrCreateUserMissionProgress, but for every active
+// mission in one round trip instead of one per mission: mission_ids and
+// period_keys are matched pairwise (unnest walks both arrays in lockstep),
+// so the missions list endpoint - polled repeatedly by every logged-in
+// client - doesn't do a query per mission on every load.
+func (q *Queries) GetOrCreateUserMissionProgressBatch(ctx context.Context, arg GetOrCreateUserMissionProgressBatchParams) ([]UserMissionProgress, error) {
+	rows, err := q.db.Query(ctx, getOrCreateUserMissionProgressBatch, arg.UserID, arg.MissionIds, arg.PeriodKeys)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []UserMissionProgress{}
+	for rows.Next() {
+		var i UserMissionProgress
+		if err := rows.Scan(
+			&i.UserMissionProgressID,
+			&i.UserID,
+			&i.MissionID,
+			&i.PeriodKey,
+			&i.ProgressCount,
+			&i.CompletedAt,
+			&i.ClaimedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const incrementMissionProgress = `-- name: IncrementMissionProgress :one
 INSERT INTO user_mission_progress (user_id, mission_id, period_key, progress_count)
 VALUES ($1, $2, $3, $4)

@@ -44,18 +44,33 @@ func (s *Server) handleListMissions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	missionIDs := make([]int64, len(all))
+	periodKeys := make([]string, len(all))
+	for i, m := range all {
+		missionIDs[i] = m.MissionID
+		periodKeys[i] = missionPeriodKey(m, user)
+	}
+
+	// One round trip for every mission's progress row instead of one per
+	// mission - this endpoint is polled by every logged-in client every 15
+	// seconds, so a per-mission query here was pure waste on every load.
+	progressRows, err := q.GetOrCreateUserMissionProgressBatch(r.Context(), db.GetOrCreateUserMissionProgressBatchParams{
+		UserID:     userID,
+		MissionIds: missionIDs,
+		PeriodKeys: periodKeys,
+	})
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to load missions")
+		return
+	}
+	progressByMissionID := make(map[int64]db.UserMissionProgress, len(progressRows))
+	for _, p := range progressRows {
+		progressByMissionID[p.MissionID] = p
+	}
+
 	resp := make([]missionResponse, 0, len(all))
 	for _, m := range all {
-		progress, err := q.GetOrCreateUserMissionProgress(r.Context(), db.GetOrCreateUserMissionProgressParams{
-			UserID:    userID,
-			MissionID: m.MissionID,
-			PeriodKey: missionPeriodKey(m, user),
-		})
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "failed to load missions")
-			return
-		}
-		resp = append(resp, toMissionResponse(m, progress))
+		resp = append(resp, toMissionResponse(m, progressByMissionID[m.MissionID]))
 	}
 
 	writeJSON(w, http.StatusOK, resp)

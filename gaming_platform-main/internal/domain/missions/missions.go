@@ -46,20 +46,27 @@ func NewService(pool *pgxpool.Pool) *Service {
 // games-played progresses. player1Elo/player2Elo are each player's Elo
 // immediately before this match's result was applied.
 func (s *Service) RecordMatchCompletion(ctx context.Context, player1ID, player2ID, winnerUserID int64, player1Elo, player2Elo int) {
-	s.incrementDaily(ctx, player1ID, GoalTypeGamesPlayed, 1)
-	s.incrementDaily(ctx, player2ID, GoalTypeGamesPlayed, 1)
+	q := db.New(s.pool)
+	all, err := q.ListActiveMissions(ctx)
+	if err != nil {
+		log.Printf("missions: list active missions error: %v", err)
+		return
+	}
+
+	s.incrementDaily(ctx, all, player1ID, GoalTypeGamesPlayed, 1)
+	s.incrementDaily(ctx, all, player2ID, GoalTypeGamesPlayed, 1)
 
 	if winnerUserID == 0 {
 		return
 	}
-	s.incrementDaily(ctx, winnerUserID, GoalTypeWins, 1)
+	s.incrementDaily(ctx, all, winnerUserID, GoalTypeWins, 1)
 
 	winnerElo, loserElo := player1Elo, player2Elo
 	if winnerUserID == player2ID {
 		winnerElo, loserElo = player2Elo, player1Elo
 	}
 	if loserElo-winnerElo >= UpsetEloThreshold {
-		s.incrementDaily(ctx, winnerUserID, GoalTypeUpsetWin, 1)
+		s.incrementDaily(ctx, all, winnerUserID, GoalTypeUpsetWin, 1)
 	}
 }
 
@@ -85,13 +92,7 @@ func (s *Service) RecordDailyClaim(ctx context.Context, userID int64, streak int
 	}
 }
 
-func (s *Service) incrementDaily(ctx context.Context, userID int64, goalType string, by int) {
-	q := db.New(s.pool)
-	all, err := q.ListActiveMissions(ctx)
-	if err != nil {
-		log.Printf("missions: list active missions error: %v", err)
-		return
-	}
+func (s *Service) incrementDaily(ctx context.Context, all []db.Mission, userID int64, goalType string, by int) {
 	today := time.Now().UTC().Format("2006-01-02")
 	for _, m := range all {
 		if m.GoalType != goalType || m.ResetType != ResetTypeDaily {
