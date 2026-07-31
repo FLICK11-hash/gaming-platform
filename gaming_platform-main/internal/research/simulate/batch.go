@@ -3,6 +3,7 @@ package simulate
 import (
 	"math/rand"
 	"sort"
+	"sync"
 
 	"gaming_platform/internal/domain/bot"
 )
@@ -76,20 +77,20 @@ func (b *BatchStats) finalize() {
 	}
 }
 
-// RunChessBatch plays n chess games at the given difficulty and aggregates
-// the results from White's perspective (White always moves first by rule).
-// If randomizeOpening is true, White's opening move is sampled from
-// WhiteChessOpenings instead of chosen by its own AI, so the results can be
-// broken down per opening; if false, the bot picks its own (much less
-// varied) opening every game.
-func RunChessBatch(n int, difficulty bot.Difficulty, randomizeOpening bool) (BatchStats, error) {
+// RunChessBatch plays n chess games with mover playing both sides and
+// aggregates the results from White's perspective (White always moves
+// first by rule). If randomizeOpening is true, White's opening move is
+// sampled from WhiteChessOpenings instead of chosen by mover, so the
+// results can be broken down per opening; if false, mover picks its own
+// (much less varied) opening every game.
+func RunChessBatch(n int, mover ChessMover, randomizeOpening bool) (BatchStats, error) {
 	var stats BatchStats
 	for i := 0; i < n; i++ {
 		var forced []string
 		if randomizeOpening {
 			forced = []string{WhiteChessOpenings[rand.Intn(len(WhiteChessOpenings))]}
 		}
-		result, err := PlayChessGame(difficulty, difficulty, forced)
+		result, err := PlayChessGame(mover, mover, forced)
 		if err != nil {
 			return BatchStats{}, err
 		}
@@ -186,8 +187,8 @@ type ChessOpeningReport struct {
 // color's book (WhiteChessOpenings or BlackChessOpenings), always seating
 // the bot under study on that color - a "defense" only means something
 // played as Black, the same way an "opening" only means something played
-// as White. Both bots play at difficulty.
-func RunChessOpeningBook(gamesPerOpening int, difficulty bot.Difficulty, color OpeningColor) ([]ChessOpeningReport, error) {
+// as White. mover plays both sides.
+func RunChessOpeningBook(gamesPerOpening int, mover ChessMover, color OpeningColor) ([]ChessOpeningReport, error) {
 	book := WhiteChessOpenings
 	if color == Black {
 		book = BlackChessOpenings
@@ -202,7 +203,7 @@ func RunChessOpeningBook(gamesPerOpening int, difficulty bot.Difficulty, color O
 
 		report := ChessOpeningReport{Opening: opening}
 		for i := 0; i < gamesPerOpening; i++ {
-			result, err := PlayChessGame(difficulty, difficulty, forced)
+			result, err := PlayChessGame(mover, mover, forced)
 			if err != nil {
 				return nil, err
 			}
@@ -227,6 +228,100 @@ func RunChessOpeningBook(gamesPerOpening int, difficulty bot.Difficulty, color O
 			report.AveragePlies /= float64(report.Games)
 		}
 		reports = append(reports, report)
+	}
+	return reports, nil
+}
+
+// RunChessOpeningBookConcurrent is RunChessOpeningBook, but plays up to
+// concurrency games at once instead of one at a time. A mover backed by a
+// pooled real engine (see internal/engine/stockfish) is safe to call this
+// way - each call checks out its own engine process for the duration of
+// its game - and a search that takes real wall-clock time per move (unlike
+// the platform's instant hand-rolled evaluation) makes that concurrency
+// worth having: gamesPerOpening x len(book) games run sequentially would
+// otherwise take gamesPerOpening x len(book) times as long as one game.
+func RunChessOpeningBookConcurrent(gamesPerOpening int, mover ChessMover, color OpeningColor, concurrency int) ([]ChessOpeningReport, error) {
+	if concurrency < 1 {
+		concurrency = 1
+	}
+
+	book := WhiteChessOpenings
+	if color == Black {
+		book = BlackChessOpenings
+	}
+
+	type job struct {
+		openingIdx int
+		forced     []string
+	}
+	type outcome struct {
+		openingIdx int
+		result     ChessGameResult
+	}
+
+	jobs := make(chan job, len(book)*gamesPerOpening)
+	for i, opening := range book {
+		forced := []string{opening}
+		if color == Black {
+			forced = []string{BlackOpeningReplyTo, opening}
+		}
+		for g := 0; g < gamesPerOpening; g++ {
+			jobs <- job{openingIdx: i, forced: forced}
+		}
+	}
+	close(jobs)
+
+	outcomes := make(chan outcome, len(book)*gamesPerOpening)
+	errs := make(chan error, concurrency)
+	var wg sync.WaitGroup
+	for w := 0; w < concurrency; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := range jobs {
+				result, err := PlayChessGame(mover, mover, j.forced)
+				if err != nil {
+					errs <- err
+					return
+				}
+				outcomes <- outcome{j.openingIdx, result}
+			}
+		}()
+	}
+	wg.Wait()
+	close(outcomes)
+	close(errs)
+
+	if err := <-errs; err != nil {
+		return nil, err
+	}
+
+	reports := make([]ChessOpeningReport, len(book))
+	for i, opening := range book {
+		reports[i].Opening = opening
+	}
+	for o := range outcomes {
+		r := &reports[o.openingIdx]
+		r.Games++
+		r.AveragePlies += float64(o.result.Plies)
+		won := o.result.WhiteWon
+		if color == Black {
+			won = o.result.BlackWon
+		}
+		switch {
+		case won:
+			r.Wins++
+		case o.result.Draw:
+			r.Draws++
+		default:
+			r.Losses++
+		}
+	}
+	for i := range reports {
+		if reports[i].Games > 0 {
+			reports[i].WinRate = float64(reports[i].Wins) / float64(reports[i].Games)
+			reports[i].AveragePlies /= float64(reports[i].Games)
+		}
 	}
 	return reports, nil
 }

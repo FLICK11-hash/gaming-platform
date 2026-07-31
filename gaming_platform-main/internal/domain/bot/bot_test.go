@@ -136,11 +136,14 @@ func TestChooseConnectFourMove_EasyUsuallyBlocks(t *testing.T) {
 }
 
 func TestDifficultyForElo(t *testing.T) {
-	if DifficultyForElo(1200) != Easy {
-		t.Fatalf("expected 1200 elo to be Easy")
+	if DifficultyForElo(1320) != Easy {
+		t.Fatalf("expected 1320 elo to be Easy")
 	}
-	if DifficultyForElo(2100) != Hard {
-		t.Fatalf("expected 2100 elo to be Hard")
+	if DifficultyForElo(2000) != Medium {
+		t.Fatalf("expected 2000 elo to be Medium")
+	}
+	if DifficultyForElo(2500) != Hard {
+		t.Fatalf("expected 2500 elo to be Hard")
 	}
 }
 
@@ -148,7 +151,10 @@ func TestUsernameForOpponentElo(t *testing.T) {
 	if got := UsernameForOpponentElo(1400); got != RookieBotUsername {
 		t.Fatalf("expected RookieBot for elo below threshold, got %s", got)
 	}
-	if got := UsernameForOpponentElo(1500); got != GrandmasterBotUsername {
-		t.Fatalf("expected GrandmasterBot for elo at threshold, got %s", got)
+	if got := UsernameForOpponentElo(EasyToMediumElo); got != ExpertBotUsername {
+		t.Fatalf("expected ExpertBot at the easy-to-medium threshold, got %s", got)
+	}
+	if got := UsernameForOpponentElo(MediumToHardElo); got != GrandmasterBotUsername {
+		t.Fatalf("expected GrandmasterBot at the medium-to-hard threshold, got %s", got)
 	}
 }

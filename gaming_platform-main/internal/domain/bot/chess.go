@@ -6,6 +6,8 @@ import (
 	"math/rand"
 
 	nchess "github.com/notnil/chess"
+
+	"gaming_platform/internal/engine/stockfish"
 )
 
 // ErrNoLegalMoves means the FEN represents a position with no legal moves,
@@ -195,6 +197,10 @@ func ChooseChessMove(fen string, difficulty Difficulty) (from, to, promo string,
 		}
 	}
 
+	// Medium has no distinct pure-Go evaluation of its own - it shares
+	// chooseHardMove's 2-ply search. That's fine here: this fallback path
+	// only runs at all when Stockfish is unavailable or errors, so it's a
+	// safety net, not the primary way Medium-tier bots play.
 	var chosen *nchess.Move
 	if difficulty == Easy {
 		chosen = chooseEasyMove(game, moves)
@@ -223,9 +229,14 @@ const easyExtraBlunderChance = 0.08
 // crashed or slow-to-start Stockfish process shouldn't be able to stall a
 // live match).
 func ChooseChessMoveEngine(fen string, difficulty Difficulty) (from, to, promo string, err error) {
-	engine := rookieEngine
-	if difficulty == Hard {
+	var engine *stockfish.Engine
+	switch difficulty {
+	case Medium:
+		engine = expertEngine
+	case Hard:
 		engine = grandmasterEngine
+	default:
+		engine = rookieEngine
 	}
 	if engine == nil {
 		return ChooseChessMove(fen, difficulty)

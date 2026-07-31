@@ -798,6 +798,18 @@
   margin: -6px 0 14px;
 }
 
+.research-tier {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.research-tier h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: #e2e8f0;
+}
+
 .research-chart {
   margin-top: 20px;
 }

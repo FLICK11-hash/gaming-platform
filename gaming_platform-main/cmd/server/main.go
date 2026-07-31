@@ -64,7 +64,7 @@ func main() {
 	achievementsSvc := achievements.NewService(pool)
 	matchSvc := match.NewService(pool, connHub, missionsSvc, leaderboardSvc, matchHistorySvc, achievementsSvc)
 	matcher := matchmaking.New(pool)
-	researchRunner := research.NewRunner(research.DefaultGamesPerOpening)
+	researchRunner := research.NewRunner(research.DefaultGamesPerOpening, cfg.StockfishPath)
 
 	go matcher.Run(ctx, 2*time.Second)
 	go matchSvc.RunClockWatcher(ctx)

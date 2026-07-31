@@ -15,11 +15,11 @@ import (
 	"time"
 )
 
-// MoveTime is how long each Stockfish search is given per move. Kept short
-// deliberately: this powers a bullet-chess bot opponent, and per the
-// platform's real-time fairness goals a bot's move needs to land well
-// under a second, not run a multi-second search.
-const MoveTime = 200 * time.Millisecond
+// RealMatchMoveTime is how long each Stockfish search is given per move in
+// a live match. Kept short deliberately: this powers a bullet-chess bot
+// opponent, and per the platform's real-time fairness goals a bot's move
+// needs to land well under a second, not run a multi-second search.
+const RealMatchMoveTime = 200 * time.Millisecond
 
 // MinUCIElo and MaxUCIElo are Stockfish's own supported range for the
 // UCI_Elo strength-limiting option (as of Stockfish 16). Anything outside
@@ -33,24 +33,26 @@ const (
 )
 
 // Engine manages a fixed-size pool of persistent Stockfish processes, all
-// configured to the same strength limit. Reusing long-lived processes
-// (rather than spawning one per move) avoids paying process-startup
-// latency on every bot move, and the pool avoids serializing every
-// concurrent match behind a single process.
+// configured to the same strength limit and per-move search budget.
+// Reusing long-lived processes (rather than spawning one per move) avoids
+// paying process-startup latency on every bot move, and the pool avoids
+// serializing every concurrent match behind a single process.
 type Engine struct {
-	procs chan *process
+	procs    chan *process
+	moveTime time.Duration
 }
 
 // NewEngine starts poolSize Stockfish processes at path, each limited to
-// elo playing strength via UCI_LimitStrength/UCI_Elo. If starting any
-// process fails, every process already started is torn down and an error
-// is returned - there's no partially-usable Engine.
-func NewEngine(path string, elo, poolSize int) (*Engine, error) {
+// elo playing strength via UCI_LimitStrength/UCI_Elo, searching for
+// moveTime per move. If starting any process fails, every process already
+// started is torn down and an error is returned - there's no
+// partially-usable Engine.
+func NewEngine(path string, elo, poolSize int, moveTime time.Duration) (*Engine, error) {
 	if poolSize < 1 {
 		return nil, errors.New("stockfish: poolSize must be at least 1")
 	}
 
-	e := &Engine{procs: make(chan *process, poolSize)}
+	e := &Engine{procs: make(chan *process, poolSize), moveTime: moveTime}
 	for i := 0; i < poolSize; i++ {
 		p, err := startProcess(path, elo)
 		if err != nil {
@@ -143,7 +145,7 @@ func (e *Engine) BestMove(fen string) (from, to, promo string, err error) {
 	if err := p.send("position fen " + fen); err != nil {
 		return "", "", "", err
 	}
-	if err := p.send(fmt.Sprintf("go movetime %d", MoveTime.Milliseconds())); err != nil {
+	if err := p.send(fmt.Sprintf("go movetime %d", e.moveTime.Milliseconds())); err != nil {
 		return "", "", "", err
 	}
 
@@ -152,27 +154,37 @@ func (e *Engine) BestMove(fen string) (from, to, promo string, err error) {
 		if !strings.HasPrefix(line, "bestmove") {
 			continue
 		}
-		fields := strings.Fields(line)
-		if len(fields) < 2 {
-			return "", "", "", fmt.Errorf("stockfish: malformed bestmove line: %q", line)
-		}
-		move := fields[1]
-		if move == "(none)" {
-			return "", "", "", errors.New("stockfish: no legal move available")
-		}
-		if len(move) < 4 {
-			return "", "", "", fmt.Errorf("stockfish: malformed move: %q", move)
-		}
-		from, to = move[0:2], move[2:4]
-		if len(move) >= 5 {
-			promo = move[4:5]
-		}
-		return from, to, promo, nil
+		return parseBestMoveLine(line)
 	}
 	if err := p.stdout.Err(); err != nil {
 		return "", "", "", err
 	}
 	return "", "", "", errors.New("stockfish: process exited before bestmove")
+}
+
+// parseBestMoveLine parses a UCI "bestmove <move> [ponder <move>]" line into
+// from/to square form plus an optional promotion letter, e.g. "bestmove
+// e7e8q ponder ..." becomes ("e7", "e8", "q"). Split out from BestMove so
+// tests can exercise the parsing itself without depending on which move a
+// real (strength-limited, and therefore not always optimal by design)
+// engine actually chooses.
+func parseBestMoveLine(line string) (from, to, promo string, err error) {
+	fields := strings.Fields(line)
+	if len(fields) < 2 {
+		return "", "", "", fmt.Errorf("stockfish: malformed bestmove line: %q", line)
+	}
+	move := fields[1]
+	if move == "(none)" {
+		return "", "", "", errors.New("stockfish: no legal move available")
+	}
+	if len(move) < 4 {
+		return "", "", "", fmt.Errorf("stockfish: malformed move: %q", move)
+	}
+	from, to = move[0:2], move[2:4]
+	if len(move) >= 5 {
+		promo = move[4:5]
+	}
+	return from, to, promo, nil
 }
 
 // Close quits every process in the pool. It must only be called once no

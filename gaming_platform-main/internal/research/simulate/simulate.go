@@ -27,6 +27,25 @@ const simMatchID = 1
 // change ever broke that guarantee.
 const maxPlies = 300
 
+// ChessMover chooses a move for one side of a simulated chess game, given
+// the current position's FEN, in the same from/to/promo shape
+// bot.ChooseChessMove returns. PlayChessGame plays through this
+// abstraction rather than a bot.Difficulty directly, so a caller can
+// supply the platform's existing pure-Go bot logic (DifficultyMover) or a
+// real Stockfish engine tuned to a specific Elo (see
+// internal/domain/research's Elo-comparison runs) without PlayChessGame
+// needing to know which.
+type ChessMover func(fen string) (from, to, promo string, err error)
+
+// DifficultyMover adapts the platform's built-in bot.ChooseChessMove logic
+// - the same hand-rolled evaluation real matches fall back to when no
+// Stockfish engine is configured - into a ChessMover.
+func DifficultyMover(difficulty bot.Difficulty) ChessMover {
+	return func(fen string) (string, string, string, error) {
+		return bot.ChooseChessMove(fen, difficulty)
+	}
+}
+
 // ChessGameResult is the outcome of one simulated chess game.
 type ChessGameResult struct {
 	// WhiteWon/BlackWon/Draw are mutually exclusive; exactly one is true.
@@ -41,18 +60,17 @@ type ChessGameResult struct {
 	Plies       int
 }
 
-// PlayChessGame plays one complete game between whiteDifficulty (playing
-// White) and blackDifficulty (playing Black). Chess always has White move
-// first, so which side moves first isn't a variable to control here -
-// which color you assign the stronger/weaker bot to is.
+// PlayChessGame plays one complete game between white and black (each a
+// ChessMover). Chess always has White move first, so which side moves
+// first isn't a variable to control here - which mover you assign the
+// stronger/weaker side to is.
 //
 // forcedMoves, if non-empty, is a sequence of legal moves (from+to square
 // form, e.g. []string{"e2e4", "c7c5"}) played in order at the very start of
-// the game instead of consulting the bots' own move-choosing logic; play
-// resumes with the bots once the sequence is exhausted. This lets a batch
-// runner hold an opening (or a specific reply to it) fixed while varying
-// everything downstream.
-func PlayChessGame(whiteDifficulty, blackDifficulty bot.Difficulty, forcedMoves []string) (ChessGameResult, error) {
+// the game instead of consulting either mover, so a batch runner can hold
+// an opening (or a specific reply to it) fixed while varying everything
+// downstream; play resumes with the movers once the sequence is exhausted.
+func PlayChessGame(white, black ChessMover, forcedMoves []string) (ChessGameResult, error) {
 	engine := chess.NewEngine()
 	engine.StartGame(simMatchID)
 	defer engine.EndGame(simMatchID)
@@ -76,16 +94,16 @@ func PlayChessGame(whiteDifficulty, blackDifficulty bot.Difficulty, forcedMoves 
 			return result, nil
 		}
 
-		difficulty := whiteDifficulty
+		mover := white
 		if ply%2 == 1 {
-			difficulty = blackDifficulty
+			mover = black
 		}
 
 		var from, to, promo string
 		if ply < len(forcedMoves) {
 			from, to = forcedMoves[ply][:2], forcedMoves[ply][2:]
 		} else {
-			from, to, promo, err = bot.ChooseChessMove(state.FEN, difficulty)
+			from, to, promo, err = mover(state.FEN)
 			if err != nil {
 				return ChessGameResult{}, fmt.Errorf("simulate: choose chess move: %w", err)
 			}

@@ -24,12 +24,12 @@ func TestChooseChessMoveEngine_WithoutConfiguredEngineFallsBackToBuiltIn(t *test
 	// TestChooseChessMoveEngine_UsesConfiguredStockfish (below) is the only
 	// other place that does, and it doesn't offer a way to unconfigure.
 	// Guard against silently testing the wrong path if that ever changes.
-	if rookieEngine != nil || grandmasterEngine != nil {
+	if rookieEngine != nil || expertEngine != nil || grandmasterEngine != nil {
 		t.Skip("an engine is already configured in this test binary; fallback path isn't exercised")
 	}
 
 	game := nchess.NewGame()
-	for _, difficulty := range []Difficulty{Easy, Hard} {
+	for _, difficulty := range []Difficulty{Easy, Medium, Hard} {
 		from, to, _, err := ChooseChessMoveEngine(game.FEN(), difficulty)
 		if err != nil {
 			t.Fatalf("difficulty %v: unexpected error: %v", difficulty, err)
@@ -48,7 +48,7 @@ func TestChooseChessMoveEngine_UsesConfiguredStockfish(t *testing.T) {
 	}
 
 	game := nchess.NewGame()
-	for _, difficulty := range []Difficulty{Easy, Hard} {
+	for _, difficulty := range []Difficulty{Easy, Medium, Hard} {
 		from, to, _, err := ChooseChessMoveEngine(game.FEN(), difficulty)
 		if err != nil {
 			t.Fatalf("difficulty %v: unexpected error: %v", difficulty, err)

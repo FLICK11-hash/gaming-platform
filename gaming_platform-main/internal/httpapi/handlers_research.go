@@ -30,14 +30,20 @@ type researchConnectFourReportDTO struct {
 	AveragePlies float64 `json:"average_plies"`
 }
 
+type researchChessEloTierDTO struct {
+	Label         string                     `json:"label"`
+	Elo           int                        `json:"elo"`
+	WhiteOpenings []researchOpeningReportDTO `json:"white_openings"`
+	BlackOpenings []researchOpeningReportDTO `json:"black_openings"`
+}
+
 type researchResultDTO struct {
-	StartedAt       string                         `json:"started_at"`
-	FinishedAt      string                         `json:"finished_at"`
-	GamesPerOpening int                            `json:"games_per_opening"`
-	Difficulty      string                         `json:"difficulty"`
-	WhiteOpenings   []researchOpeningReportDTO     `json:"white_openings"`
-	BlackOpenings   []researchOpeningReportDTO     `json:"black_openings"`
-	ConnectFour     []researchConnectFourReportDTO `json:"connect_four"`
+	StartedAt             string                         `json:"started_at"`
+	FinishedAt            string                         `json:"finished_at"`
+	GamesPerOpening       int                            `json:"games_per_opening"`
+	ChessByElo            []researchChessEloTierDTO      `json:"chess_by_elo"`
+	ConnectFourDifficulty string                         `json:"connect_four_difficulty"`
+	ConnectFour           []researchConnectFourReportDTO `json:"connect_four"`
 }
 
 type researchStatusResponse struct {
@@ -82,14 +88,23 @@ func toResultDTO(res *research.Result) *researchResultDTO {
 		}
 	}
 
+	chessByElo := make([]researchChessEloTierDTO, len(res.ChessByElo))
+	for i, tier := range res.ChessByElo {
+		chessByElo[i] = researchChessEloTierDTO{
+			Label:         tier.Label,
+			Elo:           tier.Elo,
+			WhiteOpenings: toOpeningReportDTOs(tier.WhiteOpenings),
+			BlackOpenings: toOpeningReportDTOs(tier.BlackOpenings),
+		}
+	}
+
 	return &researchResultDTO{
-		StartedAt:       res.StartedAt.UTC().Format(time.RFC3339),
-		FinishedAt:      res.FinishedAt.UTC().Format(time.RFC3339),
-		GamesPerOpening: res.GamesPerOpening,
-		Difficulty:      res.Difficulty,
-		WhiteOpenings:   toOpeningReportDTOs(res.WhiteOpenings),
-		BlackOpenings:   toOpeningReportDTOs(res.BlackOpenings),
-		ConnectFour:     connectFour,
+		StartedAt:             res.StartedAt.UTC().Format(time.RFC3339),
+		FinishedAt:            res.FinishedAt.UTC().Format(time.RFC3339),
+		GamesPerOpening:       res.GamesPerOpening,
+		ChessByElo:            chessByElo,
+		ConnectFourDifficulty: res.ConnectFourDifficulty,
+		ConnectFour:           connectFour,
 	}
 }
 

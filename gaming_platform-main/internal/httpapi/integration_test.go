@@ -58,7 +58,7 @@ func TestEndToEnd_ChessMatchToCheckmate(t *testing.T) {
 	achievementsSvc := achievements.NewService(pool)
 	matchSvc := match.NewService(pool, connHub, missionsSvc, leaderboardSvc, matchHistorySvc, achievementsSvc)
 	matcher := matchmaking.New(pool)
-	researchRunner := research.NewRunner(research.DefaultGamesPerOpening)
+	researchRunner := research.NewRunner(research.DefaultGamesPerOpening, "")
 
 	matchCtx, cancelMatch := context.WithCancel(ctx)
 	defer cancelMatch()

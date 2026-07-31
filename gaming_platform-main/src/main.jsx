@@ -1236,25 +1236,7 @@ function ResearchSimulationCard({ token }) {
 
   const { status, can_run: canRun, error, result, running_for_seconds: runningForSeconds } = sim
 
-  const whiteTotals = result ? aggregateBook(result.white_openings) : null
-  const blackTotals = result ? aggregateBook(result.black_openings) : null
-  const chessTotals = result ? aggregateBook([...result.white_openings, ...result.black_openings]) : null
   const c4Totals = result ? aggregateBook(result.connect_four) : null
-
-  const whiteBars = result
-    ? result.white_openings.map(r => ({
-        label: openingLabel(r.opening),
-        value: r.win_rate,
-        detail: `${r.wins}W / ${r.losses}L / ${r.draws}D over ${r.games} games, avg ${r.average_plies.toFixed(1)} plies`
-      }))
-    : []
-  const blackBars = result
-    ? result.black_openings.map(r => ({
-        label: openingLabel(r.opening),
-        value: r.win_rate,
-        detail: `${r.wins}W / ${r.losses}L / ${r.draws}D over ${r.games} games, avg ${r.average_plies.toFixed(1)} plies`
-      }))
-    : []
   const c4Bars = result
     ? result.connect_four.map(c => ({
         label: `Column ${c.column + 1}`,
@@ -1270,9 +1252,10 @@ function ResearchSimulationCard({ token }) {
         Monte Carlo Bot Research
       </h2>
       <p>
-        Thousands of automated bot-vs-bot games, played entirely on the server, to answer
-        two questions: how much of an edge does moving first give you, and how much does
-        the specific opening you play change the outcome?
+        Thousands of automated bot-vs-bot games, played entirely on the server against a
+        real Stockfish engine, to answer three questions: how much of an edge does moving
+        first give you, how much does the specific opening you play change the outcome, and
+        does either answer change as the bots get stronger?
       </p>
 
       <div className="research-controls">
@@ -1286,7 +1269,8 @@ function ResearchSimulationCard({ token }) {
         {status === 'running' && (
           <span className="research-status running">
             Running now{runningForSeconds ? ` — ${formatDuration(runningForSeconds)} so far` : ''}. This
-            usually takes a minute or two; slower on a busy free-tier server.
+            plays real Stockfish games at three Elo levels back to back, so it usually takes
+            several minutes — slower still on a busy free-tier server.
           </span>
         )}
         {status === 'error' && error && (
@@ -1301,33 +1285,60 @@ function ResearchSimulationCard({ token }) {
         <>
           <p className="research-meta">
             Last run finished {new Date(result.finished_at).toLocaleString()} ·{' '}
-            {result.games_per_opening} games per opening/column · sorted best to worst ·
-            both sides always play at the same "{result.difficulty}" bot AI tier (not an
-            Elo rating — Elo only labels the two fixed bot accounts real matches use, and
-            isn't consulted here, so nothing below is "1200" or "2100"; both simulated bots
-            are identical, isolating move order and opening choice as the only variables).
-            With a sample this size, an individual opening's win rate is noisy on its own —
-            the pooled win/draw rates below are the more reliable read, and every remaining
-            percentage not shown as a win is a loss or a draw (draw rates called out
-            separately, since these bots draw each other often).
+            {result.games_per_opening} games per opening/column · sorted best to worst.
+            Chess is broken out by Elo tier below — each tier plays a real Stockfish engine
+            against itself, so the only variable within a tier is move order and opening
+            choice, and comparing across tiers shows whether the same edges hold up as both
+            sides get stronger. Connect Four isn't part of that comparison (its bot strength
+            didn't change), so it's shown once, both sides at the same "
+            {result.connect_four_difficulty}" bot AI tier. With a sample this size, an
+            individual opening's win rate is noisy on its own — the pooled win/draw rates
+            are the more reliable read, and every remaining percentage not shown as a win is
+            a loss or a draw.
           </p>
 
-          <div className="profile-stats-grid">
-            <Stat label="White win rate (chess)" value={`${Math.round(whiteTotals.winRate * 100)}%`} />
-            <Stat label="Black win rate (chess)" value={`${Math.round(blackTotals.winRate * 100)}%`} />
-            <Stat label="Chess draw rate" value={`${Math.round(chessTotals.drawRate * 100)}%`} />
-            <Stat label="Red / first-mover win rate (Connect Four)" value={`${Math.round(c4Totals.winRate * 100)}%`} />
-            <Stat label="Green / second-mover win rate (Connect Four)" value={`${Math.round(c4Totals.lossRate * 100)}%`} />
-            <Stat label="Connect Four draw rate" value={`${Math.round(c4Totals.drawRate * 100)}%`} />
-          </div>
+          {result.chess_by_elo.map(tier => {
+            const whiteTotals = aggregateBook(tier.white_openings)
+            const blackTotals = aggregateBook(tier.black_openings)
+            const chessTotals = aggregateBook([...tier.white_openings, ...tier.black_openings])
+            const whiteBars = tier.white_openings.map(r => ({
+              label: openingLabel(r.opening),
+              value: r.win_rate,
+              detail: `${r.wins}W / ${r.losses}L / ${r.draws}D over ${r.games} games, avg ${r.average_plies.toFixed(1)} plies`
+            }))
+            const blackBars = tier.black_openings.map(r => ({
+              label: openingLabel(r.opening),
+              value: r.win_rate,
+              detail: `${r.wins}W / ${r.losses}L / ${r.draws}D over ${r.games} games, avg ${r.average_plies.toFixed(1)} plies`
+            }))
 
-          <OpeningBarChart title="Top White Openings — Win Rate" accent="#3b82f6" bars={whiteBars} />
-          <OpeningBarChart title="Top Black Openings — Win Rate" accent="#facc15" bars={blackBars} />
-          <OpeningBarChart
-            title="Connect Four Opening Column — Red (First Mover) Win Rate"
-            accent="#ef4444"
-            bars={c4Bars}
-          />
+            return (
+              <div className="research-tier" key={tier.label}>
+                <h3>{tier.label} — {tier.elo} Elo</h3>
+                <div className="profile-stats-grid">
+                  <Stat label="White win rate" value={`${Math.round(whiteTotals.winRate * 100)}%`} />
+                  <Stat label="Black win rate" value={`${Math.round(blackTotals.winRate * 100)}%`} />
+                  <Stat label="Draw rate" value={`${Math.round(chessTotals.drawRate * 100)}%`} />
+                </div>
+                <OpeningBarChart title={`${tier.label} — Top White Openings, Win Rate`} accent="#3b82f6" bars={whiteBars} />
+                <OpeningBarChart title={`${tier.label} — Top Black Openings, Win Rate`} accent="#facc15" bars={blackBars} />
+              </div>
+            )
+          })}
+
+          <div className="research-tier">
+            <h3>Connect Four</h3>
+            <div className="profile-stats-grid">
+              <Stat label="Red / first-mover win rate" value={`${Math.round(c4Totals.winRate * 100)}%`} />
+              <Stat label="Green / second-mover win rate" value={`${Math.round(c4Totals.lossRate * 100)}%`} />
+              <Stat label="Draw rate" value={`${Math.round(c4Totals.drawRate * 100)}%`} />
+            </div>
+            <OpeningBarChart
+              title="Opening Column — Red (First Mover) Win Rate"
+              accent="#ef4444"
+              bars={c4Bars}
+            />
+          </div>
         </>
       )}
     </div>

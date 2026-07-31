@@ -3,6 +3,7 @@ package stockfish
 import (
 	"os/exec"
 	"testing"
+	"time"
 )
 
 // findBinary locates a real Stockfish binary for the test to exercise
@@ -22,7 +23,7 @@ func findBinary(t *testing.T) string {
 func TestNewEngine_StartsAndReportsBestMove(t *testing.T) {
 	path := findBinary(t)
 
-	e, err := NewEngine(path, 1320, 1)
+	e, err := NewEngine(path, 1320, 1, RealMatchMoveTime)
 	if err != nil {
 		t.Fatalf("NewEngine: %v", err)
 	}
@@ -42,7 +43,7 @@ func TestEngine_HandlesConcurrentCallsAcrossPool(t *testing.T) {
 	path := findBinary(t)
 
 	const poolSize = 3
-	e, err := NewEngine(path, 1320, poolSize)
+	e, err := NewEngine(path, 1320, poolSize, RealMatchMoveTime)
 	if err != nil {
 		t.Fatalf("NewEngine: %v", err)
 	}
@@ -64,16 +65,69 @@ func TestEngine_HandlesConcurrentCallsAcrossPool(t *testing.T) {
 	}
 }
 
-func TestEngine_PromotionMoveIsParsed(t *testing.T) {
+func TestEngine_MoveTimeIsHonored(t *testing.T) {
 	path := findBinary(t)
 
-	// Max strength here, deliberately: UCI_LimitStrength intentionally
-	// plays weaker-than-best moves sometimes (that's the whole point of
-	// simulating a lower rating), so a heavily-limited engine can't be
-	// trusted to find the obvious win in a trivial forced position. Parsing
-	// a promotion move correctly doesn't depend on strength; forcing the
-	// engine to actually produce one here does.
-	e, err := NewEngine(path, MaxUCIElo, 1)
+	e, err := NewEngine(path, 1320, 1, 10*time.Millisecond)
+	if err != nil {
+		t.Fatalf("NewEngine: %v", err)
+	}
+	defer e.Close()
+
+	const startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+	start := time.Now()
+	if _, _, _, err := e.BestMove(startFEN); err != nil {
+		t.Fatalf("BestMove: %v", err)
+	}
+	if elapsed := time.Since(start); elapsed > 2*time.Second {
+		t.Fatalf("BestMove with a 10ms movetime took %v, want well under RealMatchMoveTime (%v)", elapsed, RealMatchMoveTime)
+	}
+}
+
+// TestParseBestMoveLine exercises move parsing directly against canned UCI
+// output instead of a running engine. Even at the top of Stockfish's Elo
+// range, UCI_LimitStrength stays enabled (see ConfigureStockfish in
+// internal/domain/bot - no bot tier should play literal, unbounded engine
+// strength), so it deliberately still introduces occasional suboptimal
+// moves; that made an earlier version of this test - which checked a real
+// engine actually finds a forced promotion - flaky under load. Parsing
+// correctness doesn't depend on what the engine decided to play, so it
+// shouldn't depend on a live process at all.
+func TestParseBestMoveLine(t *testing.T) {
+	cases := []struct {
+		line            string
+		from, to, promo string
+		wantErr         bool
+	}{
+		{line: "bestmove e2e4", from: "e2", to: "e4", promo: ""},
+		{line: "bestmove e7e8q ponder e8 somewhere", from: "e7", to: "e8", promo: "q"},
+		{line: "bestmove g1f3 ponder d7d5", from: "g1", to: "f3", promo: ""},
+		{line: "bestmove (none)", wantErr: true},
+		{line: "bestmove", wantErr: true},
+		{line: "bestmove xy", wantErr: true},
+	}
+	for _, c := range cases {
+		from, to, promo, err := parseBestMoveLine(c.line)
+		if c.wantErr {
+			if err == nil {
+				t.Errorf("parseBestMoveLine(%q): expected an error, got from=%q to=%q promo=%q", c.line, from, to, promo)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("parseBestMoveLine(%q): unexpected error: %v", c.line, err)
+			continue
+		}
+		if from != c.from || to != c.to || promo != c.promo {
+			t.Errorf("parseBestMoveLine(%q) = (%q, %q, %q), want (%q, %q, %q)", c.line, from, to, promo, c.from, c.to, c.promo)
+		}
+	}
+}
+
+func TestEngine_PromotionMoveIsParsedFromRealEngine(t *testing.T) {
+	path := findBinary(t)
+
+	e, err := NewEngine(path, MaxUCIElo, 1, RealMatchMoveTime)
 	if err != nil {
 		t.Fatalf("NewEngine: %v", err)
 	}
@@ -81,16 +135,16 @@ func TestEngine_PromotionMoveIsParsed(t *testing.T) {
 
 	// White pawn on e7, one push from queening, kings tucked in opposite
 	// corners (far enough apart to be a legal position and for Black to
-	// have no hope of stopping the push).
+	// have no hope of stopping the push). This doesn't assert Stockfish
+	// actually finds the promotion (it's strength-limited even at the top
+	// of the range, so it isn't guaranteed to under load) - just that
+	// whatever move it does return parses into a well-formed shape.
 	const nearPromotionFEN = "k7/4P3/8/8/8/8/8/K7 w - - 0 1"
-	from, to, promo, err := e.BestMove(nearPromotionFEN)
+	from, to, _, err := e.BestMove(nearPromotionFEN)
 	if err != nil {
 		t.Fatalf("BestMove: %v", err)
 	}
-	if from != "e7" || to != "e8" {
-		t.Fatalf("BestMove = %s%s, want e7e8", from, to)
-	}
-	if promo == "" {
-		t.Fatalf("expected a promotion piece letter, got empty string")
+	if len(from) != 2 || len(to) != 2 {
+		t.Fatalf("BestMove returned from=%q to=%q, want two-character squares", from, to)
 	}
 }

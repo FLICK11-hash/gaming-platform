@@ -7,7 +7,7 @@ import (
 )
 
 func TestPlayChessGame_TerminatesWithExactlyOneOutcome(t *testing.T) {
-	result, err := PlayChessGame(bot.Easy, bot.Easy, nil)
+	result, err := PlayChessGame(DifficultyMover(bot.Easy), DifficultyMover(bot.Easy), nil)
 	if err != nil {
 		t.Fatalf("PlayChessGame: %v", err)
 	}
@@ -28,7 +28,7 @@ func TestPlayChessGame_TerminatesWithExactlyOneOutcome(t *testing.T) {
 }
 
 func TestPlayChessGame_ForcedMovesArePlayedInOrder(t *testing.T) {
-	result, err := PlayChessGame(bot.Easy, bot.Easy, []string{"d2d4", "d7d5"})
+	result, err := PlayChessGame(DifficultyMover(bot.Easy), DifficultyMover(bot.Easy), []string{"d2d4", "d7d5"})
 	if err != nil {
 		t.Fatalf("PlayChessGame: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestPlayConnectFourGame_ForcedOpeningColumnIsPlayedFirst(t *testing.T) {
 
 func TestRunChessBatch_AggregatesConsistently(t *testing.T) {
 	const n = 20
-	stats, err := RunChessBatch(n, bot.Easy, true)
+	stats, err := RunChessBatch(n, DifficultyMover(bot.Easy), true)
 	if err != nil {
 		t.Fatalf("RunChessBatch: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestSortedOpenings_OrderedByGameCountDescending(t *testing.T) {
 
 func TestRunChessOpeningBook_White_SeatsBotAsWhiteEveryGame(t *testing.T) {
 	const gamesPerOpening = 3
-	reports, err := RunChessOpeningBook(gamesPerOpening, bot.Easy, White)
+	reports, err := RunChessOpeningBook(gamesPerOpening, DifficultyMover(bot.Easy), White)
 	if err != nil {
 		t.Fatalf("RunChessOpeningBook: %v", err)
 	}
@@ -149,7 +149,7 @@ func TestRunChessOpeningBook_White_SeatsBotAsWhiteEveryGame(t *testing.T) {
 
 func TestRunChessOpeningBook_Black_SeatsBotAsBlackEveryGame(t *testing.T) {
 	const gamesPerOpening = 3
-	reports, err := RunChessOpeningBook(gamesPerOpening, bot.Easy, Black)
+	reports, err := RunChessOpeningBook(gamesPerOpening, DifficultyMover(bot.Easy), Black)
 	if err != nil {
 		t.Fatalf("RunChessOpeningBook: %v", err)
 	}

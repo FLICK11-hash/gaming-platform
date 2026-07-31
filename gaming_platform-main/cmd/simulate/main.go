@@ -26,7 +26,7 @@ import (
 func main() {
 	game := flag.String("game", "chess", `which game to simulate: "chess" or "connectfour"`)
 	games := flag.Int("games", 1000, "number of games to simulate (ignored when -book is set)")
-	difficultyName := flag.String("difficulty", "easy", `bot difficulty for both sides: "easy" or "hard" (both sides always play the same difficulty, isolating move-order as the only asymmetry)`)
+	difficultyName := flag.String("difficulty", "easy", `bot difficulty for both sides: "easy", "medium", or "hard" (both sides always play the same difficulty, isolating move-order as the only asymmetry)`)
 	randomizeOpenings := flag.Bool("openings", true, "sample the opening move/column at random instead of letting the bot choose it, and break results down per opening")
 	book := flag.String("book", "", `chess only: "white" or "black" - instead of randomizing, play gamesPerOpening games against every opening in that color's book (a "black opening" only means something played as Black, so this always seats the bot on that color)`)
 	gamesPerOpening := flag.Int("games-per-opening", 50, "chess only, with -book set: how many games to play per opening")
@@ -37,10 +37,12 @@ func main() {
 	switch *difficultyName {
 	case "easy":
 		difficulty = bot.Easy
+	case "medium":
+		difficulty = bot.Medium
 	case "hard":
 		difficulty = bot.Hard
 	default:
-		log.Fatalf("unknown -difficulty %q: want \"easy\" or \"hard\"", *difficultyName)
+		log.Fatalf("unknown -difficulty %q: want \"easy\", \"medium\", or \"hard\"", *difficultyName)
 	}
 
 	if *book != "" {
@@ -56,7 +58,7 @@ func main() {
 		default:
 			log.Fatalf("unknown -book %q: want \"white\" or \"black\"", *book)
 		}
-		reports, err := simulate.RunChessOpeningBook(*gamesPerOpening, difficulty, color)
+		reports, err := simulate.RunChessOpeningBook(*gamesPerOpening, simulate.DifficultyMover(difficulty), color)
 		if err != nil {
 			log.Fatalf("simulation error: %v", err)
 		}
@@ -76,7 +78,7 @@ func main() {
 	var err error
 	switch *game {
 	case "chess":
-		stats, err = simulate.RunChessBatch(*games, difficulty, *randomizeOpenings)
+		stats, err = simulate.RunChessBatch(*games, simulate.DifficultyMover(difficulty), *randomizeOpenings)
 	case "connectfour":
 		stats, err = simulate.RunConnectFourBatch(*games, difficulty, *randomizeOpenings)
 	default:
