@@ -30,14 +30,25 @@ const DefaultGamesPerOpening = 20
 // batch.
 const runDifficulty = bot.Easy
 
+// runDifficultyLabel is runDifficulty rendered as the string the website
+// displays, kept next to the constant so the two can't drift apart.
+const runDifficultyLabel = "easy"
+
 // Result is one finished simulation run's full output.
 type Result struct {
-	StartedAt       time.Time                           `json:"started_at"`
-	FinishedAt      time.Time                           `json:"finished_at"`
-	GamesPerOpening int                                 `json:"games_per_opening"`
-	WhiteOpenings   []simulate.ChessOpeningReport       `json:"white_openings"`
-	BlackOpenings   []simulate.ChessOpeningReport       `json:"black_openings"`
-	ConnectFour     []simulate.ConnectFourOpeningReport `json:"connect_four"`
+	StartedAt       time.Time `json:"started_at"`
+	FinishedAt      time.Time `json:"finished_at"`
+	GamesPerOpening int       `json:"games_per_opening"`
+	// Difficulty is the bot AI tier both sides played at - not an Elo
+	// rating. This harness always pits two identically-configured bots
+	// against each other so the only variable being measured is move order
+	// or opening choice, never a skill gap; "Elo" only exists as a label on
+	// the two fixed bot accounts real matches use (RookieBot/GrandmasterBot,
+	// see migration 0009_bot_users.up.sql), and isn't consulted here at all.
+	Difficulty    string                              `json:"difficulty"`
+	WhiteOpenings []simulate.ChessOpeningReport       `json:"white_openings"`
+	BlackOpenings []simulate.ChessOpeningReport       `json:"black_openings"`
+	ConnectFour   []simulate.ConnectFourOpeningReport `json:"connect_four"`
 }
 
 // Runner holds the single latest simulation run in memory. There is only
@@ -127,6 +138,7 @@ func (r *Runner) run() {
 		StartedAt:       started,
 		FinishedAt:      time.Now(),
 		GamesPerOpening: r.gamesPerOpening,
+		Difficulty:      runDifficultyLabel,
 		WhiteOpenings:   whiteOpenings,
 		BlackOpenings:   blackOpenings,
 		ConnectFour:     connectFour,

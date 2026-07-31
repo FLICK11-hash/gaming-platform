@@ -1158,6 +1158,7 @@ function aggregateBook(reports) {
   return {
     ...totals,
     winRate: totals.games ? totals.wins / totals.games : 0,
+    lossRate: totals.games ? totals.losses / totals.games : 0,
     drawRate: totals.games ? totals.draws / totals.games : 0
   }
 }
@@ -1237,6 +1238,7 @@ function ResearchSimulationCard({ token }) {
 
   const whiteTotals = result ? aggregateBook(result.white_openings) : null
   const blackTotals = result ? aggregateBook(result.black_openings) : null
+  const chessTotals = result ? aggregateBook([...result.white_openings, ...result.black_openings]) : null
   const c4Totals = result ? aggregateBook(result.connect_four) : null
 
   const whiteBars = result
@@ -1299,16 +1301,24 @@ function ResearchSimulationCard({ token }) {
         <>
           <p className="research-meta">
             Last run finished {new Date(result.finished_at).toLocaleString()} ·{' '}
-            {result.games_per_opening} games per opening/column · sorted best to worst. With a
-            sample this size, an individual opening's win rate is noisy on its own — the overall
-            rates below (pooled across all openings) are the more reliable read.
+            {result.games_per_opening} games per opening/column · sorted best to worst ·
+            both sides always play at the same "{result.difficulty}" bot AI tier (not an
+            Elo rating — Elo only labels the two fixed bot accounts real matches use, and
+            isn't consulted here, so nothing below is "1200" or "2100"; both simulated bots
+            are identical, isolating move order and opening choice as the only variables).
+            With a sample this size, an individual opening's win rate is noisy on its own —
+            the pooled win/draw rates below are the more reliable read, and every remaining
+            percentage not shown as a win is a loss or a draw (draw rates called out
+            separately, since these bots draw each other often).
           </p>
 
           <div className="profile-stats-grid">
             <Stat label="White win rate (chess)" value={`${Math.round(whiteTotals.winRate * 100)}%`} />
             <Stat label="Black win rate (chess)" value={`${Math.round(blackTotals.winRate * 100)}%`} />
+            <Stat label="Chess draw rate" value={`${Math.round(chessTotals.drawRate * 100)}%`} />
             <Stat label="Red / first-mover win rate (Connect Four)" value={`${Math.round(c4Totals.winRate * 100)}%`} />
-            <Stat label="Green / second-mover win rate (Connect Four)" value={`${Math.round(c4Totals.losses / c4Totals.games * 100)}%`} />
+            <Stat label="Green / second-mover win rate (Connect Four)" value={`${Math.round(c4Totals.lossRate * 100)}%`} />
+            <Stat label="Connect Four draw rate" value={`${Math.round(c4Totals.drawRate * 100)}%`} />
           </div>
 
           <OpeningBarChart title="Top White Openings — Win Rate" accent="#3b82f6" bars={whiteBars} />

@@ -34,6 +34,7 @@ type researchResultDTO struct {
 	StartedAt       string                         `json:"started_at"`
 	FinishedAt      string                         `json:"finished_at"`
 	GamesPerOpening int                            `json:"games_per_opening"`
+	Difficulty      string                         `json:"difficulty"`
 	WhiteOpenings   []researchOpeningReportDTO     `json:"white_openings"`
 	BlackOpenings   []researchOpeningReportDTO     `json:"black_openings"`
 	ConnectFour     []researchConnectFourReportDTO `json:"connect_four"`
@@ -85,6 +86,7 @@ func toResultDTO(res *research.Result) *researchResultDTO {
 		StartedAt:       res.StartedAt.UTC().Format(time.RFC3339),
 		FinishedAt:      res.FinishedAt.UTC().Format(time.RFC3339),
 		GamesPerOpening: res.GamesPerOpening,
+		Difficulty:      res.Difficulty,
 		WhiteOpenings:   toOpeningReportDTOs(res.WhiteOpenings),
 		BlackOpenings:   toOpeningReportDTOs(res.BlackOpenings),
 		ConnectFour:     connectFour,
