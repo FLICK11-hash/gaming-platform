@@ -2,6 +2,7 @@ package bot
 
 import (
 	"errors"
+	"log"
 	"math/rand"
 
 	nchess "github.com/notnil/chess"
@@ -202,4 +203,48 @@ func ChooseChessMove(fen string, difficulty Difficulty) (from, to, promo string,
 	}
 
 	return squareStr(chosen.S1()), squareStr(chosen.S2()), promoStr(chosen.Promo()), nil
+}
+
+// easyExtraBlunderChance further weakens RookieBot's Stockfish-backed play
+// beyond UCI_Elo's own floor (RookieBotUCIElo, Stockfish's minimum of
+// 1320) to approximate its intended ~1200 rating more closely: Stockfish
+// can't be told to play weaker than 1320 through UCI_Elo alone, so this
+// occasionally overrides its move with a random legal one instead - the
+// same mechanism as easyBlunderChance above, layered on top of a real
+// engine rather than the hand-rolled evaluation. This is an approximation:
+// there's no way to verify the resulting Elo without running it through
+// many rated games, which isn't practical here.
+const easyExtraBlunderChance = 0.08
+
+// ChooseChessMoveEngine is ChooseChessMove's real-match counterpart: it
+// prefers a real Stockfish engine (see ConfigureStockfish) over the
+// hand-rolled evaluation ChooseChessMove uses, falling back to it
+// automatically if no engine is configured or a call to one fails (a
+// crashed or slow-to-start Stockfish process shouldn't be able to stall a
+// live match).
+func ChooseChessMoveEngine(fen string, difficulty Difficulty) (from, to, promo string, err error) {
+	engine := rookieEngine
+	if difficulty == Hard {
+		engine = grandmasterEngine
+	}
+	if engine == nil {
+		return ChooseChessMove(fen, difficulty)
+	}
+
+	from, to, promo, err = engine.BestMove(fen)
+	if err != nil {
+		log.Printf("bot: stockfish move failed, falling back to built-in logic: %v", err)
+		return ChooseChessMove(fen, difficulty)
+	}
+
+	if difficulty == Easy && rand.Float64() < easyExtraBlunderChance {
+		if opt, ferr := nchess.FEN(fen); ferr == nil {
+			if moves := nchess.NewGame(opt).ValidMoves(); len(moves) > 0 {
+				mv := moves[rand.Intn(len(moves))]
+				return squareStr(mv.S1()), squareStr(mv.S2()), promoStr(mv.Promo()), nil
+			}
+		}
+	}
+
+	return from, to, promo, nil
 }

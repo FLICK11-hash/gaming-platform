@@ -19,6 +19,7 @@ import (
 	"gaming_platform/internal/auth"
 	"gaming_platform/internal/config"
 	"gaming_platform/internal/domain/achievements"
+	"gaming_platform/internal/domain/bot"
 	"gaming_platform/internal/domain/hub"
 	"gaming_platform/internal/domain/leaderboard"
 	"gaming_platform/internal/domain/match"
@@ -47,6 +48,13 @@ func main() {
 		log.Fatalf("db: %v", err)
 	}
 	defer pool.Close()
+
+	// A missing or broken Stockfish binary degrades bot moves back to the
+	// platform's own built-in logic (see bot.ChooseChessMoveEngine) rather
+	// than stopping the server from starting at all.
+	if err := bot.ConfigureStockfish(cfg.StockfishPath); err != nil {
+		log.Printf("bot: Stockfish unavailable at %q, real-match bots will use built-in move logic instead: %v", cfg.StockfishPath, err)
+	}
 
 	issuer := auth.NewTokenIssuer(cfg.JWTSecret)
 	connHub := hub.New()

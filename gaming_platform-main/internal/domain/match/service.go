@@ -414,7 +414,7 @@ func (s *Service) chooseBotMove(m db.Match, botUser db.User) (MoveInput, error) 
 	if err != nil {
 		return MoveInput{}, err
 	}
-	from, to, promo, err := bot.ChooseChessMove(state.FEN, difficulty)
+	from, to, promo, err := bot.ChooseChessMoveEngine(state.FEN, difficulty)
 	if err != nil {
 		return MoveInput{}, err
 	}
