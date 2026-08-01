@@ -40,8 +40,11 @@ const (
 // difficulty tier. More than 1 lets that many bot moves resolve
 // concurrently instead of queueing behind a single process; this doesn't
 // need to be large since a human opponent's own thinking time between
-// moves is normally much longer than one Stockfish search.
-const enginePoolSize = 2
+// moves is normally much longer than one Stockfish search. Kept at 1
+// deliberately: these run for the server's entire lifetime (3 tiers x this
+// many processes, all the time), and the platform's free-tier deploy target
+// has very little RAM to spare.
+const enginePoolSize = 1
 
 var (
 	rookieEngine      *stockfish.Engine

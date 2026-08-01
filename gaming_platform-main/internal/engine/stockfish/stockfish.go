@@ -101,6 +101,11 @@ func startProcess(path string, elo int) (*process, error) {
 	for _, line := range []string{
 		"setoption name UCI_LimitStrength value true",
 		"setoption name UCI_Elo value " + strconv.Itoa(elo),
+		// Minimum transposition table size: these bots search shallow,
+		// short-movetime lines anyway, so a large hash table buys nothing,
+		// and every process's memory footprint matters on a free-tier
+		// deploy target with very little RAM to spare.
+		"setoption name Hash value 1",
 		"isready",
 	} {
 		if err := p.send(line); err != nil {

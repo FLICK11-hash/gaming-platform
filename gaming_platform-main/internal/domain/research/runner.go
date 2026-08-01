@@ -49,8 +49,11 @@ const batchMoveTime = 20 * time.Millisecond
 // tier (see simulate.RunChessOpeningBookConcurrent) - independent of, and
 // not competing with, the persistent pools real matches use
 // (bot.ConfigureStockfish), since this runner starts and tears down its
-// own engines for the duration of a single run.
-const batchEnginePoolSize = 4
+// own engines for the duration of a single run. Kept at 1 (fully sequential,
+// trading run time for memory) since the platform's free-tier deploy target
+// has very little RAM, and this runs on top of whatever the persistent
+// real-match pools are already using.
+const batchEnginePoolSize = 1
 
 // chessEloTier is one bot-Elo level to run the full chess opening book
 // against.
