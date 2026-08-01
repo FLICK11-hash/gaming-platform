@@ -21,8 +21,13 @@ var ErrAlreadyRunning = errors.New("research: a simulation is already running")
 // opening/column - the same count for every chess opening in both books,
 // every chess Elo tier, and every Connect Four column, so every bar in
 // every chart reflects an equal-sized sample and none is quietly noisier
-// than its neighbors.
-const DefaultGamesPerOpening = 20
+// than its neighbors. Kept small deliberately: with batchEnginePoolSize at
+// 1 (see below), every game in every one of the 3 Elo tiers runs fully
+// sequentially, and a real run on the free-tier deploy target's own
+// (apparently quite throttled) CPU took well over two hours at 20 - a
+// smaller, less statistically smooth sample that actually finishes beats a
+// smoother one that doesn't.
+const DefaultGamesPerOpening = 5
 
 // connectFourDifficulty is fixed at Easy for every run. Connect Four's bot
 // strength isn't part of this project's Elo question - only chess's is
@@ -43,7 +48,7 @@ const connectFourDifficultyLabel = "easy"
 // openings x DefaultGamesPerOpening games, x3 Elo tiers) and cares about
 // the statistical playing pattern across many games, not any single move's
 // depth.
-const batchMoveTime = 20 * time.Millisecond
+const batchMoveTime = 10 * time.Millisecond
 
 // batchEnginePoolSize is how many games can be in flight at once per Elo
 // tier (see simulate.RunChessOpeningBookConcurrent) - independent of, and

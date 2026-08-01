@@ -1269,8 +1269,9 @@ function ResearchSimulationCard({ token }) {
         {status === 'running' && (
           <span className="research-status running">
             Running now{runningForSeconds ? ` — ${formatDuration(runningForSeconds)} so far` : ''}. This
-            plays real Stockfish games at three Elo levels back to back, so it usually takes
-            several minutes — slower still on a busy free-tier server.
+            plays real Stockfish games at three Elo levels back to back on a shared free-tier
+            server, so it can take a while — well over an hour isn't unusual. It's safe to
+            leave this page and check back later.
           </span>
         )}
         {status === 'error' && error && (
