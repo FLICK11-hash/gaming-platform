@@ -51,9 +51,12 @@ const mateScore = 100000
 
 // minimax returns the best score achievable from the position's perspective
 // (positive always favors White, mirroring evaluateMaterial), searching
-// `depth` plies deeper via full-width search - no pruning, since the small
-// depths used here (<=2) keep the branching factor manageable.
-func minimax(g *nchess.Game, depth int) int {
+// `depth` plies deeper. alpha/beta are the standard alpha-beta bounds: once
+// a branch is proven at least as good for one side as the bound the other
+// side can already force elsewhere, the rest of that branch is skipped -
+// this returns the exact same score a full-width search would, just without
+// evaluating the moves that can't change it.
+func minimax(g *nchess.Game, depth, alpha, beta int) int {
 	moves := g.ValidMoves()
 	if len(moves) == 0 {
 		switch g.Outcome() {
@@ -75,8 +78,14 @@ func minimax(g *nchess.Game, depth int) int {
 		for _, mv := range moves {
 			clone := g.Clone()
 			_ = clone.Move(mv)
-			if v := minimax(clone, depth-1); v > best {
+			if v := minimax(clone, depth-1, alpha, beta); v > best {
 				best = v
+			}
+			if best > alpha {
+				alpha = best
+			}
+			if alpha >= beta {
+				break
 			}
 		}
 		return best
@@ -86,8 +95,14 @@ func minimax(g *nchess.Game, depth int) int {
 	for _, mv := range moves {
 		clone := g.Clone()
 		_ = clone.Move(mv)
-		if v := minimax(clone, depth-1); v < best {
+		if v := minimax(clone, depth-1, alpha, beta); v < best {
 			best = v
+		}
+		if best < beta {
+			beta = best
+		}
+		if alpha >= beta {
+			break
 		}
 	}
 	return best
@@ -157,15 +172,24 @@ func chooseEasyMove(game *nchess.Game, moves []*nchess.Move) *nchess.Move {
 // after that reply, i.e. it won't hang a piece to any single-move tactic.
 func chooseHardMove(game *nchess.Game, moves []*nchess.Move) *nchess.Move {
 	turn := game.Position().Turn()
+	alpha, beta := -mateScore*2, mateScore*2
+
 	var best *nchess.Move
 	bestScore := 0
 	for i, mv := range moves {
 		clone := game.Clone()
 		_ = clone.Move(mv)
-		score := minimax(clone, 1)
+		score := minimax(clone, 1, alpha, beta)
 		if i == 0 || betterFor(turn, score, bestScore) {
 			bestScore = score
 			best = mv
+		}
+		// Tighten whichever bound is turn's own, the same way the recursive
+		// calls do, so later sibling moves at this level get to prune too.
+		if turn == nchess.White && bestScore > alpha {
+			alpha = bestScore
+		} else if turn == nchess.Black && bestScore < beta {
+			beta = bestScore
 		}
 	}
 	return best

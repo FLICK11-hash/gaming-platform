@@ -80,8 +80,12 @@ func heuristic(board connectfour.Board, color connectfour.Color) int {
 
 // negamax returns the best score toMove can achieve from its own
 // perspective, searching down to depth plies (0 = evaluate immediately via
-// heuristic).
-func negamax(board connectfour.Board, toMove connectfour.Color, depth int) int {
+// heuristic). alpha/beta are the standard alpha-beta bounds: any branch
+// once found to be at least as good for the opponent as beta is cut short,
+// since toMove's opponent would never let play reach it - this returns the
+// exact same score minimax (full-width, no pruning) would, just without
+// evaluating the branches that can't change the outcome.
+func negamax(board connectfour.Board, toMove connectfour.Color, depth, alpha, beta int) int {
 	cols := legalColumns(board)
 	if len(cols) == 0 {
 		return 0 // board full: a draw
@@ -100,10 +104,16 @@ func negamax(board connectfour.Board, toMove connectfour.Color, depth int) int {
 		if connectfour.CheckWin(b, row, c, toMove) {
 			score = c4WinScore
 		} else {
-			score = -negamax(b, other(toMove), depth-1)
+			score = -negamax(b, other(toMove), depth-1, -beta, -alpha)
 		}
 		if score > best {
 			best = score
+		}
+		if best > alpha {
+			alpha = best
+		}
+		if alpha >= beta {
+			break // beta cutoff: the opponent already has a better option elsewhere
 		}
 	}
 	return best
@@ -146,6 +156,7 @@ func chooseEasyC4Move(board connectfour.Board, turn connectfour.Color, cols []in
 // wins and blocks forced losses a few moves out, not just the very next one.
 func chooseHardC4Move(board connectfour.Board, turn connectfour.Color, cols []int) int {
 	const depth = 5
+	alpha := -c4WinScore * 2
 
 	bestCol := cols[0]
 	bestScore := -c4WinScore * 2
@@ -158,11 +169,14 @@ func chooseHardC4Move(board connectfour.Board, turn connectfour.Color, cols []in
 		if connectfour.CheckWin(b, row, c, turn) {
 			score = c4WinScore
 		} else {
-			score = -negamax(b, other(turn), depth-1)
+			score = -negamax(b, other(turn), depth-1, -c4WinScore*2, -alpha)
 		}
 		if score > bestScore {
 			bestScore = score
 			bestCol = c
+			if score > alpha {
+				alpha = score
+			}
 		}
 	}
 	return bestCol
