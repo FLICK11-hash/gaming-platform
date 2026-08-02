@@ -24,7 +24,7 @@ func TestChooseChessMoveEngine_WithoutConfiguredEngineFallsBackToBuiltIn(t *test
 	// TestChooseChessMoveEngine_UsesConfiguredStockfish (below) is the only
 	// other place that does, and it doesn't offer a way to unconfigure.
 	// Guard against silently testing the wrong path if that ever changes.
-	if rookieEngine != nil || expertEngine != nil || grandmasterEngine != nil {
+	if sharedEngine != nil {
 		t.Skip("an engine is already configured in this test binary; fallback path isn't exercised")
 	}
 

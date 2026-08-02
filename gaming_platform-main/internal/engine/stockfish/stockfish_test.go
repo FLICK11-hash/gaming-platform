@@ -23,14 +23,14 @@ func findBinary(t *testing.T) string {
 func TestNewEngine_StartsAndReportsBestMove(t *testing.T) {
 	path := findBinary(t)
 
-	e, err := NewEngine(path, 1320, 1, RealMatchMoveTime)
+	e, err := NewEngine(path, 1, RealMatchMoveTime)
 	if err != nil {
 		t.Fatalf("NewEngine: %v", err)
 	}
 	defer e.Close()
 
 	const startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-	from, to, _, err := e.BestMove(startFEN)
+	from, to, _, err := e.BestMove(startFEN, 1320)
 	if err != nil {
 		t.Fatalf("BestMove: %v", err)
 	}
@@ -43,7 +43,7 @@ func TestEngine_HandlesConcurrentCallsAcrossPool(t *testing.T) {
 	path := findBinary(t)
 
 	const poolSize = 3
-	e, err := NewEngine(path, 1320, poolSize, RealMatchMoveTime)
+	e, err := NewEngine(path, poolSize, RealMatchMoveTime)
 	if err != nil {
 		t.Fatalf("NewEngine: %v", err)
 	}
@@ -54,7 +54,7 @@ func TestEngine_HandlesConcurrentCallsAcrossPool(t *testing.T) {
 	errCh := make(chan error, poolSize*2)
 	for i := 0; i < poolSize*2; i++ {
 		go func() {
-			_, _, _, err := e.BestMove(startFEN)
+			_, _, _, err := e.BestMove(startFEN, 1320)
 			errCh <- err
 		}()
 	}
@@ -68,7 +68,7 @@ func TestEngine_HandlesConcurrentCallsAcrossPool(t *testing.T) {
 func TestEngine_MoveTimeIsHonored(t *testing.T) {
 	path := findBinary(t)
 
-	e, err := NewEngine(path, 1320, 1, 10*time.Millisecond)
+	e, err := NewEngine(path, 1, 10*time.Millisecond)
 	if err != nil {
 		t.Fatalf("NewEngine: %v", err)
 	}
@@ -76,11 +76,37 @@ func TestEngine_MoveTimeIsHonored(t *testing.T) {
 
 	const startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 	start := time.Now()
-	if _, _, _, err := e.BestMove(startFEN); err != nil {
+	if _, _, _, err := e.BestMove(startFEN, 1320); err != nil {
 		t.Fatalf("BestMove: %v", err)
 	}
 	if elapsed := time.Since(start); elapsed > 2*time.Second {
 		t.Fatalf("BestMove with a 10ms movetime took %v, want well under RealMatchMoveTime (%v)", elapsed, RealMatchMoveTime)
+	}
+}
+
+// TestEngine_SwitchesEloOnSharedPool exercises the whole point of sharing
+// one pool across strengths instead of dedicating a pool per strength: a
+// single process must be able to serve different Elo requests back to
+// back and actually reconfigure each time, not silently keep playing at
+// whatever Elo it started with.
+func TestEngine_SwitchesEloOnSharedPool(t *testing.T) {
+	path := findBinary(t)
+
+	e, err := NewEngine(path, 1, 10*time.Millisecond)
+	if err != nil {
+		t.Fatalf("NewEngine: %v", err)
+	}
+	defer e.Close()
+
+	const startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+	for _, elo := range []int{1320, 2500, 1320, MaxUCIElo} {
+		from, to, _, err := e.BestMove(startFEN, elo)
+		if err != nil {
+			t.Fatalf("BestMove at %d elo: %v", elo, err)
+		}
+		if len(from) != 2 || len(to) != 2 {
+			t.Fatalf("BestMove at %d elo returned from=%q to=%q, want two-character squares", elo, from, to)
+		}
 	}
 }
 
@@ -127,7 +153,7 @@ func TestParseBestMoveLine(t *testing.T) {
 func TestEngine_PromotionMoveIsParsedFromRealEngine(t *testing.T) {
 	path := findBinary(t)
 
-	e, err := NewEngine(path, MaxUCIElo, 1, RealMatchMoveTime)
+	e, err := NewEngine(path, 1, RealMatchMoveTime)
 	if err != nil {
 		t.Fatalf("NewEngine: %v", err)
 	}
@@ -140,7 +166,7 @@ func TestEngine_PromotionMoveIsParsedFromRealEngine(t *testing.T) {
 	// of the range, so it isn't guaranteed to under load) - just that
 	// whatever move it does return parses into a well-formed shape.
 	const nearPromotionFEN = "k7/4P3/8/8/8/8/8/K7 w - - 0 1"
-	from, to, _, err := e.BestMove(nearPromotionFEN)
+	from, to, _, err := e.BestMove(nearPromotionFEN, MaxUCIElo)
 	if err != nil {
 		t.Fatalf("BestMove: %v", err)
 	}

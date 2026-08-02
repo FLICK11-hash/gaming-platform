@@ -32,29 +32,37 @@ const (
 	MaxUCIElo = 3190
 )
 
-// Engine manages a fixed-size pool of persistent Stockfish processes, all
-// configured to the same strength limit and per-move search budget.
+// Engine manages a fixed-size pool of persistent Stockfish processes,
+// sharing them across however many different playing strengths a caller
+// needs instead of dedicating a separate pool per strength. That matters
+// on the platform's free-tier deploy target: each process commits roughly
+// 130MB the moment it starts (Stockfish's NNUE network gets loaded during
+// the UCI handshake, before any search ever runs, and that cost doesn't
+// depend on Hash size or search depth), so three dedicated pools for three
+// Elo tiers cost 3x what one shared pool does for the same total
+// concurrency. UCI_Elo is set per BestMove call and only re-sent to a
+// process when it actually changes - unlike the NNUE load, that's cheap.
+//
 // Reusing long-lived processes (rather than spawning one per move) avoids
 // paying process-startup latency on every bot move, and the pool avoids
-// serializing every concurrent match behind a single process.
+// serializing every concurrent caller behind a single process.
 type Engine struct {
 	procs    chan *process
 	moveTime time.Duration
 }
 
-// NewEngine starts poolSize Stockfish processes at path, each limited to
-// elo playing strength via UCI_LimitStrength/UCI_Elo, searching for
-// moveTime per move. If starting any process fails, every process already
-// started is torn down and an error is returned - there's no
-// partially-usable Engine.
-func NewEngine(path string, elo, poolSize int, moveTime time.Duration) (*Engine, error) {
+// NewEngine starts poolSize Stockfish processes at path, searching for
+// moveTime per move once a caller picks a strength via BestMove. If
+// starting any process fails, every process already started is torn down
+// and an error is returned - there's no partially-usable Engine.
+func NewEngine(path string, poolSize int, moveTime time.Duration) (*Engine, error) {
 	if poolSize < 1 {
 		return nil, errors.New("stockfish: poolSize must be at least 1")
 	}
 
 	e := &Engine{procs: make(chan *process, poolSize), moveTime: moveTime}
 	for i := 0; i < poolSize; i++ {
-		p, err := startProcess(path, elo)
+		p, err := startProcess(path)
 		if err != nil {
 			e.Close()
 			return nil, fmt.Errorf("stockfish: start process %d/%d: %w", i+1, poolSize, err)
@@ -68,9 +76,14 @@ type process struct {
 	cmd    *exec.Cmd
 	stdin  io.WriteCloser
 	stdout *bufio.Scanner
+	// elo is the strength this process is currently configured for, 0 if
+	// never configured yet. Tracked so BestMove only re-sends setoption
+	// when the requested strength actually differs from last time, instead
+	// of paying that (small but non-zero) UCI round trip on every call.
+	elo int
 }
 
-func startProcess(path string, elo int) (*process, error) {
+func startProcess(path string) (*process, error) {
 	cmd := exec.Command(path)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -88,19 +101,14 @@ func startProcess(path string, elo int) (*process, error) {
 	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
 	p := &process{cmd: cmd, stdin: stdin, stdout: scanner}
 
-	for _, line := range []string{
-		"uci",
-	} {
-		if err := p.send(line); err != nil {
-			return nil, err
-		}
+	if err := p.send("uci"); err != nil {
+		return nil, err
 	}
 	if err := p.waitFor("uciok"); err != nil {
 		return nil, err
 	}
 	for _, line := range []string{
 		"setoption name UCI_LimitStrength value true",
-		"setoption name UCI_Elo value " + strconv.Itoa(elo),
 		// Minimum transposition table size: these bots search shallow,
 		// short-movetime lines anyway, so a large hash table buys nothing,
 		// and every process's memory footprint matters on a free-tier
@@ -116,6 +124,24 @@ func startProcess(path string, elo int) (*process, error) {
 		return nil, err
 	}
 	return p, nil
+}
+
+// ensureElo reconfigures p's UCI_Elo if it doesn't already match elo.
+func (p *process) ensureElo(elo int) error {
+	if p.elo == elo {
+		return nil
+	}
+	if err := p.send("setoption name UCI_Elo value " + strconv.Itoa(elo)); err != nil {
+		return err
+	}
+	if err := p.send("isready"); err != nil {
+		return err
+	}
+	if err := p.waitFor("readyok"); err != nil {
+		return err
+	}
+	p.elo = elo
+	return nil
 }
 
 func (p *process) send(cmd string) error {
@@ -135,18 +161,25 @@ func (p *process) waitFor(token string) error {
 	return fmt.Errorf("stockfish: process exited before %q", token)
 }
 
-// BestMove asks for the best move in fen, returning it in from/to/promo
-// square form (e.g. "e2", "e4", and "" or "q"/"r"/"b"/"n") - the same shape
+// BestMove asks for the best move in fen at the given playing strength
+// (Stockfish's UCI_Elo, clamped to its own supported range - see
+// MinUCIElo/MaxUCIElo), returning it in from/to/promo square form (e.g.
+// "e2", "e4", and "" or "q"/"r"/"b"/"n") - the same shape
 // bot.ChooseChessMove returns, so this can be used as a drop-in move
 // source for it.
 //
 // Every call checks out one process from the pool (blocking if all are
 // currently busy) and returns it when done, so concurrent callers never
-// share a process mid-conversation.
-func (e *Engine) BestMove(fen string) (from, to, promo string, err error) {
+// share a process mid-conversation. Callers can freely mix different elo
+// values across calls on the same Engine - each checked-out process
+// reconfigures itself only when the requested strength actually changes.
+func (e *Engine) BestMove(fen string, elo int) (from, to, promo string, err error) {
 	p := <-e.procs
 	defer func() { e.procs <- p }()
 
+	if err := p.ensureElo(elo); err != nil {
+		return "", "", "", err
+	}
 	if err := p.send("position fen " + fen); err != nil {
 		return "", "", "", err
 	}

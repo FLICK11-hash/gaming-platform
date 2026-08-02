@@ -6,8 +6,6 @@ import (
 	"math/rand"
 
 	nchess "github.com/notnil/chess"
-
-	"gaming_platform/internal/engine/stockfish"
 )
 
 // ErrNoLegalMoves means the FEN represents a position with no legal moves,
@@ -253,20 +251,21 @@ const easyExtraBlunderChance = 0.08
 // crashed or slow-to-start Stockfish process shouldn't be able to stall a
 // live match).
 func ChooseChessMoveEngine(fen string, difficulty Difficulty) (from, to, promo string, err error) {
-	var engine *stockfish.Engine
-	switch difficulty {
-	case Medium:
-		engine = expertEngine
-	case Hard:
-		engine = grandmasterEngine
-	default:
-		engine = rookieEngine
-	}
-	if engine == nil {
+	if sharedEngine == nil {
 		return ChooseChessMove(fen, difficulty)
 	}
 
-	from, to, promo, err = engine.BestMove(fen)
+	var elo int
+	switch difficulty {
+	case Medium:
+		elo = ExpertBotUCIElo
+	case Hard:
+		elo = GrandmasterBotUCIElo
+	default:
+		elo = RookieBotUCIElo
+	}
+
+	from, to, promo, err = sharedEngine.BestMove(fen, elo)
 	if err != nil {
 		log.Printf("bot: stockfish move failed, falling back to built-in logic: %v", err)
 		return ChooseChessMove(fen, difficulty)

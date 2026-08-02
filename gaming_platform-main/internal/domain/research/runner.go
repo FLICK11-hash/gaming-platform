@@ -21,13 +21,22 @@ var ErrAlreadyRunning = errors.New("research: a simulation is already running")
 // opening/column - the same count for every chess opening in both books,
 // every chess Elo tier, and every Connect Four column, so every bar in
 // every chart reflects an equal-sized sample and none is quietly noisier
-// than its neighbors. Kept small deliberately: with batchEnginePoolSize at
-// 1 (see below), every game in every one of the 3 Elo tiers runs fully
-// sequentially, and a real run on the free-tier deploy target's own
-// (apparently quite throttled) CPU took well over two hours at 20 - a
-// smaller, less statistically smooth sample that actually finishes beats a
-// smoother one that doesn't.
-const DefaultGamesPerOpening = 5
+// than its neighbors.
+//
+// 10 per opening puts 200 games (100 White + 100 Black) behind each Elo
+// tier's aggregate win/draw rate: a binomial standard error of ~3.5% and a
+// 95% CI of about +/-6.9 points on that aggregate - not tight enough to
+// trust any single opening's bar (each of those rests on just 10 games,
+// +/-31 points), but plenty to trust the aggregate, and the actual
+// headline comparison this project asks - does the draw rate/game length
+// shift between a 1320, a 2000, and a 2500 Elo tier - has a far bigger
+// effect size than that CI width, so it doesn't ride on marginal
+// significance. See runChessEloTiers for why this can now run at this size
+// in reasonable time: previously each Elo tier got its own dedicated
+// engine pool, which on the free-tier deploy target's ~130MB-per-process
+// floor meant only 1 process per tier was affordable, running fully
+// sequentially; now every tier shares one pool sized for real concurrency.
+const DefaultGamesPerOpening = 10
 
 // connectFourDifficulty is fixed at Easy for every run. Connect Four's bot
 // strength isn't part of this project's Elo question - only chess's is
@@ -50,15 +59,19 @@ const connectFourDifficultyLabel = "easy"
 // depth.
 const batchMoveTime = 10 * time.Millisecond
 
-// batchEnginePoolSize is how many games can be in flight at once per Elo
-// tier (see simulate.RunChessOpeningBookConcurrent) - independent of, and
-// not competing with, the persistent pools real matches use
-// (bot.ConfigureStockfish), since this runner starts and tears down its
-// own engines for the duration of a single run. Kept at 1 (fully sequential,
-// trading run time for memory) since the platform's free-tier deploy target
-// has very little RAM, and this runs on top of whatever the persistent
-// real-match pools are already using.
-const batchEnginePoolSize = 1
+// batchEnginePoolSize is how many games can be in flight at once, shared
+// across all three Elo tiers (see runChessEloTiers) rather than dedicated
+// per tier - independent of, and not competing much with, the persistent
+// pool real matches use (bot.ConfigureStockfish), since this runner starts
+// and tears down its own pool for the duration of a single run. Each
+// process costs about 130MB regardless of pool size (Stockfish's NNUE
+// network loads at startup, not proportional to search depth or Hash
+// size), so on the platform's free-tier deploy target this is sized to
+// leave headroom for the persistent real-match pool running at the same
+// time: 2 batch processes (~260MB) plus enginePoolSize's 1 persistent
+// process (~130MB) stays comfortably clear of the ~512MB ceiling that a
+// real deploy actually OOM'd against before this pool was shared.
+const batchEnginePoolSize = 2
 
 // chessEloTier is one bot-Elo level to run the full chess opening book
 // against.
@@ -204,30 +217,32 @@ func (r *Runner) run() {
 }
 
 // runChessEloTiers plays the full White and Black opening books at every
-// entry in chessEloTiers, each against its own freshly-started Stockfish
-// engine pool (started and torn down within this one run, independent of
-// bot.ConfigureStockfish's persistent real-match pools). A real engine is
-// required here, not just preferred: the pure-Go fallback's Medium and
-// Hard tiers share the exact same evaluation (see chess.go's
+// entry in chessEloTiers, all sharing one Stockfish process pool (started
+// once and torn down at the end of this run, independent of
+// bot.ConfigureStockfish's persistent real-match pool) - each call just
+// asks for a different Elo, which is far cheaper to reconfigure than
+// starting a new process (see stockfish.Engine's doc comment). A real
+// engine is required here, not just preferred: the pure-Go fallback's
+// Medium and Hard tiers share the exact same evaluation (see chess.go's
 // ChooseChessMove), so without Stockfish there's no genuine third data
 // point to compare - the run fails loudly instead of silently producing a
 // chart where two of the three tiers are identical.
 func (r *Runner) runChessEloTiers() ([]ChessEloTierResult, error) {
+	engine, err := stockfish.NewEngine(r.stockfishPath, batchEnginePoolSize, batchMoveTime)
+	if err != nil {
+		return nil, fmt.Errorf("research: start Stockfish: %w", err)
+	}
+	defer engine.Close()
+
 	results := make([]ChessEloTierResult, 0, len(chessEloTiers))
 	for _, tier := range chessEloTiers {
-		engine, err := stockfish.NewEngine(r.stockfishPath, tier.Elo, batchEnginePoolSize, batchMoveTime)
-		if err != nil {
-			return nil, fmt.Errorf("research: start Stockfish for %s (%d elo): %w", tier.Label, tier.Elo, err)
-		}
+		mover := func(fen string) (string, string, string, error) { return engine.BestMove(fen, tier.Elo) }
 
-		mover := func(fen string) (string, string, string, error) { return engine.BestMove(fen) }
 		white, err := simulate.RunChessOpeningBookConcurrent(r.gamesPerOpening, mover, simulate.White, batchEnginePoolSize)
 		if err != nil {
-			engine.Close()
 			return nil, fmt.Errorf("research: %s white openings: %w", tier.Label, err)
 		}
 		black, err := simulate.RunChessOpeningBookConcurrent(r.gamesPerOpening, mover, simulate.Black, batchEnginePoolSize)
-		engine.Close()
 		if err != nil {
 			return nil, fmt.Errorf("research: %s black openings: %w", tier.Label, err)
 		}

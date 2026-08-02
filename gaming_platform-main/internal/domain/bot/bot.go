@@ -36,50 +36,33 @@ const (
 	GrandmasterBotUCIElo = 2500
 )
 
-// enginePoolSize is how many persistent Stockfish processes back each
-// difficulty tier. More than 1 lets that many bot moves resolve
-// concurrently instead of queueing behind a single process; this doesn't
-// need to be large since a human opponent's own thinking time between
-// moves is normally much longer than one Stockfish search. Kept at 1
-// deliberately: these run for the server's entire lifetime (3 tiers x this
-// many processes, all the time), and the platform's free-tier deploy target
-// has very little RAM to spare.
+// enginePoolSize is how many persistent Stockfish processes back real
+// matches, shared across all three difficulty tiers (see
+// stockfish.Engine's doc comment for why sharing one pool instead of
+// dedicating one per tier matters here: each process commits about 130MB
+// the moment it starts, regardless of which Elo it ends up playing at, so
+// three dedicated pools would cost 3x this for the same total concurrency
+// - on the platform's free-tier deploy target, with very little RAM to
+// spare, that's the difference between fitting and not).
 const enginePoolSize = 1
 
-var (
-	rookieEngine      *stockfish.Engine
-	expertEngine      *stockfish.Engine
-	grandmasterEngine *stockfish.Engine
-)
+var sharedEngine *stockfish.Engine
 
-// ConfigureStockfish starts the Stockfish process pools ChooseChessMoveEngine
-// prefers, one per difficulty tier, each searching for
-// stockfish.RealMatchMoveTime per move. Call it once at startup; if it's
-// never called (or the binary at path can't be found/started),
-// ChooseChessMoveEngine transparently falls back to the same hand-rolled
-// logic ChooseChessMove always uses - a missing or broken Stockfish binary
-// degrades bot strength, it doesn't take the server down.
+// ConfigureStockfish starts the shared Stockfish process pool
+// ChooseChessMoveEngine prefers, searching for stockfish.RealMatchMoveTime
+// per move. Call it once at startup; if it's never called (or the binary
+// at path can't be found/started), ChooseChessMoveEngine transparently
+// falls back to the same hand-rolled logic ChooseChessMove always uses - a
+// missing or broken Stockfish binary degrades bot strength, it doesn't
+// take the server down.
 func ConfigureStockfish(path string) error {
-	rookie, err := stockfish.NewEngine(path, RookieBotUCIElo, enginePoolSize, stockfish.RealMatchMoveTime)
+	engine, err := stockfish.NewEngine(path, enginePoolSize, stockfish.RealMatchMoveTime)
 	if err != nil {
 		return err
 	}
-	expert, err := stockfish.NewEngine(path, ExpertBotUCIElo, enginePoolSize, stockfish.RealMatchMoveTime)
-	if err != nil {
-		rookie.Close()
-		return err
-	}
-	grandmaster, err := stockfish.NewEngine(path, GrandmasterBotUCIElo, enginePoolSize, stockfish.RealMatchMoveTime)
-	if err != nil {
-		rookie.Close()
-		expert.Close()
-		return err
-	}
-	rookieEngine = rookie
-	expertEngine = expert
-	grandmasterEngine = grandmaster
-	log.Printf("bot: Stockfish configured (rookie=%d elo, expert=%d elo, grandmaster=%d elo, pool size %d each)",
-		RookieBotUCIElo, ExpertBotUCIElo, GrandmasterBotUCIElo, enginePoolSize)
+	sharedEngine = engine
+	log.Printf("bot: Stockfish configured (shared pool size %d, tiers: rookie=%d elo, expert=%d elo, grandmaster=%d elo)",
+		enginePoolSize, RookieBotUCIElo, ExpertBotUCIElo, GrandmasterBotUCIElo)
 	return nil
 }
 
