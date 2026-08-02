@@ -99,10 +99,12 @@ type Service struct {
 	matchHistorySvc *matchhistory.Service
 	achievementsSvc *achievements.Service
 
-	mu           sync.Mutex
-	deadlines    map[int64]deadline
-	disconnects  map[int64]map[int64]disconnectDeadline // matchID -> userID -> deadline
-	countingDown map[int64]bool
+	mu              sync.Mutex
+	deadlines       map[int64]deadline
+	disconnects     map[int64]map[int64]disconnectDeadline // matchID -> userID -> deadline
+	countingDown    map[int64]bool
+	practiceMatches map[int64]bool
+	forcedOpenings  map[int64]string
 }
 
 func NewService(pool *pgxpool.Pool, h *hub.Hub, missionsSvc *missions.Service, leaderboardSvc *leaderboard.Service, matchHistorySvc *matchhistory.Service, achievementsSvc *achievements.Service) *Service {
@@ -118,7 +120,52 @@ func NewService(pool *pgxpool.Pool, h *hub.Hub, missionsSvc *missions.Service, l
 		deadlines:       make(map[int64]deadline),
 		disconnects:     make(map[int64]map[int64]disconnectDeadline),
 		countingDown:    make(map[int64]bool),
+		practiceMatches: make(map[int64]bool),
+		forcedOpenings:  make(map[int64]string),
 	}
+}
+
+// RegisterPracticeMatch marks matchID as a free "play vs computer" match:
+// excluded from Elo, missions, leaderboard, and achievement updates, since
+// it costs nothing to play and shouldn't be a way to farm ranked progress.
+// If forcedOpening is non-empty (a chess move in from+to square form, e.g.
+// "e2e4"), it overrides whatever the bot's own move-choosing logic would
+// otherwise pick for its first move in the match, so a player who picked a
+// specific opening for the computer to play actually gets it - see
+// popForcedOpening.
+//
+// Both facts live only in memory, the same accepted tradeoff as this
+// service's other per-match state (deadlines, disconnects): forgotten on a
+// server restart, a resumed practice match just falls back to normal ranked
+// bookkeeping and a bot-chosen opening rather than failing outright - not a
+// hazard worth a database migration for a free, low-stakes mode.
+func (s *Service) RegisterPracticeMatch(matchID int64, forcedOpening string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.practiceMatches[matchID] = true
+	if forcedOpening != "" {
+		s.forcedOpenings[matchID] = forcedOpening
+	}
+}
+
+func (s *Service) isPractice(matchID int64) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.practiceMatches[matchID]
+}
+
+// popForcedOpening returns and clears matchID's forced opening move, if any,
+// so it's only ever applied to the bot's first move in the match - every
+// later bot move in the same match goes back to its normal move-choosing
+// logic.
+func (s *Service) popForcedOpening(matchID int64) (string, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	move, ok := s.forcedOpenings[matchID]
+	if ok {
+		delete(s.forcedOpenings, matchID)
+	}
+	return move, ok
 }
 
 // SendError delivers an error reply to a single connected player's websocket,
@@ -410,6 +457,10 @@ func (s *Service) chooseBotMove(m db.Match, botUser db.User) (MoveInput, error) 
 		return MoveInput{Column: &column}, nil
 	}
 
+	if move, ok := s.popForcedOpening(m.MatchID); ok && len(move) >= 4 {
+		return MoveInput{From: move[0:2], To: move[2:4]}, nil
+	}
+
 	state, err := s.chessEngine.State(m.MatchID)
 	if err != nil {
 		return MoveInput{}, err
@@ -464,7 +515,7 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input M
 		return err
 	}
 
-	if isFirstChessMove && s.matchHistorySvc != nil {
+	if isFirstChessMove && s.matchHistorySvc != nil && !s.isPractice(matchID) {
 		s.matchHistorySvc.RecordFirstMove(ctx, matchID, input.From, input.To)
 	}
 
@@ -789,9 +840,27 @@ func (s *Service) finishMatch(ctx context.Context, matchID, winnerUserID int64, 
 		s.chessEngine.EndGame(matchID)
 	}
 
+	practice := s.isPractice(matchID)
+
 	s.mu.Lock()
 	delete(s.disconnects, matchID)
+	delete(s.practiceMatches, matchID)
+	delete(s.forcedOpenings, matchID)
 	s.mu.Unlock()
+
+	// Practice matches never take a coin wager and shouldn't move Elo,
+	// missions, leaderboards, or achievements - they're free, unlimited, and
+	// the opponent's opening is player-chosen, so counting them as ranked
+	// progress would be an easy way to farm all four. Just close out the
+	// tournament record (still coin_wager 0, so there's nothing to pay out
+	// or refund) instead of running the normal bracket/payout logic.
+	if practice {
+		if _, err := q.CompleteTournament(ctx, db.CompleteTournamentParams{TournamentID: m.TournamentID, WinnerUserID: winnerPG}); err != nil {
+			log.Printf("match: practice tournament close error for tournament %d: %v", m.TournamentID, err)
+		}
+		s.hub.Broadcast(matchID, wsOutbound{Type: "match_over", Winner: winnerUserID, Reason: reason})
+		return nil
+	}
 
 	if err := s.updateElo(ctx, matchID, m.Player1ID, m.Player2ID, winnerUserID); err != nil {
 		log.Printf("match: elo update error for match %d: %v", matchID, err)

@@ -91,6 +91,18 @@ type challengeRequest struct {
 	GameType string `json:"game_type"`
 }
 
+// startPracticeMatchRequest requests a free chess match against one of the
+// three fixed bot tiers the Monte Carlo research runner also tests (see
+// internal/domain/research/runner.go's chessEloTiers). Opening is a move in
+// from+to square form (e.g. "e2e4") taken from whichever of the two Monte
+// Carlo opening books matches the computer's color, or "random" (or empty)
+// to let the server pick one - see handleStartPracticeMatch.
+type startPracticeMatchRequest struct {
+	Tier    string `json:"tier"`
+	Color   string `json:"color"`
+	Opening string `json:"opening"`
+}
+
 type matchResponse struct {
 	MatchID              int64    `json:"match_id"`
 	TournamentID         int64    `json:"tournament_id"`

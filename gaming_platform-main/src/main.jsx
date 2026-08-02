@@ -23,6 +23,48 @@ import './styles.css'
 const FIXED_COIN_WAGER = 200
 const MAX_PROFILE_FRAMES = 5
 
+// PRACTICE_TIERS mirrors the three fixed bot accounts (and the Stockfish
+// Elo behind each one) that internal/domain/research/runner.go's Monte
+// Carlo simulation tests - picking a tier here plays the exact opponent
+// strength the research report describes.
+const PRACTICE_TIERS = [
+  { key: 'rookie', label: 'RookieBot', elo: 1320, blurb: 'Stockfish at its weakest setting.' },
+  { key: 'expert', label: 'ExpertBot', elo: 2000, blurb: 'A strong club-level player.' },
+  { key: 'grandmaster', label: 'GrandmasterBot', elo: 2500, blurb: 'Near the top of Stockfish’s strength limiter.' }
+]
+
+// WHITE_OPENING_CHOICES / BLACK_OPENING_CHOICES mirror
+// internal/research/simulate/openings.go's WhiteChessOpenings and
+// BlackChessOpenings exactly (same ten moves, same order) - the practice
+// match's opening picker offers the same books the research runner tests
+// each bot tier against, and the backend (handleStartPracticeMatch)
+// validates a submitted opening against those same lists.
+const WHITE_OPENING_CHOICES = [
+  { move: 'e2e4', label: "King's Pawn" },
+  { move: 'd2d4', label: "Queen's Pawn" },
+  { move: 'g1f3', label: 'Reti' },
+  { move: 'c2c4', label: 'English' },
+  { move: 'e2e3', label: "Van 't Kruijs" },
+  { move: 'd2d3', label: "King's Indian Attack setup" },
+  { move: 'b1c3', label: 'Van Geet' },
+  { move: 'g2g3', label: "King's Fianchetto" },
+  { move: 'f2f4', label: "Bird's Opening" },
+  { move: 'b2b3', label: 'Nimzo-Larsen' }
+]
+
+const BLACK_OPENING_CHOICES = [
+  { move: 'e7e5', label: 'Open Game' },
+  { move: 'c7c5', label: 'Sicilian Defense' },
+  { move: 'e7e6', label: 'French Defense' },
+  { move: 'c7c6', label: 'Caro-Kann Defense' },
+  { move: 'd7d5', label: 'Scandinavian Defense' },
+  { move: 'd7d6', label: 'Pirc-style setup' },
+  { move: 'g7g6', label: 'Modern Defense' },
+  { move: 'g8f6', label: "Alekhine's Defense" },
+  { move: 'b8c6', label: 'Nimzowitsch Defense' },
+  { move: 'a7a6', label: 'St. George Defense' }
+]
+
 const LEADERBOARD_TABS = [
   { key: 'elo', label: 'Overall Elo', unit: 'Elo' },
   { key: 'weekly_wins', label: 'Weekly Wins', unit: 'wins' },
@@ -284,6 +326,23 @@ function Dashboard({
     useState('chess')
 
   const coinWager = FIXED_COIN_WAGER
+
+  // 'matchmaking' queues for a human opponent (or a bot fallback after
+  // MatchWait); 'computer' skips the queue entirely and starts an
+  // immediate, free practice match against a chosen bot tier - see
+  // startPracticeMatch.
+  const [opponentMode, setOpponentMode] = useState('matchmaking')
+  const [practiceTier, setPracticeTier] = useState('rookie')
+  const [practiceColor, setPracticeColor] = useState('random')
+  const [practiceOpening, setPracticeOpening] = useState('random')
+
+  function selectPracticeColor(color) {
+    setPracticeColor(color)
+    // Whichever opening was picked belonged to the other book; reset to
+    // random rather than silently carrying over a move that may not even
+    // be in the new book.
+    setPracticeOpening('random')
+  }
 
   const [cosmetics, setCosmetics] = useState([])
   const cosmeticsScrollRef = useRef(null)
@@ -555,6 +614,24 @@ function Dashboard({
     }
   }
 
+  async function startPracticeMatch() {
+    try {
+      const match = await api('/matches/practice', {
+        token,
+        method: 'POST',
+        body: {
+          tier: practiceTier,
+          color: practiceColor,
+          opening: practiceColor === 'random' ? 'random' : practiceOpening
+        }
+      })
+      setActiveMatch(match)
+      onMessage('Practice match started - no coins wagered, no Elo at stake.')
+    } catch (err) {
+      onMessage(err.message)
+    }
+  }
+
   const coinBalance = Number(
     user.coin_balance ?? 0
   )
@@ -666,7 +743,7 @@ function Dashboard({
               }`
             }
             onClick={() => setGameType('connect_four')}
-            disabled={Boolean(queue || activeMatch)}
+            disabled={Boolean(queue || activeMatch) || opponentMode === 'computer'}
           >
             <div className="mode-icon">🔴</div>
 
@@ -680,139 +757,282 @@ function Dashboard({
           </button>
         </div>
 
-        <h3 className="section-subheading">Choose a Format</h3>
+        <h3 className="section-subheading">Choose an Opponent</h3>
 
         <div className="mode-grid">
           <button
             type="button"
-            className={
-              `mode-card ${
-                gameMode === 'one_vs_one'
-                  ? 'selected'
-                  : ''
-              }`
-            }
-            onClick={() =>
-              setGameMode('one_vs_one')
-            }
+            className={`mode-card ${opponentMode === 'matchmaking' ? 'selected' : ''}`}
+            onClick={() => setOpponentMode('matchmaking')}
             disabled={Boolean(queue || activeMatch)}
           >
-            <div className="mode-icon">♟</div>
+            <div className="mode-icon"><Users size={22} /></div>
 
             <div>
-              <h3>1v1 Match</h3>
-              <p>
-                Get matched directly against one opponent.
-              </p>
+              <h3>Human Opponent</h3>
+              <p>Get matched against another player.</p>
               <span className="mode-detail">
-                Fastest matchmaking
+                Seated against a bot after {`${FIXED_COIN_WAGER}`}-coin wait
               </span>
             </div>
           </button>
 
-          {/* 4-Player Tournament mode is disabled for now (too much work to
-              keep fully working right now) - may come back in the future.
-              Backend support for it is disabled to match; see matcher.go
-              and handlers_matchmaking.go.
           <button
             type="button"
-            className={
-              `mode-card ${
-                gameMode === 'tournament'
-                  ? 'selected'
-                  : ''
-              }`
-            }
-            onClick={() =>
-              setGameMode('tournament')
-            }
+            className={`mode-card ${opponentMode === 'computer' ? 'selected' : ''}`}
+            onClick={() => {
+              setOpponentMode('computer')
+              setGameType('chess')
+            }}
             disabled={Boolean(queue || activeMatch)}
           >
-            <div className="mode-icon">🏆</div>
+            <div className="mode-icon"><FlaskConical size={22} /></div>
 
             <div>
-              <h3>4-Player Tournament</h3>
+              <h3>Play vs Computer</h3>
               <p>
-                Win a semifinal and final to become champion.
+                Pick a bot tier, your color, and its opening - the
+                same setup as the Monte Carlo research runner.
               </p>
               <span className="mode-detail">
-                Includes bonus coin rewards
+                Free practice · chess only
               </span>
             </div>
           </button>
-          */}
         </div>
 
-        <div className="wager-field">
-          Virtual coin wager
-          <span className="wager-fixed">{FIXED_COIN_WAGER} coins</span>
-        </div>
+        {opponentMode === 'matchmaking' ? (
+          <>
+            <h3 className="section-subheading">Choose a Format</h3>
 
-        {/* Tournament mode disabled, see above.
-        {gameMode === 'tournament' && (
-          <div className="reward-banner">
-            <Trophy size={18} />
-            Tournament champions receive the combined prize
-            pool plus a bonus reward.
-          </div>
-        )}
-        */}
+            <div className="mode-grid">
+              <button
+                type="button"
+                className={
+                  `mode-card ${
+                    gameMode === 'one_vs_one'
+                      ? 'selected'
+                      : ''
+                  }`
+                }
+                onClick={() =>
+                  setGameMode('one_vs_one')
+                }
+                disabled={Boolean(queue || activeMatch)}
+              >
+                <div className="mode-icon">♟</div>
 
-        {queue ? (
-          <div className="queue-status">
-            <div className="queue-spinner" />
+                <div>
+                  <h3>1v1 Match</h3>
+                  <p>
+                    Get matched directly against one opponent.
+                  </p>
+                  <span className="mode-detail">
+                    Fastest matchmaking
+                  </span>
+                </div>
+              </button>
 
-            <div>
-              <b>Searching for players...</b>
+              {/* 4-Player Tournament mode is disabled for now (too much work to
+                  keep fully working right now) - may come back in the future.
+                  Backend support for it is disabled to match; see matcher.go
+                  and handlers_matchmaking.go.
+              <button
+                type="button"
+                className={
+                  `mode-card ${
+                    gameMode === 'tournament'
+                      ? 'selected'
+                      : ''
+                  }`
+                }
+                onClick={() =>
+                  setGameMode('tournament')
+                }
+                disabled={Boolean(queue || activeMatch)}
+              >
+                <div className="mode-icon">🏆</div>
 
-              <p>
-                {gameMode === 'tournament'
-                  ? 'Waiting for four compatible players'
-                  : 'Waiting for one compatible opponent'}
+                <div>
+                  <h3>4-Player Tournament</h3>
+                  <p>
+                    Win a semifinal and final to become champion.
+                  </p>
+                  <span className="mode-detail">
+                    Includes bonus coin rewards
+                  </span>
+                </div>
+              </button>
+              */}
+            </div>
+
+            <div className="wager-field">
+              Virtual coin wager
+              <span className="wager-fixed">{FIXED_COIN_WAGER} coins</span>
+            </div>
+
+            {/* Tournament mode disabled, see above.
+            {gameMode === 'tournament' && (
+              <div className="reward-banner">
+                <Trophy size={18} />
+                Tournament champions receive the combined prize
+                pool plus a bonus reward.
+              </div>
+            )}
+            */}
+
+            {queue ? (
+              <div className="queue-status">
+                <div className="queue-spinner" />
+
+                <div>
+                  <b>Searching for players...</b>
+
+                  <p>
+                    {gameMode === 'tournament'
+                      ? 'Waiting for four compatible players'
+                      : 'Waiting for one compatible opponent'}
+                  </p>
+
+                  <span>
+                    Wager:{' '}
+                    {queue.coin_wager ?? coinWager} coins
+                    {' · '}
+                    Status: {queue.status}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="muted">
+                {activeMatch
+                  ? 'You are currently in a match.'
+                  : 'Choose a mode and wager to begin.'}
               </p>
+            )}
 
-              <span>
-                Wager:{' '}
-                {queue.coin_wager ?? coinWager} coins
-                {' · '}
-                Status: {queue.status}
-              </span>
+            <div className="row">
+              <button
+                onClick={joinQueue}
+                disabled={
+                  Boolean(queue || activeMatch) ||
+                  insufficientCoins
+                }
+              >
+                {gameMode === 'tournament'
+                  ? 'Join Tournament Queue'
+                  : 'Find 1v1 Opponent'}
+              </button>
+
+              <button
+                className="danger"
+                onClick={cancelQueue}
+                disabled={!queue}
+              >
+                Cancel Queue
+              </button>
             </div>
-          </div>
+
+            {insufficientCoins && (
+              <p className="form-error">
+                You do not have enough coins for this wager.
+              </p>
+            )}
+          </>
         ) : (
-          <p className="muted">
-            {activeMatch
-              ? 'You are currently in a match.'
-              : 'Choose a mode and wager to begin.'}
-          </p>
-        )}
+          <>
+            <h3 className="section-subheading">Choose a Bot Tier</h3>
 
-        <div className="row">
-          <button
-            onClick={joinQueue}
-            disabled={
-              Boolean(queue || activeMatch) ||
-              insufficientCoins
-            }
-          >
-            {gameMode === 'tournament'
-              ? 'Join Tournament Queue'
-              : 'Find 1v1 Opponent'}
-          </button>
+            <div className="mode-grid tier-grid">
+              {PRACTICE_TIERS.map(tier => (
+                <button
+                  key={tier.key}
+                  type="button"
+                  className={`mode-card ${practiceTier === tier.key ? 'selected' : ''}`}
+                  onClick={() => setPracticeTier(tier.key)}
+                  disabled={Boolean(activeMatch)}
+                >
+                  <div>
+                    <h3>{tier.label}</h3>
+                    <p>{tier.blurb}</p>
+                    <span className="mode-detail">~{tier.elo} Elo</span>
+                  </div>
+                </button>
+              ))}
+            </div>
 
-          <button
-            className="danger"
-            onClick={cancelQueue}
-            disabled={!queue}
-          >
-            Cancel Queue
-          </button>
-        </div>
+            <h3 className="section-subheading">Choose Your Color</h3>
 
-        {insufficientCoins && (
-          <p className="form-error">
-            You do not have enough coins for this wager.
-          </p>
+            <div className="chip-row">
+              {[
+                { key: 'white', label: 'White' },
+                { key: 'black', label: 'Black' },
+                { key: 'random', label: 'Random' }
+              ].map(opt => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  className={`chip ${practiceColor === opt.key ? 'selected' : ''}`}
+                  onClick={() => selectPracticeColor(opt.key)}
+                  disabled={Boolean(activeMatch)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {practiceColor === 'random' ? (
+              <p className="muted">
+                Your color (and the computer's opening) will be picked at random.
+              </p>
+            ) : (
+              <>
+                <h3 className="section-subheading">
+                  Choose the Computer's Opening
+                </h3>
+
+                <div className="chip-row">
+                  <button
+                    type="button"
+                    className={`chip ${practiceOpening === 'random' ? 'selected' : ''}`}
+                    onClick={() => setPracticeOpening('random')}
+                    disabled={Boolean(activeMatch)}
+                  >
+                    Random
+                  </button>
+
+                  {(practiceColor === 'white' ? BLACK_OPENING_CHOICES : WHITE_OPENING_CHOICES).map(o => (
+                    <button
+                      key={o.move}
+                      type="button"
+                      className={`chip ${practiceOpening === o.move ? 'selected' : ''}`}
+                      onClick={() => setPracticeOpening(o.move)}
+                      disabled={Boolean(activeMatch)}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <div className="reward-banner">
+              <FlaskConical size={18} />
+              Free practice - no coin wager, no Elo change.
+            </div>
+
+            {!activeMatch && (
+              <p className="muted">Choose a tier and color, then start whenever you're ready.</p>
+            )}
+
+            <div className="row">
+              <button
+                onClick={startPracticeMatch}
+                disabled={Boolean(activeMatch)}
+              >
+                Play vs Computer
+              </button>
+            </div>
+          </>
         )}
       </div>
 

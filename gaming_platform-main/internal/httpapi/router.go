@@ -78,6 +78,7 @@ func (s *Server) Router() http.Handler {
 
 		r.Post("/matchmaking/queue", s.handleJoinQueue)
 		r.Delete("/matchmaking/queue/{queueID}", s.handleCancelQueue)
+		r.Post("/matches/practice", s.handleStartPracticeMatch)
 
 		r.Get("/matches/mine", s.handleGetMyActiveMatch)
 		r.Get("/matches/{matchID}", s.handleGetMatch)
