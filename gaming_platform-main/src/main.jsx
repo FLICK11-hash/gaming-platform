@@ -4,7 +4,6 @@ import {
   Trophy,
   LogOut,
   Users,
-  ShieldAlert,
   ChevronLeft,
   ChevronRight,
   Target,
@@ -1301,21 +1300,6 @@ function Dashboard({
             <ChevronRight size={22} />
           </button>
         </div>
-      </div>
-
-      <div className="card wide">
-        <h2>
-          <ShieldAlert />
-          Notes
-        </h2>
-
-        <p>
-          Select 1v1 or tournament mode, choose a virtual
-          coin wager, and enter matchmaking. Once matched,
-          the live chess board will appear and connect
-          through WebSockets. Or search up a player above
-          and challenge them directly.
-        </p>
       </div>
 
       <ResearchSimulationCard token={token} />
