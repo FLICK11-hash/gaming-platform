@@ -317,6 +317,15 @@ export default function MatchRoom({ matchId, token, userId, onExit }) {
             }
             break
           case 'match_over': {
+            // Carries the true final clock values (the timed-out side
+            // correctly clamped to 0) - without this, the frozen
+            // post-game display below would keep showing whatever the
+            // last 'state' broadcast said, which can be a couple of
+            // seconds stale by the time a timeout is actually recorded.
+            if (msg.clocks) {
+              setClocks(msg.clocks)
+              clocksSyncedAt.current = Date.now()
+            }
             const winnerUserId = msg.winner_user_id || 0
             const isDraw = winnerUserId === 0
             const isWinner = winnerUserId === userId

@@ -490,8 +490,8 @@ func (s *Service) HandleMove(ctx context.Context, matchID, userID int64, input M
 		return ErrNotYourTurn
 	}
 
-	if s.popIfExpired(matchID) {
-		return s.completeMatch(ctx, matchID)
+	if d, ok := s.popExpiredDeadline(matchID); ok {
+		return s.finishMatch(ctx, matchID, d.OpponentUserID, "")
 	}
 
 	opponentID := m.Player2ID
@@ -716,17 +716,25 @@ func (s *Service) HandleResign(ctx context.Context, matchID, userID int64) error
 	return s.finishMatch(ctx, matchID, opponentID, "")
 }
 
-// popIfExpired removes and reports whether matchID's clock has already run
-// out, so a stale move can be rejected in favor of a timeout loss.
-func (s *Service) popIfExpired(matchID int64) bool {
+// popExpiredDeadline removes and returns matchID's deadline if it has
+// already passed as of now, so a stale move can be rejected in favor of a
+// timeout loss and the periodic clock watcher can finish the match without
+// an incoming move. Deleting and returning the deadline in the same locked
+// step (rather than a caller deleting it first and a second step trying to
+// look it up again) is what makes this safe to call from two different
+// paths - an incoming move racing the watcher's tick - without either one
+// finding an already-emptied entry and silently doing nothing: whichever
+// caller wins the race gets the deadline and finishes the match; the loser
+// gets ok=false and stands down.
+func (s *Service) popExpiredDeadline(matchID int64) (deadline, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	d, ok := s.deadlines[matchID]
 	if !ok || time.Now().Before(d.At) {
-		return false
+		return deadline{}, false
 	}
 	delete(s.deadlines, matchID)
-	return true
+	return d, true
 }
 
 // RunClockWatcher periodically checks all in-flight matches for expired
@@ -798,14 +806,9 @@ func (s *Service) checkTimeouts(ctx context.Context) {
 
 // completeMatch finishes matchID as a timeout loss for whoever's clock had
 // run out, if the deadline entry is still present (idempotent against races
-// with a move arriving at the same moment).
+// with a move arriving at the same moment - see popExpiredDeadline).
 func (s *Service) completeMatch(ctx context.Context, matchID int64) error {
-	s.mu.Lock()
-	d, ok := s.deadlines[matchID]
-	if ok {
-		delete(s.deadlines, matchID)
-	}
-	s.mu.Unlock()
+	d, ok := s.popExpiredDeadline(matchID)
 	if !ok {
 		return nil
 	}
@@ -840,6 +843,14 @@ func (s *Service) finishMatch(ctx context.Context, matchID, winnerUserID int64, 
 		s.chessEngine.EndGame(matchID)
 	}
 
+	// Snapshot the final clocks (correctly clamped to 0 for whoever just
+	// timed out, via clock.RemainingAt) and send them with match_over -
+	// without this, a client that freezes its clock display once the game
+	// is over keeps showing whatever the last pre-completion 'state'
+	// broadcast happened to say, which can be a couple of seconds stale by
+	// the time the timeout is actually recorded.
+	finalClocks := s.clockSnapshot(ctx, matchID)
+
 	practice := s.isPractice(matchID)
 
 	s.mu.Lock()
@@ -858,7 +869,7 @@ func (s *Service) finishMatch(ctx context.Context, matchID, winnerUserID int64, 
 		if _, err := q.CompleteTournament(ctx, db.CompleteTournamentParams{TournamentID: m.TournamentID, WinnerUserID: winnerPG}); err != nil {
 			log.Printf("match: practice tournament close error for tournament %d: %v", m.TournamentID, err)
 		}
-		s.hub.Broadcast(matchID, wsOutbound{Type: "match_over", Winner: winnerUserID, Reason: reason})
+		s.hub.Broadcast(matchID, wsOutbound{Type: "match_over", Winner: winnerUserID, Reason: reason, Clocks: finalClocks})
 		return nil
 	}
 
@@ -866,7 +877,7 @@ func (s *Service) finishMatch(ctx context.Context, matchID, winnerUserID int64, 
 		log.Printf("match: elo update error for match %d: %v", matchID, err)
 	}
 
-	s.hub.Broadcast(matchID, wsOutbound{Type: "match_over", Winner: winnerUserID, Reason: reason})
+	s.hub.Broadcast(matchID, wsOutbound{Type: "match_over", Winner: winnerUserID, Reason: reason, Clocks: finalClocks})
 
 	if err := s.advanceBracket(ctx, m.TournamentID, m, winnerUserID); err != nil {
 		log.Printf("match: bracket advancement error for tournament %d: %v", m.TournamentID, err)
