@@ -2,13 +2,17 @@ package httpapi
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"math/rand"
 	"net/http"
+	"strconv"
 
 	"github.com/jackc/pgx/v5"
 
 	"gaming_platform/internal/auth"
 	"gaming_platform/internal/domain/bot"
+	"gaming_platform/internal/domain/connectfour"
 	db "gaming_platform/internal/db/gen"
 	"gaming_platform/internal/dbutil"
 	"gaming_platform/internal/research/simulate"
@@ -17,22 +21,24 @@ import (
 // practiceTierBotUsernames maps a practice-match request's tier string to
 // the fixed bot account that plays it - the same three accounts (and the
 // same Stockfish Elo behind each one, see internal/domain/bot) the Monte
-// Carlo research runner tests, so a player can try the exact opponent
-// strength the research report describes.
+// Carlo research runner tests, so a chess player can try the exact opponent
+// strength the research report describes. The same three accounts also
+// back Connect Four practice matches, just relabeled Easy/Intermediate/
+// Expert in the UI since there's no chess-flavored Elo to show there.
 var practiceTierBotUsernames = map[string]string{
 	"rookie":      bot.RookieBotUsername,
 	"expert":      bot.ExpertBotUsername,
 	"grandmaster": bot.GrandmasterBotUsername,
 }
 
-// handleStartPracticeMatch starts a free chess match against a chosen bot
-// tier, skipping the matchmaking queue entirely - both "players" are already
-// known, so there's nothing to wait on. Unlike handleChallengeUser and
-// handleJoinQueue, it never takes a coin wager and the resulting match is
-// registered with matchSvc as practice (see Service.RegisterPracticeMatch),
-// so it never moves Elo, missions, leaderboards, or achievements either -
-// this is a free, unlimited, opponent-opening-chosen-by-the-player mode, not
-// a competitive one.
+// handleStartPracticeMatch starts a free match (chess or Connect Four)
+// against a chosen bot tier, skipping the matchmaking queue entirely - both
+// "players" are already known, so there's nothing to wait on. Unlike
+// handleChallengeUser and handleJoinQueue, it never takes a coin wager and
+// the resulting match is registered with matchSvc as practice (see
+// Service.RegisterPracticeMatch), so it never moves Elo, missions,
+// leaderboards, or achievements either - this is a free, unlimited,
+// opponent-opening-chosen-by-the-player mode, not a competitive one.
 func (s *Server) handleStartPracticeMatch(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserID(r.Context())
 	if !ok {
@@ -46,13 +52,17 @@ func (s *Server) handleStartPracticeMatch(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if req.GameType != "chess" && req.GameType != "connect_four" {
+		writeError(w, http.StatusBadRequest, "game_type must be chess or connect_four")
+		return
+	}
 	botUsername, ok := practiceTierBotUsernames[req.Tier]
 	if !ok {
 		writeError(w, http.StatusBadRequest, "tier must be rookie, expert, or grandmaster")
 		return
 	}
-	if req.Color != "white" && req.Color != "black" && req.Color != "random" {
-		writeError(w, http.StatusBadRequest, "color must be white, black, or random")
+	if req.Order != "first" && req.Order != "second" && req.Order != "random" {
+		writeError(w, http.StatusBadRequest, "order must be first, second, or random")
 		return
 	}
 
@@ -77,36 +87,20 @@ func (s *Server) handleStartPracticeMatch(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	humanIsWhite := req.Color == "white"
-	if req.Color == "random" {
-		humanIsWhite = rand.Intn(2) == 0
+	humanFirst := req.Order == "first"
+	if req.Order == "random" {
+		humanFirst = rand.Intn(2) == 0
 	}
 
-	// The opening picker always describes the computer's own first move
-	// (whichever ply that ends up being, depending on who moves first),
-	// taken from whichever of the two Monte Carlo opening books matches the
-	// computer's color - the same books runner.go tests each tier against.
-	book := simulate.BlackChessOpenings
-	if !humanIsWhite {
-		book = simulate.WhiteChessOpenings
-	}
-
-	forcedOpening := ""
-	if req.Opening != "" && req.Opening != "random" {
-		valid := false
-		for _, o := range book {
-			if o == req.Opening {
-				valid = true
-				break
-			}
-		}
-		if !valid {
-			writeError(w, http.StatusBadRequest, "opening is not one of the ten options for the computer's color")
-			return
-		}
-		forcedOpening = req.Opening
+	var forcedOpening string
+	if req.GameType == "connect_four" {
+		forcedOpening, err = practiceConnectFourOpening(req.Opening)
 	} else {
-		forcedOpening = book[rand.Intn(len(book))]
+		forcedOpening, err = practiceChessOpening(req.Opening, humanFirst)
+	}
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	tx, err := s.pool.Begin(r.Context())
@@ -118,7 +112,7 @@ func (s *Server) handleStartPracticeMatch(w http.ResponseWriter, r *http.Request
 	qtx := db.New(s.pool).WithTx(tx)
 
 	createdTournament, err := qtx.CreateTournament(r.Context(), db.CreateTournamentParams{
-		GameType:        "chess",
+		GameType:        req.GameType,
 		GameMode:        "one_vs_one",
 		Status:          "waiting",
 		CoinWager:       0,
@@ -132,7 +126,7 @@ func (s *Server) handleStartPracticeMatch(w http.ResponseWriter, r *http.Request
 	}
 
 	player1ID, player2ID := human.UserID, botUser.UserID
-	if !humanIsWhite {
+	if !humanFirst {
 		player1ID, player2ID = botUser.UserID, human.UserID
 	}
 
@@ -149,7 +143,7 @@ func (s *Server) handleStartPracticeMatch(w http.ResponseWriter, r *http.Request
 
 	match, err := qtx.CreateMatch(r.Context(), db.CreateMatchParams{
 		TournamentID: createdTournament.TournamentID,
-		GameType:     "chess",
+		GameType:     req.GameType,
 		Round:        "final",
 		MatchNumber:  dbutil.IntToPGInt4(1),
 		Player1ID:    player1ID,
@@ -173,4 +167,42 @@ func (s *Server) handleStartPracticeMatch(w http.ResponseWriter, r *http.Request
 	s.matchSvc.RegisterPracticeMatch(match.MatchID, forcedOpening)
 
 	writeJSON(w, http.StatusCreated, s.matchResponseWithProfiles(r, db.New(s.pool), match))
+}
+
+// practiceChessOpening validates (or, for "" / "random", picks) the
+// computer's forced first move in a chess practice match: a move in
+// from+to square form (e.g. "e2e4") taken from whichever of the two Monte
+// Carlo opening books - see internal/research/simulate/openings.go -
+// matches the computer's color. The computer is Black exactly when the
+// human plays first.
+func practiceChessOpening(requested string, humanFirst bool) (string, error) {
+	book := simulate.WhiteChessOpenings
+	if humanFirst {
+		book = simulate.BlackChessOpenings
+	}
+	if requested == "" || requested == "random" {
+		return book[rand.Intn(len(book))], nil
+	}
+	for _, o := range book {
+		if o == requested {
+			return requested, nil
+		}
+	}
+	return "", errors.New("opening is not one of the ten options for the computer's color")
+}
+
+// practiceConnectFourOpening validates (or, for "" / "random", picks) the
+// computer's forced first drop in a Connect Four practice match: a column
+// numbered 1-7 the way the UI shows it, converted to the engine's 0-based
+// index for storage (see connectfour.Columns and match.Service's
+// popForcedOpening).
+func practiceConnectFourOpening(requested string) (string, error) {
+	if requested == "" || requested == "random" {
+		return strconv.Itoa(rand.Intn(connectfour.Columns)), nil
+	}
+	n, err := strconv.Atoi(requested)
+	if err != nil || n < 1 || n > connectfour.Columns {
+		return "", fmt.Errorf("opening must be a column number from 1 to %d, or random", connectfour.Columns)
+	}
+	return strconv.Itoa(n - 1), nil
 }

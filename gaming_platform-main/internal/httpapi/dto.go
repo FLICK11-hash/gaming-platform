@@ -91,16 +91,20 @@ type challengeRequest struct {
 	GameType string `json:"game_type"`
 }
 
-// startPracticeMatchRequest requests a free chess match against one of the
-// three fixed bot tiers the Monte Carlo research runner also tests (see
-// internal/domain/research/runner.go's chessEloTiers). Opening is a move in
+// startPracticeMatchRequest requests a free match (chess or Connect Four)
+// against one of the three fixed bot tiers (also used, for chess, by the
+// Monte Carlo research runner - see internal/domain/research/runner.go's
+// chessEloTiers). Order is "first", "second", or "random" - does the human
+// move first? Opening's format depends on GameType: for chess, a move in
 // from+to square form (e.g. "e2e4") taken from whichever of the two Monte
-// Carlo opening books matches the computer's color, or "random" (or empty)
-// to let the server pick one - see handleStartPracticeMatch.
+// Carlo opening books matches the computer's color; for connect_four, a
+// column number "1".."7". Either way "random" (or empty) lets the server
+// pick one - see handleStartPracticeMatch.
 type startPracticeMatchRequest struct {
-	Tier    string `json:"tier"`
-	Color   string `json:"color"`
-	Opening string `json:"opening"`
+	GameType string `json:"game_type"`
+	Tier     string `json:"tier"`
+	Order    string `json:"order"`
+	Opening  string `json:"opening"`
 }
 
 type matchResponse struct {

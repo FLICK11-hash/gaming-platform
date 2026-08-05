@@ -128,11 +128,12 @@ func NewService(pool *pgxpool.Pool, h *hub.Hub, missionsSvc *missions.Service, l
 // RegisterPracticeMatch marks matchID as a free "play vs computer" match:
 // excluded from Elo, missions, leaderboard, and achievement updates, since
 // it costs nothing to play and shouldn't be a way to farm ranked progress.
-// If forcedOpening is non-empty (a chess move in from+to square form, e.g.
-// "e2e4"), it overrides whatever the bot's own move-choosing logic would
-// otherwise pick for its first move in the match, so a player who picked a
-// specific opening for the computer to play actually gets it - see
-// popForcedOpening.
+// If forcedOpening is non-empty, it overrides whatever the bot's own
+// move-choosing logic would otherwise pick for its first move in the
+// match, so a player who picked a specific opening for the computer to
+// play actually gets it - see popForcedOpening. Its format depends on the
+// match's game type: a chess move in from+to square form (e.g. "e2e4"), or
+// a Connect Four column index ("0".."6") as a decimal string.
 //
 // Both facts live only in memory, the same accepted tradeoff as this
 // service's other per-match state (deadlines, disconnects): forgotten on a
@@ -446,6 +447,12 @@ func (s *Service) chooseBotMove(m db.Match, botUser db.User) (MoveInput, error) 
 	difficulty := bot.DifficultyForElo(dbutil.PGInt4ToInt(botUser.CurrentElo))
 
 	if m.GameType == GameTypeConnectFour {
+		if move, ok := s.popForcedOpening(m.MatchID); ok {
+			if col, err := strconv.Atoi(move); err == nil && col >= 0 && col < connectfour.Columns {
+				return MoveInput{Column: &col}, nil
+			}
+		}
+
 		state, err := s.c4Engine.State(m.MatchID)
 		if err != nil {
 			return MoveInput{}, err

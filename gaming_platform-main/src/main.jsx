@@ -22,15 +22,32 @@ import './styles.css'
 const FIXED_COIN_WAGER = 200
 const MAX_PROFILE_FRAMES = 5
 
-// PRACTICE_TIERS mirrors the three fixed bot accounts (and the Stockfish
-// Elo behind each one) that internal/domain/research/runner.go's Monte
-// Carlo simulation tests - picking a tier here plays the exact opponent
-// strength the research report describes.
-const PRACTICE_TIERS = [
+// PRACTICE_TIERS_CHESS mirrors the three fixed bot accounts (and the
+// Stockfish Elo behind each one) that internal/domain/research/runner.go's
+// Monte Carlo simulation tests - picking a tier here plays the exact
+// opponent strength the research report describes.
+const PRACTICE_TIERS_CHESS = [
   { key: 'rookie', label: 'RookieBot', elo: 1320, blurb: 'Stockfish at its weakest setting.' },
   { key: 'expert', label: 'ExpertBot', elo: 2000, blurb: 'A strong club-level player.' },
   { key: 'grandmaster', label: 'GrandmasterBot', elo: 2500, blurb: 'Near the top of Stockfish’s strength limiter.' }
 ]
+
+// The same three bot accounts/strength tiers back Connect Four practice
+// matches too, just relabeled Easy/Intermediate/Expert since there's no
+// chess-flavored Elo to show for this game.
+const PRACTICE_TIERS_CONNECT_FOUR = [
+  { key: 'rookie', label: 'Easy', blurb: 'Makes plenty of mistakes - good for learning the ropes.' },
+  { key: 'expert', label: 'Intermediate', blurb: 'Plays solid, sensible Connect Four.' },
+  { key: 'grandmaster', label: 'Expert', blurb: 'Rarely misses a winning or blocking move.' }
+]
+
+// Column choices for a Connect Four practice match's opening picker - the
+// computer's first drop, numbered the way the board is labeled (1-7) and
+// converted to a 0-based column index server-side.
+const CONNECT_FOUR_OPENING_CHOICES = [1, 2, 3, 4, 5, 6, 7].map(n => ({
+  move: String(n),
+  label: `Slot ${n}`
+}))
 
 // WHITE_OPENING_CHOICES / BLACK_OPENING_CHOICES mirror
 // internal/research/simulate/openings.go's WhiteChessOpenings and
@@ -328,20 +345,28 @@ function Dashboard({
 
   // 'matchmaking' queues for a human opponent (or a bot fallback after
   // MatchWait); 'computer' skips the queue entirely and starts an
-  // immediate, free practice match against a chosen bot tier - see
-  // startPracticeMatch.
+  // immediate, free practice match (chess or Connect Four) against a
+  // chosen bot tier - see startPracticeMatch. practiceOrder is 'first',
+  // 'second', or 'random' - does the human move first?
   const [opponentMode, setOpponentMode] = useState('matchmaking')
   const [practiceTier, setPracticeTier] = useState('rookie')
-  const [practiceColor, setPracticeColor] = useState('random')
+  const [practiceOrder, setPracticeOrder] = useState('random')
   const [practiceOpening, setPracticeOpening] = useState('random')
 
-  function selectPracticeColor(color) {
-    setPracticeColor(color)
-    // Whichever opening was picked belonged to the other book; reset to
-    // random rather than silently carrying over a move that may not even
-    // be in the new book.
+  function selectPracticeOrder(order) {
+    setPracticeOrder(order)
+    // Whichever opening was picked belonged to the other book/side; reset
+    // to random rather than silently carrying over a choice that may not
+    // even apply anymore.
     setPracticeOpening('random')
   }
+
+  // The opening picker's options depend on gameType (chess move codes vs.
+  // Connect Four column numbers) - reset to random on a game switch so a
+  // stale, format-mismatched value never gets submitted.
+  useEffect(() => {
+    setPracticeOpening('random')
+  }, [gameType])
 
   const [cosmetics, setCosmetics] = useState([])
   const cosmeticsScrollRef = useRef(null)
@@ -619,9 +644,10 @@ function Dashboard({
         token,
         method: 'POST',
         body: {
+          game_type: gameType,
           tier: practiceTier,
-          color: practiceColor,
-          opening: practiceColor === 'random' ? 'random' : practiceOpening
+          order: practiceOrder,
+          opening: practiceOrder === 'random' ? 'random' : practiceOpening
         }
       })
       setActiveMatch(match)
@@ -637,6 +663,30 @@ function Dashboard({
 
   const insufficientCoins =
     coinWager > coinBalance
+
+  const isConnectFourPractice = gameType === 'connect_four'
+  const practiceTiers = isConnectFourPractice ? PRACTICE_TIERS_CONNECT_FOUR : PRACTICE_TIERS_CHESS
+  const practiceOrderOptions = isConnectFourPractice
+    ? [
+        { key: 'first', label: 'Go First' },
+        { key: 'second', label: 'Go Second' },
+        { key: 'random', label: 'Random' }
+      ]
+    : [
+        { key: 'first', label: 'White' },
+        { key: 'second', label: 'Black' },
+        { key: 'random', label: 'Random' }
+      ]
+  // The opening picker always describes the computer's own opening,
+  // whichever ply that ends up being: for chess, the book matching
+  // whichever color the computer plays (the opposite of the human's
+  // choice); for Connect Four, the same seven column slots regardless of
+  // who moves first.
+  const practiceOpeningChoices = isConnectFourPractice
+    ? CONNECT_FOUR_OPENING_CHOICES
+    // Human first means the computer plays Black, so it's the Black book
+    // (the computer's own color) on offer here, and vice versa.
+    : (practiceOrder === 'first' ? BLACK_OPENING_CHOICES : WHITE_OPENING_CHOICES)
 
   return (
     <section className="grid">
@@ -742,7 +792,7 @@ function Dashboard({
               }`
             }
             onClick={() => setGameType('connect_four')}
-            disabled={Boolean(queue || activeMatch) || opponentMode === 'computer'}
+            disabled={Boolean(queue || activeMatch)}
           >
             <div className="mode-icon">🔴</div>
 
@@ -779,10 +829,7 @@ function Dashboard({
           <button
             type="button"
             className={`mode-card ${opponentMode === 'computer' ? 'selected' : ''}`}
-            onClick={() => {
-              setOpponentMode('computer')
-              setGameType('chess')
-            }}
+            onClick={() => setOpponentMode('computer')}
             disabled={Boolean(queue || activeMatch)}
           >
             <div className="mode-icon"><FlaskConical size={22} /></div>
@@ -790,11 +837,11 @@ function Dashboard({
             <div>
               <h3>Play vs Computer</h3>
               <p>
-                Pick a bot tier, your color, and its opening - the
-                same setup as the Monte Carlo research runner.
+                Pick a difficulty, whether you go first, and the
+                computer's opening move.
               </p>
               <span className="mode-detail">
-                Free practice · chess only
+                Free practice · no coins, no Elo
               </span>
             </div>
           </button>
@@ -939,10 +986,10 @@ function Dashboard({
           </>
         ) : (
           <>
-            <h3 className="section-subheading">Choose a Bot Tier</h3>
+            <h3 className="section-subheading">Choose a Difficulty</h3>
 
             <div className="mode-grid tier-grid">
-              {PRACTICE_TIERS.map(tier => (
+              {practiceTiers.map(tier => (
                 <button
                   key={tier.key}
                   type="button"
@@ -953,25 +1000,25 @@ function Dashboard({
                   <div>
                     <h3>{tier.label}</h3>
                     <p>{tier.blurb}</p>
-                    <span className="mode-detail">~{tier.elo} Elo</span>
+                    {tier.elo != null && (
+                      <span className="mode-detail">~{tier.elo} Elo</span>
+                    )}
                   </div>
                 </button>
               ))}
             </div>
 
-            <h3 className="section-subheading">Choose Your Color</h3>
+            <h3 className="section-subheading">
+              {isConnectFourPractice ? 'Go First or Second?' : 'Choose Your Color'}
+            </h3>
 
             <div className="chip-row">
-              {[
-                { key: 'white', label: 'White' },
-                { key: 'black', label: 'Black' },
-                { key: 'random', label: 'Random' }
-              ].map(opt => (
+              {practiceOrderOptions.map(opt => (
                 <button
                   key={opt.key}
                   type="button"
-                  className={`chip ${practiceColor === opt.key ? 'selected' : ''}`}
-                  onClick={() => selectPracticeColor(opt.key)}
+                  className={`chip ${practiceOrder === opt.key ? 'selected' : ''}`}
+                  onClick={() => selectPracticeOrder(opt.key)}
                   disabled={Boolean(activeMatch)}
                 >
                   {opt.label}
@@ -979,9 +1026,11 @@ function Dashboard({
               ))}
             </div>
 
-            {practiceColor === 'random' ? (
+            {practiceOrder === 'random' ? (
               <p className="muted">
-                Your color (and the computer's opening) will be picked at random.
+                {isConnectFourPractice
+                  ? 'Whether you go first (and the computer\'s opening slot) will be picked at random.'
+                  : "Your color (and the computer's opening) will be picked at random."}
               </p>
             ) : (
               <>
@@ -999,7 +1048,7 @@ function Dashboard({
                     Random
                   </button>
 
-                  {(practiceColor === 'white' ? BLACK_OPENING_CHOICES : WHITE_OPENING_CHOICES).map(o => (
+                  {practiceOpeningChoices.map(o => (
                     <button
                       key={o.move}
                       type="button"
@@ -1020,7 +1069,7 @@ function Dashboard({
             </div>
 
             {!activeMatch && (
-              <p className="muted">Choose a tier and color, then start whenever you're ready.</p>
+              <p className="muted">Choose a difficulty and turn order, then start whenever you're ready.</p>
             )}
 
             <div className="row">
