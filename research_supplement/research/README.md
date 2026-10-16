@@ -10,20 +10,26 @@ Supplementary material for "Are Opening Rankings from Engine Self-Play Real? Sam
 
 ## Studies 2-4 (replication program with full game records)
 - `harness/harness.py`: reproduces the platform's game loop (Stockfish 15.1, UCI_LimitStrength, 1 MB hash, 1 thread, 10 ms per move, FEN-only input, automatic checkmate / stalemate / insufficient material / fivefold repetition / 75-move rule, 300-ply cap).
-- `harness/complete.py`: plays a study to a target number of games per cell (resumable).
-- `harness/calibrate.py`: cross-setting matches (Study 3).
-- `harness/replication.jsonl` (Study 2), `harness/d3_confirm.jsonl` (Study 4), `harness/calibration*.jsonl` (Study 3): one JSON object per game with setting, forced move, result, termination, number of plies, and the full move list in UCI notation.
+- `harness/complete.py`: plays a study to a target number of games per cell (resumable). `harness/calibrate.py`: cross-setting matches (resumable).
+- `data_conrad/`: primary Studies 2-4, run by the first author on his Windows laptop.
+- `data_ai/`: the earlier robustness run of the same program on a single-core cloud processor, executed by the AI system (Section 4.16).
+- Each line is one game: setting, forced move, result, termination, number of plies, seconds, and the full move list in UCI notation.
 
-To rerun (about 2-3 hours on one laptop core): compile Stockfish 15.1 from https://github.com/official-stockfish/Stockfish (tag sf_15.1) with its default network, `pip install chess`, then
+To rerun: build Stockfish 15.1 from https://github.com/official-stockfish/Stockfish (tag sf_15.1), `pip install chess`, then
 ```
-python harness/calibrate.py --engine /path/to/stockfish --pairs 1320:2000,2000:2500,1320:2500,1320:2500 --games 200 --out harness/calibration.jsonl
-python harness/complete.py --engine /path/to/stockfish --study replication --target 30 --out harness/replication.jsonl
-python harness/complete.py --engine /path/to/stockfish --study d3_confirm --target 60 --sets white --out harness/d3_confirm.jsonl
+python harness/calibrate.py --engine /path/to/stockfish --out calibration.jsonl
+python harness/complete.py --engine /path/to/stockfish --study replication --target 30 --out replication.jsonl
+python harness/complete.py --engine /path/to/stockfish --study d3_confirm --target 60 --sets white --out d3_confirm.jsonl
 ```
+
+## Studies 5-6 (Stockfish 19, 3,000 nodes per move; J. Huang)
+- `studies5_6/`: game-level CSV and PGN records, locked protocols, game schedules (manifests), and analysis outputs for the opening-response policy study (Study 5: 6,960 survey and 5,220 evaluation games) and the multi-move variation study (Study 6: 10,440 games), with the configuration, policy, and engine SHA-256 fingerprints reported in the paper.
+- `jh_data.py`: the summary values used for the Study 5 and 6 tables and figures.
 
 ## Analysis
 ```
 pip install numpy pandas scipy statsmodels matplotlib
-python analysis.py && python a2.py && python a3.py && python a4.py && python a5_c4.py && python a6_new.py && python figs.py
+python analysis.py && python a2.py && python a3.py && python a4.py && python a5_c4.py
+python a6_new.py ai new_ai && python a6_new.py conrad new && python a7_cross.py && python figs.py
 ```
-Random seeds are fixed in the analysis scripts. Platform configuration for Study 1: commit 5872d85 of this repository.
+Random seeds are fixed in the analysis scripts. Platform configuration for Study 1: commit 5872d85 of this repository; permanent archive https://doi.org/10.5281/zenodo.23357406.

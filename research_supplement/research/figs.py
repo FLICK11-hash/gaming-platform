@@ -128,8 +128,8 @@ save("fig11_c4")
 
 # Fig12 Study 1 vs Study 2 per-cell designated-color win %
 import os
-if os.path.exists("rep_cells.csv"):
-    rc=pd.read_csv("rep_cells.csv")
+if os.path.exists("rep_cells_conrad.csv"):
+    rc=pd.read_csv("rep_cells_conrad.csv")
     fig,axs=plt.subplots(1,2,figsize=(6.5,3.2),sharex=True,sharey=True)
     for ax,(col,s) in zip(axs,[("White","white"),("Black","black")]):
         for L in LEVELS:
@@ -139,3 +139,25 @@ if os.path.exists("rep_cells.csv"):
         ax.plot([20,70],[20,70],color="grey",lw=.8,ls=":"); ax.set_title(f"{col} set"); ax.set_xlabel("Study 1 win % (n = 290)")
     axs[0].set_ylabel("Study 2 win % (n = 30)"); axs[1].legend(frameon=False,fontsize=7.5,title="Setting")
     save("fig12_replication")
+
+# Studies 5-6 figures
+from jh_data import PRIMARY, VAR
+fig,ax=plt.subplots(figsize=(6.0,2.6))
+for i,(elo,lab,d,lo,hi,p,ph) in enumerate(PRIMARY):
+    y=3-i; mk="o" if lab.startswith("Learned") else "D"; fc="#333" if mk=="o" else "white"
+    ax.errorbar(d,y,xerr=[[d-lo],[hi-d]],fmt=mk,color="#333",mfc=fc,capsize=3,ms=5)
+ax.axvline(0,color="grey",lw=.8,ls=":")
+ax.set_yticks(range(4)); ax.set_yticklabels([f"{l}, White {e}" for e,l,*_ in PRIMARY][::-1],fontsize=8)
+ax.set_xlabel("Difference in Black expected score (pp, 95% CI)\nNegative values favor freely choosing Stockfish")
+save("fig13_policy")
+fig,ax=plt.subplots(figsize=(6.5,6.2))
+y=0; ticks=[]; labs=[]; fam_prev=None
+for fam,var,a,alo,ahi,b,blo,bhi in VAR:
+    if fam!=fam_prev and fam_prev is not None: ax.axhline(y-0.5,color="#ccc",lw=.7); 
+    fam_prev=fam
+    ax.errorbar(a,y-0.15,xerr=[[a-alo],[ahi-a]],fmt="o",color="#333",ms=4,capsize=2,lw=.9,label="White 1800" if y==0 else None)
+    ax.errorbar(b,y+0.15,xerr=[[b-blo],[bhi-b]],fmt="s",color="#777",mfc="white",ms=4,capsize=2,lw=.9,label="White 2000" if y==0 else None)
+    ticks.append(y); labs.append(f"{fam}: {var}"); y+=1
+ax.axvline(50,color="grey",lw=.8,ls=":"); ax.set_yticks(ticks); ax.set_yticklabels(labs,fontsize=7.5); ax.invert_yaxis()
+ax.set_xlabel("Black expected score (%), 95% CI; Black at nominal 2000"); ax.legend(frameon=False,fontsize=8,loc="lower left")
+save("fig14_variations")

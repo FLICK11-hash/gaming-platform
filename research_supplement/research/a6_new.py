@@ -11,7 +11,10 @@ UCI2NAME_B={"g7g6":"Modern","e7e6":"French","c7c6":"Caro-Kann","e7e5":"Open Game
 def load(f):
     try: return pd.DataFrame([json.loads(l) for l in open(f)])
     except FileNotFoundError: return pd.DataFrame()
-rep=load("harness/replication.jsonl"); d3=load("harness/d3_confirm.jsonl"); cal=load("harness/calibration.jsonl")
+import sys
+SRC=sys.argv[1] if len(sys.argv)>1 else "conrad"; KEY=sys.argv[2] if len(sys.argv)>2 else "new"
+suf="_conrad" if SRC=="conrad" else ""
+rep=load(f"data_{SRC}/replication{suf}.jsonl"); d3=load(f"data_{SRC}/d3_confirm{suf}.jsonl"); cal=load(f"data_{SRC}/calibration{suf}.jsonl")
 NEW={}
 def outcome_cols(df):
     df=df.copy()
@@ -51,7 +54,7 @@ if len(rep):
     NEW["dup_20"]=int(pref.duplicated().sum()); NEW["n_games_ge20"]=int((rep.plies>=20).sum())
     # per opening table
     tab=rep.groupby(["set","name","tier"]).agg(n=("des_win","size"),win=("des_win","sum"),draw=("dr","sum"),loss=("des_loss","sum"),score=("des_score","mean")).reset_index()
-    tab.to_csv("rep_cells.csv",index=False)
+    tab.to_csv(f"rep_cells_{SRC}.csv",index=False)
     # consistency of opening effects across studies (designated wins), per color
     cons={}
     for col,D,s in [("White",WHITE,"white"),("Black",BLACK,"black")]:
@@ -114,5 +117,5 @@ if len(cal):
         cc[f"{lo}:{hi}"]=dict(n=n,score=100*s,elo=elo(s),elo_lo=elo(s-1.96*se),elo_hi=elo(s+1.96*se),draws=100*(g.result=="1/2-1/2").mean(),
                               wins=int((g.score_strong==1).sum()),losses=int((g.score_strong==0).sum()),nominal=(max(lo,1350) if False else hi-max(lo,1350)))
     NEW["calibration"]=cc
-R["new"]=NEW; json.dump(R,open("results.json","w"),indent=1,default=lambda o: float(o) if hasattr(o,"__float__") else (int(o) if hasattr(o,"__int__") else str(o)))
+R[KEY]=NEW; json.dump(R,open("results.json","w"),indent=1,default=lambda o: float(o) if hasattr(o,"__float__") else (int(o) if hasattr(o,"__int__") else str(o)))
 print(json.dumps(NEW,indent=0,default=lambda o: float(o) if hasattr(o,"__float__") else str(o))[:3000])
