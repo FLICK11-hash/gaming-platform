@@ -1,0 +1,402 @@
+{
+  "study_id": "opening-defense-18lines-290-2026-v1",
+  "randomization_seed": 2026101601,
+  "engine": {
+    "nodes_per_move": 3000,
+    "threads": 1,
+    "hash_mb": 16,
+    "max_plies": 400
+  },
+  "survey": {
+    "black_elo": 2000,
+    "white_elos": [
+      1800,
+      2000
+    ],
+    "games_per_cell": 290
+  },
+  "lines": {
+    "black_elo": 2000,
+    "white_elos": [
+      1800,
+      2000
+    ],
+    "games_per_cell": 290
+  },
+  "test": {
+    "black_elo": 2000,
+    "white_elos": [
+      1800,
+      2000
+    ],
+    "games_per_cell": 290
+  },
+  "levels": {
+    "matchups": [
+      {
+        "white": 1800,
+        "black": 1800
+      },
+      {
+        "white": 2000,
+        "black": 2000
+      },
+      {
+        "white": 1800,
+        "black": 2000
+      },
+      {
+        "white": 2000,
+        "black": 1800
+      }
+    ],
+    "games_per_cell": 290
+  },
+  "policy": {
+    "prior_strength": 4.0,
+    "minimum_complete_games_per_candidate": 260,
+    "maximum_censored_fraction": 0.05
+  },
+  "openings": [
+    {
+      "id": "kings_pawn",
+      "name": "King's Pawn Opening",
+      "white_first_san": "e4",
+      "book_candidate": "sicilian",
+      "responses": [
+        {
+          "id": "sicilian",
+          "name": "Sicilian Defense",
+          "black_reply_san": "c5"
+        },
+        {
+          "id": "open_game",
+          "name": "Open Game",
+          "black_reply_san": "e5"
+        },
+        {
+          "id": "french",
+          "name": "French Defense",
+          "black_reply_san": "e6"
+        },
+        {
+          "id": "caro_kann",
+          "name": "Caro-Kann Defense",
+          "black_reply_san": "c6"
+        }
+      ]
+    },
+    {
+      "id": "queens_pawn",
+      "name": "Queen's Pawn Opening",
+      "white_first_san": "d4",
+      "book_candidate": "queens_pawn_game",
+      "responses": [
+        {
+          "id": "queens_pawn_game",
+          "name": "Queen's Pawn Game (...d5)",
+          "black_reply_san": "d5"
+        },
+        {
+          "id": "indian_game",
+          "name": "Indian Game",
+          "black_reply_san": "Nf6"
+        },
+        {
+          "id": "dutch",
+          "name": "Dutch Defense",
+          "black_reply_san": "f5"
+        },
+        {
+          "id": "horwitz",
+          "name": "Horwitz Defense",
+          "black_reply_san": "e6"
+        }
+      ]
+    },
+    {
+      "id": "english",
+      "name": "English Opening",
+      "white_first_san": "c4",
+      "book_candidate": "symmetrical_english",
+      "responses": [
+        {
+          "id": "symmetrical_english",
+          "name": "Symmetrical English",
+          "black_reply_san": "c5"
+        },
+        {
+          "id": "kings_english",
+          "name": "King's English Variation",
+          "black_reply_san": "e5"
+        },
+        {
+          "id": "anglo_indian",
+          "name": "Anglo-Indian Defense",
+          "black_reply_san": "Nf6"
+        },
+        {
+          "id": "english_e6",
+          "name": "English Opening (...e6)",
+          "black_reply_san": "e6"
+        }
+      ]
+    }
+  ],
+  "opening_lines": [
+    {
+      "id": "sicilian_najdorf",
+      "name": "Sicilian Defense: Najdorf Variation",
+      "san": [
+        "e4",
+        "c5",
+        "Nf3",
+        "d6",
+        "d4",
+        "cxd4",
+        "Nxd4",
+        "Nf6",
+        "Nc3",
+        "a6"
+      ]
+    },
+    {
+      "id": "sicilian_dragon",
+      "name": "Sicilian Defense: Dragon Variation",
+      "san": [
+        "e4",
+        "c5",
+        "Nf3",
+        "d6",
+        "d4",
+        "cxd4",
+        "Nxd4",
+        "Nf6",
+        "Nc3",
+        "g6"
+      ]
+    },
+    {
+      "id": "sicilian_classical",
+      "name": "Sicilian Defense: Classical Variation",
+      "san": [
+        "e4",
+        "c5",
+        "Nf3",
+        "d6",
+        "d4",
+        "cxd4",
+        "Nxd4",
+        "Nf6",
+        "Nc3",
+        "Nc6"
+      ]
+    },
+    {
+      "id": "queens_gambit_declined",
+      "name": "Queen's Gambit Declined",
+      "san": [
+        "d4",
+        "d5",
+        "c4",
+        "e6"
+      ]
+    },
+    {
+      "id": "queens_gambit_accepted",
+      "name": "Queen's Gambit Accepted",
+      "san": [
+        "d4",
+        "d5",
+        "c4",
+        "dxc4"
+      ]
+    },
+    {
+      "id": "slav_defense",
+      "name": "Slav Defense",
+      "san": [
+        "d4",
+        "d5",
+        "c4",
+        "c6"
+      ]
+    },
+    {
+      "id": "english_symmetrical",
+      "name": "Symmetrical English",
+      "san": [
+        "c4",
+        "c5",
+        "Nc3",
+        "Nc6"
+      ]
+    },
+    {
+      "id": "english_kings",
+      "name": "King's English Variation",
+      "san": [
+        "c4",
+        "e5",
+        "Nc3",
+        "Nf6"
+      ]
+    },
+    {
+      "id": "sicilian_scheveningen",
+      "name": "Sicilian Defense: Scheveningen Variation",
+      "san": [
+        "e4",
+        "c5",
+        "Nf3",
+        "d6",
+        "d4",
+        "cxd4",
+        "Nxd4",
+        "Nf6",
+        "Nc3",
+        "e6"
+      ]
+    },
+    {
+      "id": "ruy_morphy",
+      "name": "Ruy Lopez: Morphy Defense",
+      "san": [
+        "e4",
+        "e5",
+        "Nf3",
+        "Nc6",
+        "Bb5",
+        "a6"
+      ]
+    },
+    {
+      "id": "ruy_berlin",
+      "name": "Ruy Lopez: Berlin Defense",
+      "san": [
+        "e4",
+        "e5",
+        "Nf3",
+        "Nc6",
+        "Bb5",
+        "Nf6"
+      ]
+    },
+    {
+      "id": "ruy_steinitz",
+      "name": "Ruy Lopez: Steinitz Defense",
+      "san": [
+        "e4",
+        "e5",
+        "Nf3",
+        "Nc6",
+        "Bb5",
+        "d6"
+      ]
+    },
+    {
+      "id": "ruy_classical",
+      "name": "Ruy Lopez: Classical Defense",
+      "san": [
+        "e4",
+        "e5",
+        "Nf3",
+        "Nc6",
+        "Bb5",
+        "Bc5"
+      ]
+    },
+    {
+      "id": "queens_gambit_chigorin",
+      "name": "Queen's Gambit: Chigorin Defense",
+      "san": [
+        "d4",
+        "d5",
+        "c4",
+        "Nc6"
+      ]
+    },
+    {
+      "id": "french_winawer",
+      "name": "French Defense: Winawer Variation",
+      "san": [
+        "e4",
+        "e6",
+        "d4",
+        "d5",
+        "Nc3",
+        "Bb4"
+      ]
+    },
+    {
+      "id": "french_classical",
+      "name": "French Defense: Classical Variation",
+      "san": [
+        "e4",
+        "e6",
+        "d4",
+        "d5",
+        "Nc3",
+        "Nf6"
+      ]
+    },
+    {
+      "id": "caro_kann_classical",
+      "name": "Caro-Kann Defense: Classical Variation",
+      "san": [
+        "e4",
+        "c6",
+        "d4",
+        "d5",
+        "Nc3",
+        "dxe4",
+        "Nxe4",
+        "Bf5"
+      ]
+    },
+    {
+      "id": "caro_kann_gurgenidze",
+      "name": "Caro-Kann Defense: Gurgenidze System",
+      "san": [
+        "e4",
+        "c6",
+        "d4",
+        "d5",
+        "Nc3",
+        "g6"
+      ]
+    }
+  ],
+  "level_positions": [
+    {
+      "id": "start",
+      "name": "Standard starting position",
+      "san": []
+    },
+    {
+      "id": "sicilian",
+      "name": "King's Pawn vs Sicilian Defense",
+      "san": [
+        "e4",
+        "c5"
+      ]
+    },
+    {
+      "id": "dutch",
+      "name": "Queen's Pawn vs Dutch Defense",
+      "san": [
+        "d4",
+        "f5"
+      ]
+    },
+    {
+      "id": "symmetrical_english",
+      "name": "English vs Symmetrical English",
+      "san": [
+        "c4",
+        "c5"
+      ]
+    }
+  ],
+  "randomization_block_size": 10
+}

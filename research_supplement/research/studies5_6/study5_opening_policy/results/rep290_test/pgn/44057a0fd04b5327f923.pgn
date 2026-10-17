@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:test"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "1/2-1/2"]
+[OpeningName "English Opening"]
+[StudyGameID "44057a0fd04b5327f923"]
+[Method "fixed_book"]
+[StudyPositionID "english"]
+[Termination "FIFTY_MOVES"]
+
+1. c4 c5 2. e3 e6 3. Nc3 d5 4. Qa4+ Qd7 5. Qxd7+ Kxd7 6. cxd5 exd5 7. Nxd5 Nc6 8. Nf3 Bd6 9. b3 b6 10. d4 Nge7 11. Bc4 cxd4 12. Nxd4 Bb7 13. Nxe7 Bb4+ 14. Kf1 Kxe7 15. Nc2 Rhd8 16. Bb2 g6 17. h3 f5 18. Rc1 h5 19. a3 Bd6 20. f3 Rac8 21. Kf2 f4 22. exf4 Kf8 23. Ne3 Bxf4 24. Rcd1 Ne5 25. Rhe1 Bxe3+ 26. Rxe3 Nxc4 27. Rxd8+ Rxd8 28. bxc4 Ba6 29. Kg3 Re8 30. Be5 Kf7 31. Kh4 Rc8 32. Bd6 Rc6 33. Bb4 Bc8 34. Re4 a5 35. Bd2 Be6 36. Rf4+ Ke7 37. Rd4 Rxc4 38. Be3 Rc2 39. g4 Rc4 40. Bg5+ Kf8 41. Rd6 Kf7 42. Bd2 hxg4 43. Rxb6 Rc2 44. Bg5 gxf3 45. Kg3 Bd5 46. Rf6+ Kg7 47. h4 Rg2+ 48. Kf4 Ra2 49. Ke5 Ba8 50. Kd4 f2 51. Ke3 a4 52. Rf4 Bb7 53. Rxf2 Bd5 54. Rxa2 Bxa2 55. Kf2 Bb1 56. Bf4 Kf6 57. Bc7 Kf7 58. Bd6 g5 59. Bh2 Ke7 60. Be5 Kf8 61. Kf1 Bd3+ 62. Kg1 Be2 63. Bb8 Bf3 64. Kf2 Bd5 65. Kf1 Ke7 66. Kf2 Bc6 67. Kg3 Ke6 68. h5 Be4 69. Kf2 Kf7 70. Ke3 Bf5 71. Bh2 Bh3 72. Kd4 Kg7 73. Be5+ Kh7 74. Bc7 Kh6 75. Ke3 Bf1 76. Bb8 Ba6 77. Kd4 Be2 78. Ke3 Bc4 79. Bh2 Kxh5 80. Bb8 Bb3 81. Bd6 Kg6 82. Kd4 Bc2 83. Kd5 Kf5 84. Kd4 Kf6 85. Kd5 Kf5 86. Kd4 Ke6 87. Bc5 Be4 88. Ke3 Bc2 89. Bf8 Kf7 90. Bb4 Bb1 91. Bd6 Be4 92. Bb4 Bc2 93. Bd2 g4 94. Be1 Be4 95. Bf2 Bg2 96. Bg3 Bh3 97. Bd6 Kg7 98. Bf4 Kf7 99. Ke2 Bf1+ 100. Ke3 Be2 101. Bd6 Bd1 102. Be5 Ke6 103. Bg3 Bb3 104. Kd2 Bd1 105. Kc1 Bf3 106. Bf2 Bh1 107. Kd2 Kf7 108. Be1 Kg8 109. Bg3 Kf7 110. Be5 Ke6 111. Bf4 Kd5 112. Bc7 Kd4 113. Ke1 Bc6 114. Kd2 Bb5 115. Kc2 Ba6 116. Bg3 Ke3 117. Bb8 Bc8 118. Kc3 Bd7 119. Kc2 Bf5+ 120. Kc1 Kd3 121. Bg3 Be6 122. Kb2 Kc4 123. Be5 Bg8 124. Kb1 Bh7+ 125. Ka1 Bc2 126. Bf4 g3 127. Bd2 Kd3 128. Bf4 g2 129. Bh2 g1=Q+ 130. Bxg1 Kc3 131. Bb6 Bf5 132. Ka2 Kc2 133. Ba5 Bd3 134. Bd8 Bg6 135. Ka1 Kb3 136. Bh4 Be8 137. Bf2 Kxa3 138. Ba7 Bh5 139. Bc5+ Kb3 140. Kb1 Bg4 141. Bf8 Kc3 142. Ba3 Bd7 143. Ka2 Kc4 144. Kb2 Kb5 145. Be7 Kc6 146. Bf6 Kd5 147. Bh4 Bh3 148. Ka3 Ke5 149. Bg3+ Ke4 150. Kxa4 Ke3 151. Bc7 Kf3 152. Ka3 Bc8 153. Kb3 Be6+ 154. Ka3 Bc8 155. Bd6 Bg4 156. Bh2 Ke4 157. Kb4 Bd7 158. Ka3 Bh3 159. Kb4 Bc8 160. Bg3 Bd7 161. Be5 Bf5 162. Ka5 Kd5 163. Bh8 Bb1 164. Bf6 Bc2 165. Bb2 Kc6 166. Ka6 Kd5 167. Ka5 Kd6 168. Kb4 Be4 169. Bc1 Bb1 170. Bg5 Bc2 171. Be7+ Kd5 172. Bc5 Bb1 173. Bf2 Ke6 174. Kb5 Kd5 175. Ka5 Ke6 176. Bc5 Kd7 177. Bg1 Bf5 178. Kb6 Be4 179. Bc5 Bd3 180. Bd4 Ke6 181. Ka7 Be2 182. Bh8 Bd3 183. Ba1 Bg6 184. Kb6 Bb1 185. Be5 Kf7 186. Ka7 Bg6 187. Bf6 Kg8 188. Kb8 Kh7 189. Kc8 Be4 190. Kc7 Bg2 191. Kd6 Be4 192. Bg5 Bd3 193. Bd2 Bf1 194. Ke6 Ba6 195. Kf5 Bb5 196. Ke4 Ba4 197. Ke5 Bb5 198. Kd5 Ba4 199. Ke5 Bc6 1/2-1/2

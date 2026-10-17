@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 2000)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "1-0"]
+[OpeningName "Queen's Gambit: Chigorin Defense"]
+[StudyGameID "54a0b2e545e3ba6e58b8"]
+[Method "fixed_line"]
+[StudyPositionID "queens_gambit_chigorin"]
+[Termination "CHECKMATE"]
+
+1. d4 d5 2. c4 Nc6 3. e3 Bf5 4. Nf3 Nf6 5. cxd5 Nxd5 6. Bd2 a6 7. a3 g6 8. Nc3 Nxc3 9. Bxc3 Na7 10. d5 Rg8 11. Qb3 Qb8 12. e4 Bg4 13. Ne5 f5 14. d6 Rg7 15. Nxg4 fxg4 16. Bc4 c6 17. d7+ Kxd7 18. Rd1+ Ke8 19. Be2 e5 20. O-O Nb5 21. Bxb5 axb5 22. Kh1 Qc7 23. Qc2 Rd8 24. f3 Rxd1 25. Qxd1 Rd7 26. Qb3 b4 27. Bxb4 Bxb4 28. axb4 Rf7 29. Ra1 gxf3 30. Ra8+ Ke7 31. gxf3 Qd6 32. Qc3 Qd1+ 33. Kg2 Qe2+ 34. Kg3 Ke6 35. Ra5 Kd7 36. Ra1 h5 37. h4 g5 38. hxg5 c5 39. bxc5 h4+ 40. Kg4 h3 41. c6+ Kd6 42. cxb7 Rxb7 43. Qa3+ Kd7 44. Kxh3 Rxb2 45. Qa7+ Ke8 46. Qa8+ Rb8 47. Qxb8+ Kd7 48. Qb7+ Ke6 49. Qb6+ Ke7 50. Ra7+ Ke8 51. Qc6+ Kd8 52. Rd7+ Ke8 53. Rc7+ Kf8 54. Qh6+ Kg8 55. Rg7+ Kf8 56. Qh8# 1-0

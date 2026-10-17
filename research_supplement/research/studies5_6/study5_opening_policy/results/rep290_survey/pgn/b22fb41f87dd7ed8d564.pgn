@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:survey"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 2000)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Open Game"]
+[StudyGameID "b22fb41f87dd7ed8d564"]
+[Method "forced_reply"]
+[StudyPositionID "kings_pawn"]
+[Termination "CHECKMATE"]
+
+1. e4 e5 2. d3 c6 3. f4 exf4 4. Nh3 g5 5. Nc3 d5 6. g3 d4 7. Nb1 fxg3 8. Nxg5 Bh6 9. Qh5 Qf6 10. Kd1 Nd7 11. Bh3 g2 12. Rg1 Ne5 13. Bxc8 Qf1+ 14. Kd2 Nf3+ 15. Qxf3 Bxg5+ 16. Qf4 Bxf4# 0-1

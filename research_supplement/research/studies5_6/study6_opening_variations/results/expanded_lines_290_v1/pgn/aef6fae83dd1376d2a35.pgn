@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Sicilian Defense: Scheveningen Variation"]
+[StudyGameID "aef6fae83dd1376d2a35"]
+[Method "fixed_line"]
+[StudyPositionID "sicilian_scheveningen"]
+[Termination "CHECKMATE"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 e6 6. Be3 Bd7 7. Qe2 Nc6 8. Nb3 a5 9. Nd4 a4 10. a3 Nxd4 11. Bxd4 Be7 12. f4 Ra5 13. e5 dxe5 14. fxe5 Bc6 15. exf6 Qxd4 16. fxg7 Rg8 17. Qc4 Re5+ 18. Be2 Bh4+ 19. g3 Qxc4 20. Rf1 Qd4 21. Rf2 Rxg7 22. Nxa4 Rxe2+ 23. Kxe2 Qg4+ 24. Kd2 Qxa4 25. c4 Qa5+ 26. Ke2 Rg5 27. Kf1 Qc5 28. Rc1 Rg6 29. gxh4 Qd4 30. h5 Rg8 31. a4 Qd3+ 32. Re2 Rg5 33. h4 Qh3+ 34. Ke1 Rg3 35. b3 Rf3 36. Kd1 h6 37. Rb1 Rg3 38. a5 Qf1+ 39. Re1 Bf3+ 40. Kc2 Qg2+ 41. Kd3 Bxh5+ 42. Kd4 Qf2+ 43. Ke5 Qc5+ 44. Kf6 Qf5# 0-1

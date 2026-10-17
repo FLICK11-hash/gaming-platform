@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:test"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "1-0"]
+[OpeningName "King's Pawn Opening"]
+[StudyGameID "edb47937f206b95e0b6d"]
+[Method "learned"]
+[StudyPositionID "kings_pawn"]
+[Termination "CHECKMATE"]
+
+1. e4 e5 2. Nf3 d6 3. d4 exd4 4. c3 Nf6 5. Qxd4 Nc6 6. Qe3 g6 7. Bc4 Qe7 8. O-O Nxe4 9. Na3 Bg7 10. Nb5 Bf5 11. Nfd4 O-O 12. Bd5 Qd7 13. Bxe4 Bxe4 14. Qxe4 Rac8 15. Nxc6 Rce8 16. Qd3 a6 17. Nbd4 h5 18. Qd1 bxc6 19. Qa4 g5 20. Be3 Qe7 21. Qxc6 Rc8 22. h3 Rce8 23. Nf5 Qe4 24. Nd4 Bxd4 25. Qxe4 Rxe4 26. Bxd4 Re7 27. Be3 Kg7 28. Rfd1 g4 29. Bg5 Re6 30. h4 a5 31. b3 f5 32. Bf4 Kf6 33. g3 Rfe8 34. Rdc1 R8e7 35. Kf1 Kf7 36. Rab1 Kg6 37. a3 Re4 38. Kg1 a4 39. Kf1 R7e6 40. bxa4 d5 41. Bxc7 Rc6 42. Bf4 Rd4 43. Kg2 Rdc4 44. Re1 Rd6 45. a5 Re6 46. Rxe6+ Kf7 47. Re7+ Kxe7 48. Ra1 Rc5 49. Be3 Kf7 50. Bxc5 f4 51. a4 f3+ 52. Kf1 d4 53. c4 Ke6 54. Kg1 d3 55. Be3 d2 56. Bxd2 Kf5 57. a6 Kf6 58. a7 Ke7 59. a8=Q Kd7 60. Bc3 Ke6 61. Qe8+ Kd6 62. Be5+ Kc5 63. Qb5# 1-0

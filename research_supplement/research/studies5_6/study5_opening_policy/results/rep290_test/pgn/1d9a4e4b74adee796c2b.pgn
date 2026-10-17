@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:test"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "1-0"]
+[OpeningName "English Opening"]
+[StudyGameID "1d9a4e4b74adee796c2b"]
+[Method "engine"]
+[StudyPositionID "english"]
+[Termination "CHECKMATE"]
+
+1. c4 e5 2. Nf3 Bd6 3. e4 Ne7 4. d4 Bb4+ 5. Nc3 Ng6 6. h4 h5 7. Bg5 Bxc3+ 8. bxc3 f6 9. Be3 Qe7 10. Nd2 Nf4 11. c5 Nc6 12. Qa4 b6 13. d5 Nd8 14. cxb6 cxb6 15. Bxb6 f5 16. g3 Nfe6 17. exf5 Bb7 18. Bxd8 Nxd8 19. Bg2 Nf7 20. c4 Nh6 21. Rb1 e4 22. Nxe4 Qe5 23. f6 Qd4 24. Rxb7 O-O 25. Qc2 Rfb8 26. f7+ Kxf7 27. Rb3 g6 28. O-O a5 29. Rxb8 Qxe4 30. Qxe4 Rxb8 31. Qf4+ Kg7 32. Qxb8 Kh7 33. Be4 Nf7 34. Rb1 Kg7 35. Bxg6 Kxg6 36. c5 a4 37. g4 hxg4 38. h5+ Kg5 39. Qg8+ Kf4 40. Qxf7+ Ke4 41. Qxd7 Ke5 42. Qd6+ Ke4 43. Re1+ Kd3 44. Qa6+ Kc3 45. Qa5+ Kc4 46. h6 Kd4 47. c6 a3 48. Qb4+ Kxd5 49. Rd1+ Ke5 50. Qc5+ Kf6 51. Qd6+ Kf7 52. Qc7+ Kg6 53. Rd6+ Kg5 54. Qg7+ Kf5 55. Qf6+ Ke4 56. Qd4+ Kf3 57. Rd5 g3 58. Qe3+ Kg4 59. Qxg3# 1-0

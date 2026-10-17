@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:survey"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "1-0"]
+[OpeningName "Queen's Pawn Game (...d5)"]
+[StudyGameID "514e1f937114ac4c6f4f"]
+[Method "forced_reply"]
+[StudyPositionID "queens_pawn"]
+[Termination "CHECKMATE"]
+
+1. d4 d5 2. c3 Nf6 3. Nf3 c6 4. Bf4 Nbd7 5. Nbd2 h6 6. h3 Qb6 7. Rb1 g6 8. e3 a6 9. Be2 Bg7 10. b4 O-O 11. Qb3 Qa7 12. O-O Re8 13. c4 b5 14. c5 Qb7 15. Rfc1 Nf8 16. Bd3 Ne6 17. Bg3 Bd7 18. Qc2 a5 19. Re1 axb4 20. Ne5 Ra4 21. Bh2 Rea8 22. Rb2 Qa7 23. Ra1 Ne8 24. Ndf3 Ng5 25. Nd2 Bxe5 26. Bxe5 Ng7 27. h4 Ne4 28. Nxe4 dxe4 29. Bxe4 Nf5 30. Rd1 Rxa2 31. h5 Qa4 32. Rxa2 Qxa2 33. d5 Qxc2 34. Bxc2 Nh4 35. dxc6 Bxc6 36. Rd4 Nxg2 37. Kf1 f6 38. Bc7 Kg7 39. Be4 Bxe4 40. Rxe4 b3 41. Kxg2 Ra4 42. Rxe7+ Kf8 43. Bd6 Kg8 44. Re8+ Kf7 45. Rf8+ Kg7 46. Rb8 Rg4+ 47. Kh3 b4 48. Bf4 g5 49. Kxg4 gxf4 50. Rxb4 fxe3 51. fxe3 Kf7 52. Kf5 b2 53. c6 Ke8 54. Kf4 b1=R 55. Rxb1 Kf8 56. c7 Ke7 57. Rb8 f5 58. Kxf5 Kd7 59. c8=Q+ Kd6 60. Rb1 Kd5 61. Rb8 Kd6 62. Rb7 Kd5 63. Rd7# 1-0

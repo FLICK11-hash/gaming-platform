@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:survey"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 2000)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Sicilian Defense"]
+[StudyGameID "dc417c704903d192c925"]
+[Method "forced_reply"]
+[StudyPositionID "kings_pawn"]
+[Termination "CHECKMATE"]
+
+1. e4 c5 2. Nf3 Nc6 3. Nc3 Nf6 4. e5 Ng4 5. h3 Ngxe5 6. Be2 d6 7. O-O e6 8. Re1 a6 9. Rb1 Be7 10. a3 Nxf3+ 11. Bxf3 d5 12. b4 cxb4 13. axb4 b5 14. Ba3 O-O 15. Qc1 Nd4 16. Bh5 Bb7 17. Bg4 Qc7 18. Ra1 e5 19. Ne2 Nxe2+ 20. Bxe2 Rae8 21. c3 e4 22. Bf1 Bg5 23. Qc2 Re7 24. Bb2 f5 25. d3 e3 26. h4 Bf4 27. Bc1 d4 28. Qa2+ Rff7 29. Re2 exf2+ 30. Kh1 Be3 31. Qa5 Qd7 32. cxd4 f4 33. Bd2 Qh3# 0-1

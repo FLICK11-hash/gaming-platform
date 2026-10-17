@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:survey"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 2000)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Indian Game"]
+[StudyGameID "7aa8974e423c62760f13"]
+[Method "forced_reply"]
+[StudyPositionID "queens_pawn"]
+[Termination "CHECKMATE"]
+
+1. d4 Nf6 2. c4 e6 3. e3 c5 4. Be2 Be7 5. Nf3 cxd4 6. Nxd4 O-O 7. Nc3 Nc6 8. O-O Qb6 9. b3 d5 10. Na4 Qa5 11. Nxc6 bxc6 12. Qc2 c5 13. cxd5 Nxd5 14. Bd2 Nb4 15. Qd1 Qd8 16. Bc3 Qc7 17. Bxb4 cxb4 18. Bf3 Ba6 19. Bxa8 Bxf1 20. Qxf1 Rxa8 21. Rc1 Qa5 22. Qc4 Qd8 23. Qc2 a5 24. Qc6 Bf8 25. h3 Qd2 26. Nb6 Rb8 27. Qc7 Rxb6 28. e4 Rd6 29. g3 Rd7 30. Qc8 h5 31. h4 a4 32. bxa4 Rd3 33. Qxf8+ Kxf8 34. a5 Rd8 35. Rf1 g5 36. g4 f6 37. e5 Qe2 38. f3 Rd2 39. Ra1 Kg8 40. hxg5 fxe5 41. a6 b3 42. Rc1 Qg2# 0-1

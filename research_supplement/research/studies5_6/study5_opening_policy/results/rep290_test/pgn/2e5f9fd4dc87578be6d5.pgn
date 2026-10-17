@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:test"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Queen's Pawn Opening"]
+[StudyGameID "2e5f9fd4dc87578be6d5"]
+[Method "learned"]
+[StudyPositionID "queens_pawn"]
+[Termination "CHECKMATE"]
+
+1. d4 d5 2. c3 Nf6 3. Bf4 Nh5 4. Be3 c6 5. g3 Nf6 6. Nd2 a5 7. a3 h6 8. Qc2 Be6 9. f3 Qd7 10. Bf4 g5 11. Be5 Bg7 12. e4 Qd8 13. Bxb8 Qxb8 14. Bh3 g4 15. fxg4 Nxe4 16. Nxe4 dxe4 17. a4 Qd6 18. Rd1 O-O-O 19. Ne2 h5 20. Qxe4 Bh6 21. Rg1 Rdg8 22. g5 Bxh3 23. gxh6 Bg4 24. Rd3 Qxh6 25. Nf4 Rd8 26. h3 Be6 27. Nxe6 Qxe6 28. Qxe6+ fxe6 29. Rf1 Rd5 30. Re3 Kd7 31. h4 b5 32. Kd1 bxa4 33. Rfe1 Rb5 34. Rxe6 Rxb2 35. R6e5 Rf8 36. Rxa5 Kd6 37. Rxa4 e6 38. c4 Rff2 39. c5+ Kc7 40. Ra1 Rfd2+ 41. Kc1 Kc8 42. Rxe6 Rbc2+ 43. Kb1 Rb2+ 44. Kc1 Rdc2+ 45. Kd1 Rf2 46. Rxc6+ Kb8 47. Ke1 Rfe2+ 48. Kd1 Rbd2+ 49. Kc1 Rxd4 50. Rb1+ Ka7 51. Rcb6 Ra4 52. R6b2 Rxb2 53. Rxb2 Ra1+ 54. Kc2 Rf1 55. Rb6 Rf2+ 56. Kd3 Rf3+ 57. Ke4 Rxg3 58. Rb5 Rh3 59. c6 Rxh4+ 60. Kf5 Rg4 61. Rb7+ Ka6 62. Ke5 Rg5+ 63. Kf4 Ra5 64. Rb4 Rc5 65. Rb3 Rxc6 66. Kg3 Ka5 67. Rf3 Rc4 68. Rf5+ Kb4 69. Rf6 Rg4+ 70. Kh3 Kb5 71. Rf8 Rg5 72. Rf2 Ka5 73. Kh4 Re5 74. Rf4 Kb5 75. Kg3 Kc6 76. Kf2 Kd7 77. Rf6 Rg5 78. Kf1 Re5 79. Ra6 Rb5 80. Ke1 Rg5 81. Rb6 Ke7 82. Rb7+ Kf6 83. Rb6+ Ke7 84. Rb7+ Ke6 85. Rc7 h4 86. Rc3 Rg4 87. Re3+ Kf6 88. Kf1 Rb4 89. Kg1 Rf4 90. Rh3 Kg7 91. Kh2 Kf8 92. Ra3 Re4 93. Ra1 Ke7 94. Rc1 Re6 95. Rb1 Rg6 96. Rb5 Re6 97. Rb1 Rg6 98. Rb7+ Kd8 99. Rb5 Rd6 100. Rb8+ Ke7 101. Rb5 h3 102. Rb1 Ke6 103. Rf1 Rd5 104. Rg1 Kf7 105. Rb1 Rd7 106. Rc1 Rb7 107. Re1 Kf6 108. Rf1+ Kg7 109. Re1 Rd7 110. Re2 Rc7 111. Ra2 Rc1 112. Ra8 Rc2+ 113. Kg3 Rg2+ 114. Kf3 Kf7 115. Rh8 Ke7 116. Rh5 Kd7 117. Rh6 Rc2 118. Rh7+ Ke8 119. Rh5 Ra2 120. Rh4 Kf7 121. Rf4+ Kg6 122. Rh4 Ra5 123. Rg4+ Rg5 124. Re4 h2 125. Re6+ Kh5 126. Re1 Rg1 127. Ke2 Kg4 128. Rxg1+ hxg1=R 129. Kd2 Kf4 130. Kc3 Kf3 131. Kd3 Re1 132. Kc3 Re4 133. Kd3 Re8 134. Kc3 Ke3 135. Kb2 Kd3 136. Kc1 Rb8 137. Kd1 Rb1# 0-1

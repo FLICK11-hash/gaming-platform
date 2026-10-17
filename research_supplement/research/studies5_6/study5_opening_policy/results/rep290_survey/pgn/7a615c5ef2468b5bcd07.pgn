@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:survey"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 2000)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Dutch Defense"]
+[StudyGameID "7a615c5ef2468b5bcd07"]
+[Method "forced_reply"]
+[StudyPositionID "queens_pawn"]
+[Termination "CHECKMATE"]
+
+1. d4 f5 2. c4 e6 3. e3 Bb4+ 4. Nc3 Nf6 5. Qb3 a5 6. Be2 c5 7. Bd2 a4 8. Qc2 cxd4 9. Nd1 Nc6 10. Bxb4 Nxb4 11. Qc1 d3 12. Nc3 dxe2 13. Qd2 O-O 14. Rb1 Nc6 15. Ngxe2 b6 16. b3 axb3 17. Rxb3 Bb7 18. O-O Bc8 19. Rfb1 Ra6 20. Qb2 h6 21. Rxb6 Ra8 22. Rd1 Ne5 23. Qb5 Ng6 24. c5 Ne7 25. Nf4 Qc7 26. h3 Qe5 27. c6 Nxc6 28. Qc4 Qa5 29. Rb2 Ba6 30. Qa4 Qxc3 31. Nxe6 Qxb2 32. Nxf8 Qb7 33. Nxd7 Nxd7 34. g4 Nce5 35. f4 Nf3+ 36. Kh1 Nd2+ 37. e4 Be2 38. Rxd2 Rxa4 39. Rxe2 Nb6 40. Kg1 Rxe4 41. Rb2 Qd5 42. Kg2 Re2+ 43. Kg3 Qd3+ 44. Kh4 Qd8+ 45. Kh5 Rxb2 46. a3 Qd5 47. a4 Qd7 48. g5 Qd1+ 49. Kg6 Qd6+ 50. Kh5 Kh7 51. g6+ Qxg6+ 52. Kh4 Rf2 53. a5 Nc4 54. a6 h5 55. a7 Nb2 56. a8=N Na4 57. Nc7 Rxf4# 0-1

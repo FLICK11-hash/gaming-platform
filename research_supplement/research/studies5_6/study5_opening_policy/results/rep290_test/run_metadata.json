@@ -1,0 +1,27 @@
+{
+  "config_sha256": "32d395285b9cbe39b95368123df40d519d33201c57660bff8e2aa44f86fa7b06",
+  "created_utc": "2026-10-16T05:21:13.422770+00:00",
+  "engine": {
+    "elo_range": [
+      1320,
+      3190
+    ],
+    "engine_id": {
+      "author": "the Stockfish developers (see AUTHORS file)",
+      "name": "Stockfish 19"
+    },
+    "path": "/opt/homebrew/Cellar/stockfish/19/bin/stockfish",
+    "sha256": "dc2f18c34ae962dff591b66147d220ec06e61d756b93d8a4f5e04fd8e55c251f"
+  },
+  "engine_sha256": "dc2f18c34ae962dff591b66147d220ec06e61d756b93d8a4f5e04fd8e55c251f",
+  "manifest_sha256": "5695aec8b282e4d558de02545c3560c8801b3a968b1277ed84e99d2a43760317",
+  "os_platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.7",
+  "stage": "test",
+  "study_id": "opening-policy-290-per-cell-2026-v2",
+  "warnings": [
+    "UCI_Elo is a setting, not a calibrated playing rating.",
+    "Stockfish UCI offers no standardized random-seed option; task ID is NOT an engine RNG seed.",
+    "Ply-cap results are censored and never converted to draws."
+  ]
+}

@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "French Defense: Winawer Variation"]
+[StudyGameID "981359961a614cfb8e16"]
+[Method "fixed_line"]
+[StudyPositionID "french_winawer"]
+[Termination "CHECKMATE"]
+
+1. e4 e6 2. d4 d5 3. Nc3 Bb4 4. Bd3 c5 5. Qg4 Kf8 6. exd5 c4 7. Be2 exd5 8. Qf3 h5 9. Bd2 Be6 10. Bxc4 dxc4 11. Qxb7 Bxc3 12. Bxc3 Bd5 13. Qxd5 Qxd5 14. Bb4+ Ke8 15. f3 Rh6 16. O-O-O Nc6 17. a3 Qd8 18. Nh3 Qf6 19. f4 Kd7 20. f5 Rd8 21. Bd2 Qxf5 22. Bxh6 Qf6 23. Bg5 Qd6 24. Rhf1 Kc8 25. Bxd8 Nxd8 26. Rf3 Ne7 27. Nf4 h4 28. d5 Nf5 29. g3 Qe5 30. d6 Nc6 31. d7+ Kd8 32. Rc3 Qe4 33. b3 cxb3 34. Rdd3 hxg3 35. Kd1 b2 36. Rb3 gxh2 37. Kd2 h1=Q 38. Ne6+ Qxe6 39. Rb8+ Nxb8 40. Kc3 Qe5+ 41. Kb3 Qb7+ 42. Ka2 b1=B# 0-1

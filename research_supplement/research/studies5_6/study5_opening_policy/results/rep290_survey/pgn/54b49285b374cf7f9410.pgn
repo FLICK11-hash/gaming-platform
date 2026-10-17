@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:survey"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Caro-Kann Defense"]
+[StudyGameID "54b49285b374cf7f9410"]
+[Method "forced_reply"]
+[StudyPositionID "kings_pawn"]
+[Termination "CHECKMATE"]
+
+1. e4 c6 2. Nf3 d5 3. Nc3 dxe4 4. Ng5 Nf6 5. Ngxe4 Bf5 6. d3 Nbd7 7. Be2 e5 8. O-O Be7 9. a4 a5 10. Kh1 O-O 11. Bf3 Bb4 12. Na2 Be7 13. Qe2 Ne8 14. Nac3 Be6 15. g4 Nb6 16. Ng3 Nd7 17. Bg2 Bg5 18. Nce4 Bxc1 19. Rfxc1 g6 20. Rg1 Qh4 21. h3 Ndf6 22. Nxf6+ Nxf6 23. Qxe5 Nxg4 24. Qe2 Rae8 25. Qf3 f5 26. Rae1 Bd5 27. Nxf5 gxf5 28. Qg3 Qxg3 29. Bxd5+ cxd5 30. fxg3 Ne3 31. h4 b6 32. c3 Ng4 33. d4 Nf2+ 34. Kh2 Ng4+ 35. Kh3 Re4 36. b4 h5 37. Rh1 Kg7 38. Kg2 Kf6 39. Kf3 Rfe8 40. Kg2 Rg8 41. Rb1 Rge8 42. Rhf1 Ne3+ 43. Kh3 Rf8 44. Rf2 Nc4 45. Rxf5+ Kxf5 46. Rf1+ Kg6 47. Rxf8 Re1 48. Rc8 Rc1 49. g4 Rxc3+ 50. Kh2 hxg4 51. Rg8+ Kf6 52. Rf8+ Kg7 53. Rf5 Rh3+ 54. Kg1 Kg6 55. Rxd5 Rg3+ 56. Kh2 Rh3+ 57. Kg2 Ne3+ 58. Kg1 Rg3+ 59. Kf2 Rf3+ 60. Ke2 Nxd5 61. bxa5 bxa5 62. Kd2 Kf5 63. Kc1 Ke4 64. Kb2 g3 65. Ka1 Ke3 66. Kb1 Rf2 67. Ka1 g2 68. Kb1 Kxd4 69. Kc1 Ne3 70. Kb1 g1=R# 0-1

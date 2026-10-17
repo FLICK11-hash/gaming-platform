@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:survey"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Anglo-Indian Defense"]
+[StudyGameID "61ce517fdb9c9ae914ca"]
+[Method "forced_reply"]
+[StudyPositionID "english"]
+[Termination "CHECKMATE"]
+
+1. c4 Nf6 2. d4 e6 3. Nc3 Bb4 4. Nh3 c5 5. a3 Ba5 6. dxc5 Bxc3+ 7. bxc3 O-O 8. f3 Na6 9. Bf4 Qa5 10. Rb1 d5 11. cxd6 Re8 12. Bg5 e5 13. Qc1 Bd7 14. Rxb7 Nc5 15. Rb4 Re6 16. Be3 Rxd6 17. Bf2 Qc7 18. e4 Bxh3 19. Rb5 Nd3+ 20. Bxd3 Bxg2 21. Bg3 Bxh1 22. Bxe5 Qc6 23. Qb1 Re8 24. Ke2 Rde6 25. Bd4 Bg2 26. Kf2 Bh3 27. Qg1 Bg4 28. Rc5 Qb7 29. Qb1 Rb6 30. Qc1 Bxf3 31. Bxf6 Bxe4 32. Bxe4 Qxe4 33. Bxg7 h6 34. Re5 Rxe5 35. Bxe5 Qxe5 36. Kf3 Qh5+ 37. Kg3 a6 38. h4 Qg6+ 39. Kf2 Qf5+ 40. Kg3 Rg6+ 41. Qg5 Qd3+ 42. Kf2 hxg5 43. a4 Rf6+ 44. Kg2 Qf1+ 45. Kh2 Qf4+ 46. Kg2 gxh4 47. Kg1 Qf2+ 48. Kh1 Qe1+ 49. Kh2 Rf3 50. Kg2 Qg3+ 51. Kh1 f5 52. a5 Rxc3 53. c5 Rc1# 0-1

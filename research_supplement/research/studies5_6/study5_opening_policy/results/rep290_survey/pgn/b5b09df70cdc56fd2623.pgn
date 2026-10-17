@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:survey"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Caro-Kann Defense"]
+[StudyGameID "b5b09df70cdc56fd2623"]
+[Method "forced_reply"]
+[StudyPositionID "kings_pawn"]
+[Termination "CHECKMATE"]
+
+1. e4 c6 2. Nf3 d5 3. d3 dxe4 4. Ng5 Nf6 5. Nxe4 e5 6. Bg5 Nbd7 7. Be2 h6 8. Bh4 Be7 9. O-O Nxe4 10. Bxe7 Nxf2 11. Rxf2 Qxe7 12. Qe1 Nf6 13. Na3 e4 14. Rf1 O-O 15. Nc4 Rd8 16. dxe4 Qxe4 17. c3 Re8 18. Nd6 Qe3+ 19. Rf2 Re7 20. Qc1 Qc5 21. Qd2 Rxe2 22. Qd4 Qe5 23. Qxa7 Rxa7 24. Rxe2 Qxd6 25. Ree1 Qf8 26. Rad1 Nd7 27. Rxd7 Bxd7 28. Kf1 Qc5 29. g3 Qb5+ 30. Kf2 Qf5+ 31. Kg1 Rxa2 32. c4 g6 33. Re7 Ra1+ 34. Kg2 Qf1# 0-1

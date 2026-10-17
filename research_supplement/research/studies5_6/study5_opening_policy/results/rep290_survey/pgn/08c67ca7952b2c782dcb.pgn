@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:survey"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "1/2-1/2"]
+[OpeningName "Horwitz Defense"]
+[StudyGameID "08c67ca7952b2c782dcb"]
+[Method "forced_reply"]
+[StudyPositionID "queens_pawn"]
+[Termination "FIFTY_MOVES"]
+
+1. d4 e6 2. c3 c5 3. Nf3 Nf6 4. Bg5 cxd4 5. Bxf6 Qxf6 6. cxd4 Bb4+ 7. Nbd2 O-O 8. e3 d5 9. Qc2 Nc6 10. Bd3 Kh8 11. a3 Ba5 12. Rc1 Bb6 13. Nb3 e5 14. dxe5 Qe7 15. Bf5 f6 16. Bxc8 Rfxc8 17. exf6 Qxf6 18. Qc3 d4 19. Nfxd4 Ne7 20. Qd2 Rd8 21. Rc4 a5 22. Qe2 a4 23. Nd2 Ng6 24. O-O Bxd4 25. Rxd4 Nf4 26. Rxd8+ Rxd8 27. Qb5 Nxg2 28. Ne4 Qg6 29. Ng3 Nh4 30. Rc1 Qg4 31. Ra1 Qf3 32. Qf1 h6 33. Re1 Qd5 34. e4 Qd2 35. Re3 Rc8 36. Qe2 Rc1+ 37. Nf1 Qd6 38. Qd3 Qf6 39. Rg3 Re1 40. Qd2 Rb1 41. e5 Nf3+ 42. Kg2 Nxe5 43. Qc3 Qe6 44. Re3 Qc4 45. Nd2 Qxc3 46. bxc3 Rb2 47. Rxe5 Rxd2 48. Re8+ Kh7 49. Re4 Rc2 50. h4 b5 51. Rb4 Rc1 52. Rb2 Kh8 53. f3 g6 54. Rxb5 Rc2+ 55. Kg1 Ra2 56. Ra5 Ra1+ 57. Kh2 Rc1 58. Rxa4 Rxc3 59. Ra8+ Kg7 60. Ra7+ Kh8 61. f4 Rd3 62. f5 gxf5 63. a4 Ra3 64. a5 h5 65. Rc7 f4 66. a6 Ra2+ 67. Kg1 Ra1+ 68. Kg2 Rxa6 69. Rc5 Kg8 70. Kf2 Rh6 71. Rc4 Rf6 72. Rc5 Rb6 73. Kf1 Rb1+ 74. Ke2 Rg1 75. Kf3 Kg7 76. Rc2 Ra1 77. Kxf4 Rg1 78. Rc6 Rf1+ 79. Ke3 Rf6 80. Rc5 Kh6 81. Rg5 Rf8 82. Re5 Rf6 83. Ra5 Re6+ 84. Kd2 Rf6 85. Ra1 Kg6 86. Ra7 Kh6 87. Ke1 Rb6 88. Kd1 Rb4 89. Kc2 Rxh4 90. Kd1 Rh2 91. Ke1 Rh3 92. Ke2 Rc3 93. Kf1 Rc5 94. Ke1 Rc6 95. Kf2 Rg6 96. Ke1 Rc6 97. Ra1 Re6+ 98. Kf2 Rg6 99. Ke3 Re6+ 100. Kd2 Re5 101. Rb1 Kg6 102. Rc1 Re6 103. Rg1+ Kf7 104. Kc3 Ke8 105. Rg7 Re2 106. Rg8+ Ke7 107. Rh8 Kf7 108. Kd4 Rh2 109. Rc8 Rg2 110. Ke4 Rg5 111. Rc7+ Ke8 112. Rh7 Kd8 113. Kd4 Ke8 114. Kc4 h4 115. Rh6 Ra5 116. Kb4 Rf5 117. Kb3 Rf3+ 118. Kc4 Rf4+ 119. Kc3 Ke7 120. Rc6 Kd8 121. Rg6 Kc8 122. Rg1 Rf7 123. Kd3 Rd7+ 124. Ke3 Re7+ 125. Kf3 h3 126. Rh1 Rf7+ 127. Kg3 Kd8 128. Ra1 Rc7 129. Rf1 Ke8 130. Rf2 Rc3+ 131. Kh4 Re3 132. Kg5 Re7 133. Kg4 Rg7+ 134. Kxh3 Rh7+ 135. Kg2 Rh8 136. Ra2 Ke7 137. Kg3 Kd6 138. Kg2 Kd5 139. Ra3 Kc4 140. Ra2 Rd8 141. Kg3 Kc3 142. Rh2 Re8 143. Rh1 Re7 144. Rf1 Rg7+ 145. Kh2 Kd4 146. Rf4+ Ke5 147. Rh4 Kd5 148. Ra4 Rh7+ 149. Kg3 Rh8 150. Kf3 Kc5 151. Ra2 Kb6 152. Rb2+ Ka7 153. Rc2 Ka6 154. Rc4 Rh3+ 155. Kg2 Kb5 156. Rc2 Rd3 157. Kh2 Ka5 158. Rc5+ Kb4 159. Rc2 Rd5 160. Rb2+ Kc4 161. Kh3 Rg5 162. Re2 Rb5 163. Re3 Rb7 164. Re8 Rh7+ 165. Kg4 Rg7+ 166. Kf3 Rc7 167. Ke3 Rc5 168. Kf4 Rh5 169. Kg3 Kb4 170. Kf3 Rh6 171. Re4+ Ka3 172. Re8 Rb6 173. Re7 Rb3+ 174. Kf2 Rc3 175. Rg7 Kb2 176. Rb7+ Ka2 177. Rh7 Rc1 178. Ke2 Rc8 179. Rh6 Ra8 180. Rh7 Kb2 181. Rf7 Rb8 182. Re7 Rd8 183. Ra7 Rc8 1/2-1/2

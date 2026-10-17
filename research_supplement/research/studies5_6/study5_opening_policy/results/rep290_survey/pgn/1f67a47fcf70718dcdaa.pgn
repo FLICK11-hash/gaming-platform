@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:survey"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "King's English Variation"]
+[StudyGameID "1f67a47fcf70718dcdaa"]
+[Method "forced_reply"]
+[StudyPositionID "english"]
+[Termination "CHECKMATE"]
+
+1. c4 e5 2. Nf3 d6 3. d4 Nd7 4. Nc3 Ngf6 5. g3 g6 6. Bg2 a5 7. Qc2 exd4 8. Na4 c5 9. e3 Ne5 10. Qb3 Nxf3+ 11. Bxf3 Bh3 12. exd4 Bg7 13. Be3 Ng4 14. Bxg4 Bxg4 15. dxc5 O-O 16. O-O dxc5 17. Bxc5 Re8 18. Qxb7 Rb8 19. Qg2 Qd3 20. f3 Bf5 21. Rac1 Re2 22. Bf2 Bd4 23. g4 Qd2 24. Rfd1 Bxf2+ 25. Kh1 Qe3 26. Rc3 Qe5 27. Qf1 Bc5 28. f4 Qe4+ 29. Qf3 Be3 30. Rd8+ Rxd8 31. Rxe3 Rd1# 0-1

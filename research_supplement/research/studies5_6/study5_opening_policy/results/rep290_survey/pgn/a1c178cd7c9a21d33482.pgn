@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:survey"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "1-0"]
+[OpeningName "Anglo-Indian Defense"]
+[StudyGameID "a1c178cd7c9a21d33482"]
+[Method "forced_reply"]
+[StudyPositionID "english"]
+[Termination "CHECKMATE"]
+
+1. c4 Nf6 2. d4 e6 3. Nc3 Bb4 4. Qc2 O-O 5. e4 Nc6 6. Nf3 d6 7. a3 Bxc3+ 8. bxc3 e5 9. h3 h6 10. Be3 Nh5 11. Be2 b6 12. O-O Kh8 13. Nxe5 dxe5 14. d5 f5 15. Bxh5 Na5 16. exf5 Bxf5 17. Qe2 Qh4 18. f4 Nb3 19. Rad1 e4 20. a4 Qf6 21. g4 g6 22. gxf5 gxh5 23. Rb1 Rg8+ 24. Kh2 Qxf5 25. Rxb3 c5 26. dxc6 h4 27. Rb5 Qe6 28. f5 Qd6+ 29. Bf4 Qc7 30. Bxc7 Rac8 31. Bf4 Rcd8 32. Kh1 Ra8 33. Be5+ Kh7 34. f6 Rg2 35. Kxg2 Kg8 36. f7+ Kf8 37. Bd6+ Kg7 38. Qg4+ Kh7 39. a5 Rc8 40. Qf5+ Kg7 41. Be5+ Kf8 42. Qxc8+ Ke7 43. c5 bxa5 44. Bd6# 1-0

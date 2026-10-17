@@ -1,0 +1,37 @@
+position_id,position_name,white_elo,black_elo,method,treatment_id,planned_games,recorded_games,completed_games,censored_games,completion_fraction,repeated_completed_sequences,repeated_sequence_fraction,blocks_recorded
+caro_kann_classical,Caro-Kann Defense: Classical Variation,1800,2000,fixed_line,caro_kann_classical,290,290,290,0,1.0,0,0.0,29
+caro_kann_classical,Caro-Kann Defense: Classical Variation,2000,2000,fixed_line,caro_kann_classical,290,290,290,0,1.0,0,0.0,29
+caro_kann_gurgenidze,Caro-Kann Defense: Gurgenidze System,1800,2000,fixed_line,caro_kann_gurgenidze,290,290,290,0,1.0,1,0.0034482758620689655,29
+caro_kann_gurgenidze,Caro-Kann Defense: Gurgenidze System,2000,2000,fixed_line,caro_kann_gurgenidze,290,290,290,0,1.0,5,0.017241379310344827,29
+english_kings,King's English Variation,1800,2000,fixed_line,english_kings,290,290,290,0,1.0,0,0.0,29
+english_kings,King's English Variation,2000,2000,fixed_line,english_kings,290,290,289,1,0.996551724137931,0,0.0,29
+english_symmetrical,Symmetrical English,1800,2000,fixed_line,english_symmetrical,290,290,290,0,1.0,0,0.0,29
+english_symmetrical,Symmetrical English,2000,2000,fixed_line,english_symmetrical,290,290,290,0,1.0,0,0.0,29
+french_classical,French Defense: Classical Variation,1800,2000,fixed_line,french_classical,290,290,290,0,1.0,0,0.0,29
+french_classical,French Defense: Classical Variation,2000,2000,fixed_line,french_classical,290,290,290,0,1.0,0,0.0,29
+french_winawer,French Defense: Winawer Variation,1800,2000,fixed_line,french_winawer,290,290,290,0,1.0,0,0.0,29
+french_winawer,French Defense: Winawer Variation,2000,2000,fixed_line,french_winawer,290,290,290,0,1.0,0,0.0,29
+queens_gambit_accepted,Queen's Gambit Accepted,1800,2000,fixed_line,queens_gambit_accepted,290,290,289,1,0.996551724137931,0,0.0,29
+queens_gambit_accepted,Queen's Gambit Accepted,2000,2000,fixed_line,queens_gambit_accepted,290,290,290,0,1.0,0,0.0,29
+queens_gambit_chigorin,Queen's Gambit: Chigorin Defense,1800,2000,fixed_line,queens_gambit_chigorin,290,290,290,0,1.0,0,0.0,29
+queens_gambit_chigorin,Queen's Gambit: Chigorin Defense,2000,2000,fixed_line,queens_gambit_chigorin,290,290,290,0,1.0,0,0.0,29
+queens_gambit_declined,Queen's Gambit Declined,1800,2000,fixed_line,queens_gambit_declined,290,290,290,0,1.0,0,0.0,29
+queens_gambit_declined,Queen's Gambit Declined,2000,2000,fixed_line,queens_gambit_declined,290,290,290,0,1.0,0,0.0,29
+ruy_berlin,Ruy Lopez: Berlin Defense,1800,2000,fixed_line,ruy_berlin,290,290,290,0,1.0,0,0.0,29
+ruy_berlin,Ruy Lopez: Berlin Defense,2000,2000,fixed_line,ruy_berlin,290,290,290,0,1.0,0,0.0,29
+ruy_classical,Ruy Lopez: Classical Defense,1800,2000,fixed_line,ruy_classical,290,290,290,0,1.0,0,0.0,29
+ruy_classical,Ruy Lopez: Classical Defense,2000,2000,fixed_line,ruy_classical,290,290,290,0,1.0,0,0.0,29
+ruy_morphy,Ruy Lopez: Morphy Defense,1800,2000,fixed_line,ruy_morphy,290,290,290,0,1.0,0,0.0,29
+ruy_morphy,Ruy Lopez: Morphy Defense,2000,2000,fixed_line,ruy_morphy,290,290,290,0,1.0,0,0.0,29
+ruy_steinitz,Ruy Lopez: Steinitz Defense,1800,2000,fixed_line,ruy_steinitz,290,290,290,0,1.0,0,0.0,29
+ruy_steinitz,Ruy Lopez: Steinitz Defense,2000,2000,fixed_line,ruy_steinitz,290,290,290,0,1.0,0,0.0,29
+sicilian_classical,Sicilian Defense: Classical Variation,1800,2000,fixed_line,sicilian_classical,290,290,289,1,0.996551724137931,0,0.0,29
+sicilian_classical,Sicilian Defense: Classical Variation,2000,2000,fixed_line,sicilian_classical,290,290,290,0,1.0,0,0.0,29
+sicilian_dragon,Sicilian Defense: Dragon Variation,1800,2000,fixed_line,sicilian_dragon,290,290,290,0,1.0,0,0.0,29
+sicilian_dragon,Sicilian Defense: Dragon Variation,2000,2000,fixed_line,sicilian_dragon,290,290,290,0,1.0,0,0.0,29
+sicilian_najdorf,Sicilian Defense: Najdorf Variation,1800,2000,fixed_line,sicilian_najdorf,290,290,289,1,0.996551724137931,0,0.0,29
+sicilian_najdorf,Sicilian Defense: Najdorf Variation,2000,2000,fixed_line,sicilian_najdorf,290,290,289,1,0.996551724137931,0,0.0,29
+sicilian_scheveningen,Sicilian Defense: Scheveningen Variation,1800,2000,fixed_line,sicilian_scheveningen,290,290,289,1,0.996551724137931,0,0.0,29
+sicilian_scheveningen,Sicilian Defense: Scheveningen Variation,2000,2000,fixed_line,sicilian_scheveningen,290,290,290,0,1.0,0,0.0,29
+slav_defense,Slav Defense,1800,2000,fixed_line,slav_defense,290,290,290,0,1.0,0,0.0,29
+slav_defense,Slav Defense,2000,2000,fixed_line,slav_defense,290,290,290,0,1.0,0,0.0,29

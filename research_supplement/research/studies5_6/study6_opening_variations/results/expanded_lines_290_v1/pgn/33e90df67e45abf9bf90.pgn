@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "French Defense: Classical Variation"]
+[StudyGameID "33e90df67e45abf9bf90"]
+[Method "fixed_line"]
+[StudyPositionID "french_classical"]
+[Termination "CHECKMATE"]
+
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. Nf3 c5 6. Be2 cxd4 7. Bg5 Qb6 8. Qxd4 a6 9. O-O-O Qxd4 10. Nxd4 Nxe5 11. Rhe1 Nbc6 12. Na4 Nd7 13. Be3 Nxd4 14. Rxd4 b5 15. Nc3 Bc5 16. Rg4 Bxe3+ 17. fxe3 O-O 18. Rd4 Bb7 19. e4 Nf6 20. Bf3 e5 21. Rb4 d4 22. Nxb5 axb5 23. Re2 Ba6 24. Rb3 Rfe8 25. Kb1 g6 26. g4 Nd7 27. h3 Re7 28. Rd2 b4 29. Be2 Bxe2 30. c3 d3 31. cxb4 Re6 32. Rdxd3 Nf6 33. Re3 Bc4 34. Rbc3 Bxa2+ 35. Kc2 Ree8 36. b3 Re6 37. Rcd3 Kg7 38. Rc3 g5 39. Kb2 Rb6 40. Red3 Rbb8 41. Rc7 Rxb4 42. Rc8 Rxb3+ 43. Rxb3 Rxc8 44. h4 Bxb3 45. hxg5 Bc4 46. Ka3 Nxg4 47. Ka4 Bd3 48. Ka5 Rb8 49. Ka4 Bb1 50. g6 hxg6 51. Ka5 Kh6 52. Ka6 Kg5 53. Ka5 f6 54. Ka6 Bc2 55. Ka7 Rb3 56. Ka6 Rb8 57. Ka5 Bd3 58. Ka4 Kh6 59. Ka3 Bb1 60. Ka4 Ne3 61. Ka5 Bd3 62. Ka4 Nd1 63. Ka3 Nf2 64. Ka2 Nd1 65. Ka3 Nf2 66. Ka2 g5 67. Ka3 Nh1 68. Ka2 Kg6 69. Ka1 Kh6 70. Ka2 Bc2 71. Ka1 Kh7 72. Ka2 g4 73. Ka1 Bd3 74. Ka2 Kh6 75. Ka1 Nf2 76. Ka2 Nh1 77. Ka3 g3 78. Ka4 Bc4 79. Ka5 Kg6 80. Ka4 g2 81. Ka5 Kh6 82. Ka4 g1=R 83. Ka3 Ng3 84. Ka4 Ra1# 0-1

@@ -1,0 +1,25 @@
+position_id,position_name,white_elo,black_elo,method,treatment_id,planned_games,recorded_games,completed_games,censored_games,completion_fraction,repeated_completed_sequences,repeated_sequence_fraction,blocks_recorded
+english,Anglo-Indian Defense,1800,2000,forced_reply,anglo_indian,290,290,290,0,1.0,0,0.0,29
+english,Anglo-Indian Defense,2000,2000,forced_reply,anglo_indian,290,290,290,0,1.0,0,0.0,29
+english,English Opening (...e6),1800,2000,forced_reply,english_e6,290,290,290,0,1.0,0,0.0,29
+english,English Opening (...e6),2000,2000,forced_reply,english_e6,290,290,290,0,1.0,0,0.0,29
+english,King's English Variation,1800,2000,forced_reply,kings_english,290,290,290,0,1.0,0,0.0,29
+english,King's English Variation,2000,2000,forced_reply,kings_english,290,290,290,0,1.0,0,0.0,29
+english,Symmetrical English,1800,2000,forced_reply,symmetrical_english,290,290,290,0,1.0,0,0.0,29
+english,Symmetrical English,2000,2000,forced_reply,symmetrical_english,290,290,290,0,1.0,0,0.0,29
+kings_pawn,Caro-Kann Defense,1800,2000,forced_reply,caro_kann,290,290,289,1,0.996551724137931,0,0.0,29
+kings_pawn,Caro-Kann Defense,2000,2000,forced_reply,caro_kann,290,290,289,1,0.996551724137931,0,0.0,29
+kings_pawn,French Defense,1800,2000,forced_reply,french,290,290,290,0,1.0,0,0.0,29
+kings_pawn,French Defense,2000,2000,forced_reply,french,290,290,290,0,1.0,0,0.0,29
+kings_pawn,Open Game,1800,2000,forced_reply,open_game,290,290,290,0,1.0,0,0.0,29
+kings_pawn,Open Game,2000,2000,forced_reply,open_game,290,290,289,1,0.996551724137931,0,0.0,29
+kings_pawn,Sicilian Defense,1800,2000,forced_reply,sicilian,290,290,290,0,1.0,0,0.0,29
+kings_pawn,Sicilian Defense,2000,2000,forced_reply,sicilian,290,290,290,0,1.0,0,0.0,29
+queens_pawn,Dutch Defense,1800,2000,forced_reply,dutch,290,290,289,1,0.996551724137931,0,0.0,29
+queens_pawn,Dutch Defense,2000,2000,forced_reply,dutch,290,290,290,0,1.0,0,0.0,29
+queens_pawn,Horwitz Defense,1800,2000,forced_reply,horwitz,290,290,290,0,1.0,0,0.0,29
+queens_pawn,Horwitz Defense,2000,2000,forced_reply,horwitz,290,290,290,0,1.0,0,0.0,29
+queens_pawn,Indian Game,1800,2000,forced_reply,indian_game,290,290,290,0,1.0,0,0.0,29
+queens_pawn,Indian Game,2000,2000,forced_reply,indian_game,290,290,290,0,1.0,0,0.0,29
+queens_pawn,Queen's Pawn Game (...d5),1800,2000,forced_reply,queens_pawn_game,290,290,290,0,1.0,0,0.0,29
+queens_pawn,Queen's Pawn Game (...d5),2000,2000,forced_reply,queens_pawn_game,290,290,289,1,0.996551724137931,0,0.0,29

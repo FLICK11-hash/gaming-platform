@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "French Defense: Classical Variation"]
+[StudyGameID "04eb95221c8b86bf2c86"]
+[Method "fixed_line"]
+[StudyPositionID "french_classical"]
+[Termination "CHECKMATE"]
+
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. Nf3 c5 6. dxc5 Bxc5 7. Bf4 h6 8. Bd3 O-O 9. O-O Nc6 10. Qe2 Bb6 11. Na4 Bc7 12. c4 f6 13. Rad1 Bxe5 14. Bg3 Re8 15. Bc2 Bxg3 16. fxg3 Nf8 17. a3 Ne7 18. Nd4 e5 19. Nb5 d4 20. Nbc3 Qc7 21. Ne4 f5 22. Nf2 b6 23. g4 Nfg6 24. gxf5 Bxf5 25. Bxf5 Nxf5 26. Qh5 Nge7 27. Ng4 Rf8 28. Rde1 e4 29. Rxf5 Nxf5 30. Rxe4 Rad8 31. b4 Qxc4 32. Re1 d3 33. Nf6+ Rxf6 34. Qe8+ Rxe8 35. Rb1 d2 36. Nb2 Re1+ 37. Rxe1 dxe1=Q# 0-1

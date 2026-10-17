@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "1-0"]
+[OpeningName "Sicilian Defense: Najdorf Variation"]
+[StudyGameID "8fc6886212902fe926df"]
+[Method "fixed_line"]
+[StudyPositionID "sicilian_najdorf"]
+[Termination "CHECKMATE"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Be3 e6 7. g4 Nc6 8. f3 Qb6 9. Qd2 Qxb2 10. Rb1 Qa3 11. Nxc6 bxc6 12. Rb3 Qa5 13. Bb6 Qe5 14. f4 Nxe4 15. Qg2 Qxf4 16. Qxe4 Qxe4+ 17. Nxe4 e5 18. Bg2 Bxg4 19. Nf6+ gxf6 20. Bxc6+ Bd7 21. Bxa8 Bh6 22. Bd5 Bg5 23. Be3 Be6 24. Rb8+ Kd7 25. Bxe6+ Ke7 26. Rxh8 h6 27. Bc8 h5 28. Bf2 Bh6 29. c4 Bg7 30. Rg8 Bf8 31. c5 d5 32. Rhg1 Kd8 33. Bxa6 e4 34. R1g2 Kc7 35. Rxf8 Kc6 36. a3 f5 37. Rgg8 Kd7 38. Rd8+ Ke6 39. Rde8+ Kd7 40. Bb5+ Kc7 41. Re7# 1-0

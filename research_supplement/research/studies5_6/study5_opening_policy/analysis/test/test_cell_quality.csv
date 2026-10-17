@@ -1,0 +1,19 @@
+position_id,position_name,white_elo,black_elo,method,treatment_id,planned_games,recorded_games,completed_games,censored_games,completion_fraction,repeated_completed_sequences,repeated_sequence_fraction,blocks_recorded
+english,English Opening,1800,2000,engine,free_engine,290,290,290,0,1.0,0,0.0,29
+english,English Opening,1800,2000,fixed_book,symmetrical_english,290,290,290,0,1.0,0,0.0,29
+english,English Opening,1800,2000,learned,symmetrical_english,290,290,289,1,0.996551724137931,0,0.0,29
+english,English Opening,2000,2000,engine,free_engine,290,290,290,0,1.0,0,0.0,29
+english,English Opening,2000,2000,fixed_book,symmetrical_english,290,290,290,0,1.0,0,0.0,29
+english,English Opening,2000,2000,learned,symmetrical_english,290,290,289,1,0.996551724137931,0,0.0,29
+kings_pawn,King's Pawn Opening,1800,2000,engine,free_engine,290,290,288,2,0.993103448275862,0,0.0,29
+kings_pawn,King's Pawn Opening,1800,2000,fixed_book,sicilian,290,290,290,0,1.0,0,0.0,29
+kings_pawn,King's Pawn Opening,1800,2000,learned,open_game,290,290,290,0,1.0,0,0.0,29
+kings_pawn,King's Pawn Opening,2000,2000,engine,free_engine,290,290,290,0,1.0,0,0.0,29
+kings_pawn,King's Pawn Opening,2000,2000,fixed_book,sicilian,290,290,290,0,1.0,0,0.0,29
+kings_pawn,King's Pawn Opening,2000,2000,learned,sicilian,290,290,290,0,1.0,0,0.0,29
+queens_pawn,Queen's Pawn Opening,1800,2000,engine,free_engine,290,290,290,0,1.0,0,0.0,29
+queens_pawn,Queen's Pawn Opening,1800,2000,fixed_book,queens_pawn_game,290,290,290,0,1.0,0,0.0,29
+queens_pawn,Queen's Pawn Opening,1800,2000,learned,queens_pawn_game,290,290,290,0,1.0,0,0.0,29
+queens_pawn,Queen's Pawn Opening,2000,2000,engine,free_engine,290,290,290,0,1.0,0,0.0,29
+queens_pawn,Queen's Pawn Opening,2000,2000,fixed_book,queens_pawn_game,290,290,290,0,1.0,0,0.0,29
+queens_pawn,Queen's Pawn Opening,2000,2000,learned,dutch,290,290,290,0,1.0,0,0.0,29

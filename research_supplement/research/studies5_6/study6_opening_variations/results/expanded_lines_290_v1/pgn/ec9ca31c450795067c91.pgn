@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 2000)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "1-0"]
+[OpeningName "Ruy Lopez: Steinitz Defense"]
+[StudyGameID "ec9ca31c450795067c91"]
+[Method "fixed_line"]
+[StudyPositionID "ruy_steinitz"]
+[Termination "CHECKMATE"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 d6 4. O-O a6 5. Bc4 g5 6. a4 Qf6 7. Nc3 Be6 8. d3 g4 9. Ne1 Bh6 10. Bxe6 Qxe6 11. f4 Bxf4 12. Bxf4 exf4 13. d4 f3 14. d5 Qe5 15. dxc6 bxc6 16. gxf3 g3 17. Ne2 gxh2+ 18. Kh1 Qxb2 19. Ng2 Qe5 20. Qd3 Ne7 21. c3 Qf6 22. Rf2 h5 23. Rd1 a5 24. Ne3 O-O-O 25. f4 h4 26. Rb1 Rdg8 27. e5 Qe6 28. Rxh2 dxe5 29. Qa6+ Kd7 30. fxe5 Qxe5 31. Ng2 h3 32. Qd3+ Qd5 33. Qxd5+ cxd5 34. Ngf4 Rg5 35. Rf2 Nc8 36. Nd4 Nd6 37. Nd3 Kc8 38. Nc5 Rhh5 39. Nc6 Nb7 40. Na7+ Kb8 41. Rfb2 Ka8 42. Rxb7 Rh8 43. Nb5 Rg1+ 44. Rxg1 h2 45. Rg8+ Rxg8 46. Nxc7# 1-0

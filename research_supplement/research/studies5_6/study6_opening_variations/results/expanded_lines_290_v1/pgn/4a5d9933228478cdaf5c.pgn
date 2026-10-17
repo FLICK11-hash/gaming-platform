@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Slav Defense"]
+[StudyGameID "4a5d9933228478cdaf5c"]
+[Method "fixed_line"]
+[StudyPositionID "slav_defense"]
+[Termination "CHECKMATE"]
+
+1. d4 d5 2. c4 c6 3. Nc3 Bf5 4. Nf3 Nf6 5. cxd5 Nxd5 6. Ng5 Nxc3 7. bxc3 h6 8. Nh3 Nd7 9. g3 Be4 10. Rg1 Bf5 11. Qb3 e5 12. g4 Bh7 13. g5 Qa5 14. Bd2 Qc7 15. f4 e4 16. c4 hxg5 17. Rb1 g4 18. Nf2 c5 19. Qxb7 Qxb7 20. Rxb7 cxd4 21. Rg3 Nc5 22. Rb2 f5 23. h3 e3 24. Bg2 exd2+ 25. Kf1 Rc8 26. hxg4 d1=Q+ 27. Nxd1 Be7 28. g5 a5 29. Rf3 Bg8 30. Rh3 Rxh3 31. Bxh3 Bf7 32. g6 Be6 33. Rb6 Kd8 34. Kg2 a4 35. e4 a3 36. e5 Bxc4 37. Kg1 Nd7 38. Rb5 Bxb5 39. Bxf5 d3 40. Kh1 d2 41. Bd3 Ba4 42. f5 Nxe5 43. f6 Bxf6 44. Be4 Rc1 45. Bd5 Bg5 46. Be4 Kc7 47. Kg1 Be7 48. Kh1 Bxd1 49. Kh2 Ng4+ 50. Kh1 Bf3# 0-1

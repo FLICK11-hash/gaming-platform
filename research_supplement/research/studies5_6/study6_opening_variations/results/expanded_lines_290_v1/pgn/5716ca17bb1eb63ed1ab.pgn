@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 2000)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Ruy Lopez: Classical Defense"]
+[StudyGameID "5716ca17bb1eb63ed1ab"]
+[Method "fixed_line"]
+[StudyPositionID "ruy_classical"]
+[Termination "CHECKMATE"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Bc5 4. Bxc6 dxc6 5. O-O Qe7 6. c3 Bg4 7. h3 Bh5 8. Qe2 Nf6 9. d3 Nd7 10. Nbd2 a5 11. Rd1 O-O 12. Nf1 f5 13. exf5 Rxf5 14. N1h2 Rf7 15. Be3 Bd6 16. Ng4 h6 17. Re1 e4 18. Nd2 exd3 19. Nxh6+ gxh6 20. Qxh5 Re8 21. Nf3 Ne5 22. Nh4 Qf6 23. Bxh6 Qxf2+ 24. Kh1 Ree7 25. Re3 Re6 26. Rd1 Qf1+ 27. Kh2 Ng4# 0-1

@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Symmetrical English"]
+[StudyGameID "8b96aa6f43331bafca94"]
+[Method "fixed_line"]
+[StudyPositionID "english_symmetrical"]
+[Termination "CHECKMATE"]
+
+1. c4 c5 2. Nc3 Nc6 3. Nf3 e6 4. d4 Na5 5. e4 cxd4 6. Qxd4 b6 7. Bf4 Ba6 8. Nb5 Nc6 9. Nd6+ Bxd6 10. Qxd6 Qf6 11. Qd2 Nge7 12. Rd1 d6 13. Be2 e5 14. Bg5 Qe6 15. Qxd6 Bxc4 16. Nxe5 Qxd6 17. Rxd6 Nxe5 18. b3 Bxe2 19. Bxe7 Kxe7 20. Rd5 f6 21. Kxe2 g5 22. h4 gxh4 23. Ke3 Rag8 24. Rxh4 Nf7 25. g4 Rd8 26. Rdh5 h6 27. Rh1 Ra8 28. R5h2 Rag8 29. f4 Rd8 30. Rh5 Rc8 31. Rd1 Rc7 32. Rhd5 Rhc8 33. R5d3 a5 34. Kf3 Rc3 35. a4 R8c6 36. Ke3 Rc7 37. Kf2 R3c6 38. Re3 Rc2+ 39. Kg1 Ra2 40. b4 Rac2 41. g5 Rc1 42. gxf6+ Ke6 43. Rd3 axb4 44. Kh2 R7c2+ 45. Kg3 Rc3 46. Rxc1 Rxd3+ 47. Kh4 Rc3 48. Rd1 Rc4 49. Kh5 Kxf6 50. Rg1 Rc5+ 51. Kh4 b3 52. Rg3 b2 53. Rg1 Rc1 54. Rg5 hxg5+ 55. Kg3 b1=Q 56. e5+ Kf5 57. Kg2 Qb2+ 58. Kg3 gxf4+ 59. Kf3 Nxe5# 0-1

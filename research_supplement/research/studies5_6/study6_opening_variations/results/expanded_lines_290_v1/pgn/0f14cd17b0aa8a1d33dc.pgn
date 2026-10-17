@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 2000)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Queen's Gambit Accepted"]
+[StudyGameID "0f14cd17b0aa8a1d33dc"]
+[Method "fixed_line"]
+[StudyPositionID "queens_gambit_accepted"]
+[Termination "CHECKMATE"]
+
+1. d4 d5 2. c4 dxc4 3. e4 e5 4. dxe5 Qxd1+ 5. Kxd1 Bg4+ 6. Kc2 Nc6 7. Bxc4 O-O-O 8. f3 Nxe5 9. Bb3 Bd7 10. Ne2 Ne7 11. Bf4 f6 12. Nbc3 N7c6 13. Rad1 Na5 14. Bxe5 fxe5 15. Nc1 Nc6 16. N3e2 h5 17. h4 Rh6 18. Bf7 Bd6 19. a3 a5 20. Nd3 Rf8 21. Bc4 Rg6 22. Rdg1 Kb8 23. Kd2 Be8 24. Bb5 Rh8 25. Ke3 Ka7 26. Rh3 Kb6 27. a4 Bf7 28. Rg3 Nb4 29. Rc1 Rxg3 30. Nxg3 Bb3 31. Nf5 Nxd3 32. Kxd3 Bb4 33. Ke3 Rd8 34. Bd3 g6 35. Bc4 Bxa4 36. Bd5 c6 37. b3 Bb5 38. Bc4 Bd2+ 39. Ke2 Bxc1 40. Ne7 Bxc4+ 41. bxc4 Rd2+ 42. Ke1 Kc5 43. f4 a4 44. Nxg6 Rd8 45. f5 Re8 46. f6 Rc8 47. Kd1 Be3 48. Kc2 Ra8 49. g3 a3 50. Nxe5 a2 51. Nd3+ Kd4 52. Nb4 a1=Q 53. f7 Qa4+ 54. Kb1 Qxb4+ 55. Kc2 Ra2+ 56. Kd1 Rd2+ 57. Kc1 Re2+ 58. Kd1 Qd2# 0-1

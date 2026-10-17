@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "1-0"]
+[OpeningName "Caro-Kann Defense: Gurgenidze System"]
+[StudyGameID "cd83e315b576c8d0360e"]
+[Method "fixed_line"]
+[StudyPositionID "caro_kann_gurgenidze"]
+[Termination "CHECKMATE"]
+
+1. e4 c6 2. d4 d5 3. Nc3 g6 4. e5 h5 5. Nf3 Bg4 6. Bd3 Qb6 7. Be3 e6 8. O-O Ne7 9. a4 Nf5 10. a5 Qd8 11. Qe2 Be7 12. Bxf5 gxf5 13. Na4 Qxa5 14. Nc5 Qb5 15. Qxb5 cxb5 16. Nxb7 f4 17. Bd2 Kd7 18. c3 Bxf3 19. gxf3 Rg8+ 20. Kh1 Nc6 21. b4 a6 22. Rfe1 Ra7 23. Nd6 h4 24. Nxf7 Rg7 25. Nd6 Bxd6 26. exd6 Rf7 27. Kg2 a5 28. bxa5 Rxa5 29. Rxa5 Nxa5 30. Kh3 Rf8 31. Rb1 Kc6 32. Kxh4 Nc4 33. Rd1 Rh8+ 34. Kg5 Rxh2 35. Bxf4 Rxf2 36. Ra1 Rc2 37. Kf6 Rxc3 38. Ke7 b4 39. d7 Rxf3 40. d8=Q Ra3 41. Qc8+ Kb5 42. Qd7+ Kb6 43. Qc7+ Kb5 44. Rb1 Ra2 45. Kf6 Na3 46. Rc1 Ka4 47. Qa7+ Kb3 48. Qc5 Rf2 49. Qc7 Rc2 50. Qe7 e5 51. Rxc2 Nxc2 52. dxe5 Ne3 53. Qd6 Ng4+ 54. Kf7 Nf2 55. e6 Kc3 56. Qc6+ Kb3 57. e7 Nd3 58. e8=Q d4 59. Qa4+ Kb2 60. Qe2+ Kb1 61. Qxd3+ Kb2 62. Qac2+ Ka1 63. Qf1# 1-0

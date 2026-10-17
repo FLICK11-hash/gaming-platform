@@ -1,0 +1,195 @@
+{
+  "choices": {
+    "english|1800": {
+      "all_candidate_estimates": [
+        {
+          "candidate_id": "anglo_indian",
+          "n": 290,
+          "observed_black_score": 0.6379310344827587,
+          "smoothed_black_score": 0.6360544217687075
+        },
+        {
+          "candidate_id": "english_e6",
+          "n": 290,
+          "observed_black_score": 0.6258620689655172,
+          "smoothed_black_score": 0.6241496598639455
+        },
+        {
+          "candidate_id": "kings_english",
+          "n": 290,
+          "observed_black_score": 0.6310344827586207,
+          "smoothed_black_score": 0.6292517006802721
+        },
+        {
+          "candidate_id": "symmetrical_english",
+          "n": 290,
+          "observed_black_score": 0.646551724137931,
+          "smoothed_black_score": 0.6445578231292517
+        }
+      ],
+      "candidate_id": "symmetrical_english",
+      "candidate_name": "Symmetrical English",
+      "smoothed_training_score": 0.6445578231292517
+    },
+    "english|2000": {
+      "all_candidate_estimates": [
+        {
+          "candidate_id": "anglo_indian",
+          "n": 290,
+          "observed_black_score": 0.49137931034482757,
+          "smoothed_black_score": 0.4914965986394558
+        },
+        {
+          "candidate_id": "english_e6",
+          "n": 290,
+          "observed_black_score": 0.44482758620689655,
+          "smoothed_black_score": 0.445578231292517
+        },
+        {
+          "candidate_id": "kings_english",
+          "n": 290,
+          "observed_black_score": 0.5017241379310344,
+          "smoothed_black_score": 0.5017006802721088
+        },
+        {
+          "candidate_id": "symmetrical_english",
+          "n": 290,
+          "observed_black_score": 0.5051724137931034,
+          "smoothed_black_score": 0.5051020408163265
+        }
+      ],
+      "candidate_id": "symmetrical_english",
+      "candidate_name": "Symmetrical English",
+      "smoothed_training_score": 0.5051020408163265
+    },
+    "kings_pawn|1800": {
+      "all_candidate_estimates": [
+        {
+          "candidate_id": "caro_kann",
+          "n": 289,
+          "observed_black_score": 0.6124567474048442,
+          "smoothed_black_score": 0.6109215017064846
+        },
+        {
+          "candidate_id": "french",
+          "n": 290,
+          "observed_black_score": 0.6293103448275862,
+          "smoothed_black_score": 0.6275510204081632
+        },
+        {
+          "candidate_id": "open_game",
+          "n": 290,
+          "observed_black_score": 0.6913793103448276,
+          "smoothed_black_score": 0.6887755102040817
+        },
+        {
+          "candidate_id": "sicilian",
+          "n": 290,
+          "observed_black_score": 0.6827586206896552,
+          "smoothed_black_score": 0.6802721088435374
+        }
+      ],
+      "candidate_id": "open_game",
+      "candidate_name": "Open Game",
+      "smoothed_training_score": 0.6887755102040817
+    },
+    "kings_pawn|2000": {
+      "all_candidate_estimates": [
+        {
+          "candidate_id": "caro_kann",
+          "n": 289,
+          "observed_black_score": 0.4290657439446367,
+          "smoothed_black_score": 0.4300341296928328
+        },
+        {
+          "candidate_id": "french",
+          "n": 290,
+          "observed_black_score": 0.4482758620689655,
+          "smoothed_black_score": 0.4489795918367347
+        },
+        {
+          "candidate_id": "open_game",
+          "n": 289,
+          "observed_black_score": 0.4602076124567474,
+          "smoothed_black_score": 0.46075085324232085
+        },
+        {
+          "candidate_id": "sicilian",
+          "n": 290,
+          "observed_black_score": 0.503448275862069,
+          "smoothed_black_score": 0.5034013605442177
+        }
+      ],
+      "candidate_id": "sicilian",
+      "candidate_name": "Sicilian Defense",
+      "smoothed_training_score": 0.5034013605442177
+    },
+    "queens_pawn|1800": {
+      "all_candidate_estimates": [
+        {
+          "candidate_id": "dutch",
+          "n": 289,
+          "observed_black_score": 0.5865051903114187,
+          "smoothed_black_score": 0.5853242320819113
+        },
+        {
+          "candidate_id": "horwitz",
+          "n": 290,
+          "observed_black_score": 0.6327586206896552,
+          "smoothed_black_score": 0.6309523809523809
+        },
+        {
+          "candidate_id": "indian_game",
+          "n": 290,
+          "observed_black_score": 0.6413793103448275,
+          "smoothed_black_score": 0.6394557823129252
+        },
+        {
+          "candidate_id": "queens_pawn_game",
+          "n": 290,
+          "observed_black_score": 0.6758620689655173,
+          "smoothed_black_score": 0.673469387755102
+        }
+      ],
+      "candidate_id": "queens_pawn_game",
+      "candidate_name": "Queen's Pawn Game (...d5)",
+      "smoothed_training_score": 0.673469387755102
+    },
+    "queens_pawn|2000": {
+      "all_candidate_estimates": [
+        {
+          "candidate_id": "dutch",
+          "n": 290,
+          "observed_black_score": 0.503448275862069,
+          "smoothed_black_score": 0.5034013605442177
+        },
+        {
+          "candidate_id": "horwitz",
+          "n": 290,
+          "observed_black_score": 0.46206896551724136,
+          "smoothed_black_score": 0.46258503401360546
+        },
+        {
+          "candidate_id": "indian_game",
+          "n": 290,
+          "observed_black_score": 0.45,
+          "smoothed_black_score": 0.45068027210884354
+        },
+        {
+          "candidate_id": "queens_pawn_game",
+          "n": 289,
+          "observed_black_score": 0.4757785467128028,
+          "smoothed_black_score": 0.4761092150170648
+        }
+      ],
+      "candidate_id": "dutch",
+      "candidate_name": "Dutch Defense",
+      "smoothed_training_score": 0.5034013605442177
+    }
+  },
+  "config_sha256": "32d395285b9cbe39b95368123df40d519d33201c57660bff8e2aa44f86fa7b06",
+  "selection_method": "shrinkage_expected_score_argmax",
+  "study_id": "opening-policy-290-per-cell-2026-v2",
+  "training_csv_sha256": "ab1926f4133457a2e149c2bc3453516855503995b68f7572c25499111e89913e",
+  "training_game_count": 6960
+}

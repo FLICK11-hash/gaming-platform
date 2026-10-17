@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:test"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 2000)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "1-0"]
+[OpeningName "Queen's Pawn Opening"]
+[StudyGameID "227384c3b836cce4375c"]
+[Method "fixed_book"]
+[StudyPositionID "queens_pawn"]
+[Termination "CHECKMATE"]
+
+1. d4 d5 2. Nf3 Bf5 3. Nh4 Bg4 4. h3 Be6 5. e3 c6 6. Bd3 g6 7. b3 c5 8. Nf3 Bg7 9. O-O Nc6 10. Bb5 Nh6 11. Bxc6+ bxc6 12. c3 cxd4 13. cxd4 Qa5 14. Qc2 Rc8 15. Bd2 Qb6 16. Nc3 c5 17. Qd3 O-O 18. Na4 Qb8 19. Rfc1 cxd4 20. Rxc8 Bxc8 21. Nxd4 Nf5 22. Nc6 Qa8 23. Rc1 Bf6 24. Qxd5 Bb7 25. e4 e6 26. Qd7 Rc8 27. Qd3 Nh4 28. e5 Bd8 29. Nxd8 Rxd8 30. Qc3 Rc8 31. Qd4 Rxc1+ 32. Bxc1 Nxg2 33. Bd2 g5 34. Qg4 h6 35. f4 Qd8 36. fxg5 h5 37. Qb4 Qd3 38. g6 Qf3 39. Qe7 Nh4 40. gxf7+ Qxf7 41. Qd8+ Kh7 42. Qxh4 Qg6+ 43. Qg5 Be4 44. Qxg6+ Bxg6 45. h4 a6 46. Kf2 a5 47. Be3 Bf7 48. Nb6 Be8 49. Bd4 Bg6 50. Nc4 Bb1 51. Nxa5 Kg6 52. Be3 Kg7 53. a3 Bd3 54. Nb7 Bg6 55. Nc5 Kh7 56. a4 Be8 57. Ke2 Kg6 58. Kd3 Kf5 59. Kc3 Bc6 60. a5 Bb5 61. Bd2 Kxe5 62. Kb4 Bc6 63. Kc3 Kd6 64. Kb4 e5 65. Bc3 Bf3 66. Be1 Ke7 67. Bd2 Kf7 68. Bc3 Be2 69. Be1 e4 70. a6 Bxa6 71. Ka5 Bf1 72. Bf2 Kf8 73. b4 Bg2 74. Be3 Bh3 75. Bf4 e3 76. Bg3 Bf1 77. b5 Bg2 78. Be1 e2 79. Nb3 Ke7 80. Kb6 Bd5 81. Nd4 Kd8 82. Kc5 Ba8 83. Kd6 Bb7 84. Ke6 Bh1 85. Nxe2 Kc8 86. Nd4 Bg2 87. Bc3 Bh3+ 88. Ke7 Bd7 89. Kf6 Bg4 90. Bb4 Bd7 91. Ke7 Bh3 92. Kf6 Bg4 93. Ke5 Bd1 94. b6 Kb7 95. Bd2 Ka6 96. Ne6 Kxb6 97. Be1 Kb7 98. Bb4 Kc6 99. Ng5 Bg4 100. Ne4 Kc7 101. Kf6 Kd8 102. Nc5 Kc8 103. Bc3 Kb8 104. Be1 Kc7 105. Ne6+ Kd7 106. Ng5 Kd8 107. Bg3 Be2 108. Bh2 Kd7 109. Ne4 Ke8 110. Bb8 Kd7 111. Ng5 Ke8 112. Ne6 Bf3 113. Be5 Bd1 114. Bh2 Be2 115. Bg1 Bd1 116. Ng7+ Kf8 117. Bc5+ Kg8 118. Nf5 Kh7 119. Nd6 Bb3 120. Nf7 Ba4 121. Ng5+ Kg8 122. Be7 Bb3 123. Nf3 Kh7 124. Ne1 Bd1 125. Bd6 Ba4 126. Ng2 Kh6 127. Be7 Bb3 128. Nf4 Bc4 129. Bf8+ Kh7 130. Bb4 Kh8 131. Be7 Kh7 132. Kg5 Bg8 133. Ba3 Bf7 134. Bd6 Kg8 135. Be7 Kh7 136. Bc5 Bb3 137. Bd6 Bg8 138. Kxh5 Bc4 139. Bf8 Bb3 140. Ba3 Ba2 141. Kg5 Bb3 142. Kf6 Kh6 143. Bf8+ Kh7 144. Kg5 Kh8 145. Ng6+ Kg8 146. Bd6 Be6 147. Bc5 Bb3 148. Ne7+ Kh7 149. Bd6 Bf7 150. Bc7 Kg7 151. Bd8 Be8 152. Nc8 Bc6 153. h5 Kh7 154. h6 Ba4 155. Ba5 Bc2 156. Nb6 Bf5 157. Na4 Bg6 158. Nb6 Bf7 159. Nd7 Bb3 160. Nf8+ Kh8 161. h7 Kg7 162. Bd2 Ba2 163. Ba5 Bc4 164. Kh4 Ba6 165. Bc3+ Kf7 166. Bd4 Bd3 167. h8=Q Be4 168. Qg7+ Ke8 169. Kg3 Bf5 170. Kf4 Bh3 171. Qf6 Bf1 172. Bc5 Bh3 173. Ba3 Bg2 174. Ke5 Be4 175. Bd6 Bd3 176. Ba3 Bc2 177. Bc5 Bd1 178. Ba3 Be2 179. Bc5 Bd3 180. Kf4 Bh7 181. Bd6 Bc2 182. Qe6+ Kd8 183. Qe7+ Kc8 184. Ne6 Ba4 185. Nc5 Bc2 186. Qf8# 1-0

@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:survey"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "French Defense"]
+[StudyGameID "d3eb9acb44ed214d8046"]
+[Method "forced_reply"]
+[StudyPositionID "kings_pawn"]
+[Termination "CHECKMATE"]
+
+1. e4 e6 2. Nf3 d5 3. Nc3 Bb4 4. e5 Ne7 5. a3 Bxc3 6. bxc3 c5 7. Rb1 Qc7 8. d3 h6 9. h4 Bd7 10. Be2 Ba4 11. O-O Nd7 12. d4 Rg8 13. Re1 a6 14. c4 O-O-O 15. Bd2 Bc6 16. a4 g5 17. Rb2 g4 18. Nh2 cxd4 19. c5 Nxe5 20. Bxh6 Nc4 21. Rb3 f5 22. Qa1 Qa5 23. g3 Qxc5 24. c3 d3 25. Be3 d4 26. Bg5 Rxg5 27. Bxd3 Rg6 28. Bxc4 Qxc4 29. Qa3 Qd5 30. f3 gxf3 31. Kf2 dxc3 32. Rxb7 Qd2+ 33. Kg1 Rxg3+ 34. Kh1 Qxe1+ 35. Nf1 Rh3+ 36. Kg1 f2# 0-1

@@ -1,0 +1,5 @@
+white_elo,comparison,planned_blocks,usable_blocks,blocks_with_missing_complete_outcomes,delta,block_se,ci_low,ci_high,p_two_sided_normal_approx,holm_p_primary,note
+1800,learned-engine,29,29,0,-0.03318965517241379,0.020712377483440972,-0.0737859150399581,0.007406604695130513,0.10906567519018824,0.21273322807383083,Block-level normal approximation; check repeat trajectories and censoring.
+1800,fixed_book-engine,29,29,0,-0.02227011494252874,0.021352596774434015,-0.06412120462041941,0.01958097473536193,0.2969622505524783,,Block-level normal approximation; check repeat trajectories and censoring.
+2000,learned-engine,29,29,0,-0.039272030651341,0.024320934667671216,-0.08694106259997658,0.008397001297294579,0.10636661403691541,0.21273322807383083,Block-level normal approximation; check repeat trajectories and censoring.
+2000,fixed_book-engine,29,29,0,0.004597701149425287,0.021694382798825792,-0.03792328913627326,0.04711869143512384,0.8321612642430447,,Block-level normal approximation; check repeat trajectories and censoring.

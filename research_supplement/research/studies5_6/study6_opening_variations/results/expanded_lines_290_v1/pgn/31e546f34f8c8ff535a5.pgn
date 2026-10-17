@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Ruy Lopez: Morphy Defense"]
+[StudyGameID "31e546f34f8c8ff535a5"]
+[Method "fixed_line"]
+[StudyPositionID "ruy_morphy"]
+[Termination "CHECKMATE"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 b5 5. Bb3 d6 6. a4 Be6 7. axb5 axb5 8. Rxa8 Qxa8 9. c3 Nd4 10. Nxd4 Qxe4+ 11. Ne2 Qxb1 12. Bxe6 fxe6 13. f4 exf4 14. Qb3 Kf7 15. d4 Qe4 16. Rf1 Nf6 17. Bxf4 Qxg2 18. Bd2 Qd5 19. Qxd5 exd5 20. Nf4 c6 21. Nh5 Be7 22. Bg5 Kg6 23. Nxf6 Rf8 24. Rg1 Bxf6 25. Bf4+ Kh5 26. Ke2 Re8+ 27. Kf3 c5 28. Be3 cxd4 29. Bxd4 Bxd4 30. cxd4 Re7 31. Ra1 Rf7+ 32. Kg3 Re7 33. Ra3 g5 34. Rc3 Re4 35. Rb3 h6 36. Kf3 g4+ 37. Kg3 Rxd4 38. Rxb5 Kg5 39. h3 Rd3+ 40. Kf2 gxh3 41. Rb6 Kf4 42. Ra6 Rd2+ 43. Ke1 Rd4 44. Rb6 h2 45. Kf2 h1=Q 46. Rb4 Qh2+ 47. Ke1 Rxb4 48. Kf1 Rc4 49. b4 Rxb4 50. Ke1 Rb1# 0-1

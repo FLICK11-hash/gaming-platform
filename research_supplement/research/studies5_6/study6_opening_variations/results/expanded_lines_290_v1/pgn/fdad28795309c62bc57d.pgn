@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Sicilian Defense: Classical Variation"]
+[StudyGameID "fdad28795309c62bc57d"]
+[Method "fixed_line"]
+[StudyPositionID "sicilian_classical"]
+[Termination "CHECKMATE"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 Nc6 6. Bb5 Qd7 7. Nd5 Nxe4 8. Qe2 Nf6 9. c4 e5 10. f4 Kd8 11. Nc2 Qg4 12. Qd2 Ne4 13. Qe2 Qxe2+ 14. Kxe2 g6 15. b3 Bg4+ 16. Kf1 h5 17. Bb2 Nc5 18. fxe5 dxe5 19. Nce3 Nd4 20. Bc3 Ne4 21. Bxd4 exd4 22. Nc2 a6 23. Re1 d3 24. Rxe4 axb5 25. Ne1 d2 26. Ne3 Rxa2 27. Nf3 Ra1+ 28. Ke2 Rxh1 29. Kxd2 Bh6 30. cxb5 Kc8 31. Ne5 Kb8 32. Nxg4 hxg4 33. b6 Rg1 34. Ke2 g3 35. hxg3 Bxe3 36. Kxe3 Rd8 37. Re7 Rc1 38. g4 Rb1 39. Rxb7+ Kc8 40. Rxf7 Kb8 41. Rf3 Rg8 42. Kd2 Rh8 43. Kc2 Rg1 44. Rg3 g5 45. Kd3 Rh6 46. Re3 Rd6+ 47. Kc4 Rxg2 48. Kc5 Rd7 49. b4 Rc2+ 50. Kb5 Rc1 51. Re5 Rg7 52. Re2 Rb1 53. Ra2 Re1 54. Kc5 Rg8 55. Kb5 Re6 56. Rf2 Re5+ 57. Kc6 Rg6+ 58. Kd7 Kb7 59. Rf7 Re3 60. Rh7 Rxb6 61. Re7 Rxe7+ 62. Kd8 Re1 63. Kd7 Ree6 64. Kd8 Rbd6# 0-1

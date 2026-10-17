@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Caro-Kann Defense: Classical Variation"]
+[StudyGameID "793e175ba93b63ff0fca"]
+[Method "fixed_line"]
+[StudyPositionID "caro_kann_classical"]
+[Termination "CHECKMATE"]
+
+1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5 5. Ng3 Bg6 6. c3 e6 7. h4 h6 8. Nf3 Bh7 9. Nh5 Nd7 10. a4 Qa5 11. g4 Be4 12. Ng3 Bh7 13. Bd3 Ngf6 14. Bxh7 Nxh7 15. g5 Bd6 16. Ne4 Bc7 17. Rg1 Qd5 18. Qd3 Nhf8 19. Be3 h5 20. c4 Qf5 21. Ne5 Nxe5 22. Nf6+ gxf6 23. dxe5 Qxd3 24. a5 Qd8 25. a6 bxa6 26. exf6 Be5 27. Ra2 Qd7 28. Ke2 Qc7 29. f4 Bxf4 30. Rxa6 Bd6 31. Rga1 Qb7 32. Rb6 Qc7 33. c5 Be5 34. Bd2 Rg8 35. Rb7 Qxb7 36. Bb4 a6 37. Kf1 Qxb4 38. Ra3 Qb5+ 39. Kf2 Qxc5+ 40. Re3 Qc2+ 41. Re2 Bd4+ 42. Kg3 Qxe2 43. b3 Qf1 44. g6 Be5# 0-1

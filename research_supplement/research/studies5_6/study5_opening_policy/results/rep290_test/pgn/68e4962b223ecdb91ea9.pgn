@@ -1,0 +1,14 @@
+[Event "opening-policy-290-per-cell-2026-v2:test"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 2000)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "King's Pawn Opening"]
+[StudyGameID "68e4962b223ecdb91ea9"]
+[Method "fixed_book"]
+[StudyPositionID "kings_pawn"]
+[Termination "CHECKMATE"]
+
+1. e4 c5 2. Nf3 Nc6 3. Be2 g6 4. d4 cxd4 5. Nxd4 Nf6 6. Nxc6 bxc6 7. e5 Ne4 8. Qd4 Qa5+ 9. Kd1 d5 10. e6 Bg7 11. exf7+ Kxf7 12. Qe3 Rb8 13. f3 Nf6 14. Nd2 e5 15. Qxe5 Qb6 16. Qd6 Rd8 17. Qf4 Kg8 18. a4 Nh5 19. Qh4 c5 20. Nb3 Bf5 21. Ra3 c4 22. a5 Qb4 23. Nd4 Rf8 24. c3 Qc5 25. Qg5 Bxd4 26. cxd4 Qxd4+ 27. Qd2 Qxd2+ 28. Kxd2 Nf4 29. Ke1 g5 30. Kf2 Nxe2 31. Kxe2 Bd3+ 32. Kf2 Rfe8 33. h4 g4 34. Kg3 a6 35. h5 gxf3 36. Rg1 Re2 37. gxf3 Kf7 38. Kf4 d4 39. h6 Bg6 40. Ra4 Rc2 41. Re1 Bd3 42. Rh1 Ke6 43. Re1+ Kd7 44. Rd1 Kc6 45. Ke5 Kc5 46. Ra3 Re2+ 47. Kf6 Rf8+ 48. Kg5 Rg2+ 49. Kh5 Rfg8 50. b4+ Kxb4 51. Rh1 Rg1 52. Rxg1 Rxg1 53. Bb2 c3 54. Ra1 Rg2 55. Ba3+ Kc4 56. Bf8 Kd5 57. Bg7 Bc2 58. Rh1 Re2 59. Kg5 Kc4 60. Bh8 Rg2+ 61. Kf6 Rg3 62. Rh4 Rg8 63. Bg7 Rd8 64. Rg4 Ba4 65. Ke7 Rd7+ 66. Kf8 Bb3 67. Kg8 c2 68. Rg1 Kb4+ 69. Kxh7 Bf7 70. f4 Kb3 71. Kh8 Rd8+ 72. Kh7 d3 73. Re1 Rd7 74. Bf8 Ka2 75. Bb4 Be8+ 76. Kh8 d2 77. Bxd2 Rxd2 78. Kg7 Rd1 79. Re2 Rd7+ 80. Kf6 Kb3 81. Re1 Bh5 82. f5 Bf3 83. Kg6 Be4 84. h7 Rd8 85. Rf1 Rc8 86. Rc1 Rb8 87. Kf6 Bxf5 88. Kxf5 Rd8 89. Rh1 Kb2 90. Ke6 c1=Q 91. h8=Q+ Rxh8 92. Rxh8 Qc7 93. Rf8 Ka3 94. Rf5 Kb4 95. Re5 Qc4+ 96. Kd7 Qd4+ 97. Ke6 Qg4+ 98. Kd5 Qd7+ 99. Ke4 Qd2 100. Kf3 Qc2 101. Ke3 Qg6 102. Kf3 Qd6 103. Rf5 Qc6+ 104. Kg4 Kc4 105. Rf2 Qe6+ 106. Kf3 Qd5+ 107. Kg4 Qxa5 108. Kg3 Qe1 109. Kg2 Qe3 110. Kf1 Kc3 111. Kg2 Qg5+ 112. Kh2 Qe3 113. Rf6 Qe2+ 114. Kg1 Qg4+ 115. Kf2 Qh4+ 116. Kg2 a5 117. Rf2 Kd3 118. Rf8 Qd4 119. Kh1 Qe4+ 120. Kh2 Ke3 121. Rf1 Qh7+ 122. Kg2 Qg6+ 123. Kh2 Qh5+ 124. Kg2 a4 125. Re1+ Kd4 126. Rg1 Qg6+ 127. Kf2 Qb6 128. Rg3 Qc5 129. Kg2 Qc6+ 130. Kf2 Kc4 131. Rg4+ Kb3 132. Rxa4 Qxa4 133. Kf1 Qc6 134. Ke2 Qg2+ 135. Ke3 Qf1 136. Ke4 Kc3 137. Ke5 Qf2 138. Ke6 Kd3 139. Ke5 Ke3 140. Ke6 Qh4 141. Ke5 Qh5+ 142. Kd6 Qg5 143. Kc6 Qe5 144. Kd7 Qf4 145. Kc6 Qc4+ 146. Kb7 Qf1 147. Kb8 Qf7 148. Ka8 Qf3+ 149. Ka7 Qf1 150. Ka8 Kd2 151. Kb7 Qb5+ 152. Kc7 Kc3 153. Kc8 Qb1 154. Kd8 Qb4 155. Kd7 Qe4 156. Kc8 Kd3 157. Kb8 Qh7 158. Kc8 Qe7 159. Kb8 Qd7 160. Ka8 Kc4 161. Kb8 Kb5 162. Ka8 Kc6 163. Kb8 Qf7 164. Kc8 Qg8# 0-1

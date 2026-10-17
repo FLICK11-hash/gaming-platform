@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Ruy Lopez: Berlin Defense"]
+[StudyGameID "b090023a6e363dcd3a75"]
+[Method "fixed_line"]
+[StudyPositionID "ruy_berlin"]
+[Termination "CHECKMATE"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. O-O Bc5 5. Nc3 Nd4 6. Nxe5 O-O 7. Bc4 d6 8. Nf3 Bg4 9. Re1 d5 10. exd5 Qd7 11. Be2 Nxe2+ 12. Qxe2 Nxd5 13. Qc4 Bxf3 14. gxf3 Rae8 15. Ne4 f5 16. b4 Bxb4 17. a3 fxe4 18. fxe4 Qg4+ 19. Kf1 Rxf2+ 20. Kxf2 Rf8# 0-1

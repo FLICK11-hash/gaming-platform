@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 1800)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "Symmetrical English"]
+[StudyGameID "a040962bff7352314f7b"]
+[Method "fixed_line"]
+[StudyPositionID "english_symmetrical"]
+[Termination "CHECKMATE"]
+
+1. c4 c5 2. Nc3 Nc6 3. d3 e6 4. e3 d5 5. cxd5 exd5 6. d4 Be6 7. Nge2 a6 8. g3 cxd4 9. Na4 b5 10. a3 bxa4 11. Bd2 Nge7 12. Qxa4 Bd7 13. Qb3 Rc8 14. exd4 Rb8 15. Qe3 g6 16. Bg2 Rb6 17. b4 Bg7 18. Bxd5 h5 19. Bg2 Bg4 20. d5 Ne5 21. h3 Nxd5 22. Qb3 Nxb4 23. Bxb4 Nd3+ 24. Kf1 Qf6 25. Qxd3 Qxa1+ 26. Nc1 Qxc1+ 27. Be1 Re6 28. Be4 Bf5 29. Bxf5 Rxe1+ 30. Kg2 O-O 31. Qc2 Rxh1 32. Bd3 Rg1+ 33. Kh2 Rh1+ 34. Kg2 Qa1 35. Be2 Rg1+ 36. Kh2 Rc1 37. Qa4 g5 38. Qd7 Qc3 39. Bd3 Qa1 40. Qd5 Re8 41. Bg6 Rf8 42. Bd3 h4 43. Qe4 Rd8 44. Bxa6 Be5 45. Bd3 Rxd3 46. Qa4 Bxg3+ 47. fxg3 Qa2+ 48. Qc2 Rxc2+ 49. Kg1 Rd1# 0-1

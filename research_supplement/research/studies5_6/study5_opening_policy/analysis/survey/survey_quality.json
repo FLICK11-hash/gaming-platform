@@ -1,0 +1,12 @@
+{
+  "phase": "survey",
+  "n_games_recorded": 6960,
+  "expected_games_per_cell": 290,
+  "n_cells_reported": 24,
+  "n_cells_below_planned_records": 0,
+  "n_cells_with_censored_games": 5,
+  "n_completed": 6955,
+  "n_censored": 5,
+  "duplicate_full_move_sequences": 0,
+  "warning": "Normal 95% intervals are descriptive and assume game independence; validate dependence, censoring, and statistical power before inferential claims."
+}

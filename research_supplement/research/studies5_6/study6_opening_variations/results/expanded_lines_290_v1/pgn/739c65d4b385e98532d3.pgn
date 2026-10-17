@@ -1,0 +1,14 @@
+[Event "opening-defense-18lines-290-2026-v1:lines"]
+[Site "Local UCI simulation"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish(UCI_Elo 2000)"]
+[Black "Stockfish(UCI_Elo 2000)"]
+[Result "0-1"]
+[OpeningName "King's English Variation"]
+[StudyGameID "739c65d4b385e98532d3"]
+[Method "fixed_line"]
+[StudyPositionID "english_kings"]
+[Termination "CHECKMATE"]
+
+1. c4 e5 2. Nc3 Nf6 3. Nf3 d6 4. d4 Nbd7 5. g3 c6 6. Bg5 Qb6 7. Qc2 exd4 8. Ne4 Be7 9. Bg2 h6 10. Nxf6+ Nxf6 11. Bc1 d5 12. cxd5 Qb4+ 13. Qd2 Nxd5 14. Qxb4 Nxb4 15. Nxd4 Bc5 16. a3 Nd3+ 17. exd3 Bxd4 18. Rb1 Bf5 19. O-O O-O-O 20. Be4 Bg6 21. Re1 Bxe4 22. Rxe4 f5 23. Re2 Rhe8 24. Be3 Bxe3 25. Rbe1 Rxd3 26. Rxe3 Rdxe3 27. fxe3 a5 28. h4 Rd8 29. Rf1 Rd3 30. Kh2 Rd5 31. Rf2 Re5 32. Rf4 g5 33. hxg5 hxg5 34. Rf2 g4 35. Re2 Kc7 36. Kg2 c5 37. Re1 b5 38. Kf2 Kc6 39. Rf1 Kd5 40. Rc1 Re8 41. Ke2 a4 42. Rh1 Rb8 43. Rf1 Ke4 44. Rf2 Ke5 45. Rg2 c4 46. Kf2 Rh8 47. Ke2 Rh7 48. Kd2 Rh1 49. Kc3 Rh8 50. Kd2 Rh5 51. Rf2 Rh3 52. Rg2 Rh6 53. Re2 Rd6+ 54. Kc1 Rd3 55. b4 Rxa3 56. Kb1 Rd3 57. Ka1 Rd1+ 58. Ka2 Rd7 59. Ka1 Rd1+ 60. Ka2 Rd8 61. Rh2 Rd3 62. Rh8 Rxe3 63. Ra8 Kd4 64. Ra5 Kd3 65. Rxb5 f4 66. gxf4 Rf3 67. Rb6 c3 68. f5 Kc4 69. Rb7 g3 70. Rc7+ Kd3 71. f6 Rxf6 72. Rg7 Rf3 73. Rg8 Ke2 74. b5 c2 75. Rc8 Kd1 76. b6 Rf2 77. Ka3 c1=Q+ 78. Rxc1+ Kxc1 79. b7 Rb2 80. b8=Q Rxb8 81. Kxa4 g2 82. Ka5 g1=Q 83. Ka6 Rb3 84. Ka5 Rb2 85. Ka4 Rb7 86. Ka5 Qa7# 0-1
