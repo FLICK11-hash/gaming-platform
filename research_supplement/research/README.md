@@ -1,5 +1,11 @@
 # Opening rankings in engine self-play: data, game records, and analysis
 
+Supplementary materials for *Opening Rankings from Engine Self-Play Are Less Certain Than They Look: Sampling Error, Draws, and Strength Dependence in Strength-Limited Stockfish Games*.
+
+**Authors:** Conrad Flick, Jaysen Jensen, Jingyu Huang, and Mario Camaro Paslar (University of Chicago).
+
+This repository provides the data, experimental protocols, game records, and analysis code supporting the six chess studies and Connect Four positive control described in the manuscript.
+
 Supplementary material for "Are Opening Rankings from Engine Self-Play Real? Sampling Error, Draws, and Strength Dependence in Strength-Limited Stockfish Games" (Flick & Camaro Paslar).
 
 ## Study 1 (platform runs, transcribed from screenshots)
